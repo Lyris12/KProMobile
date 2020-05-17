@@ -68,8 +68,11 @@ struct DuelInfo {
 	bool isTag;
 	bool isSingleMode;
 	bool is_shuffling;
+	//modded - to check swapped
+	bool is_swapped;
 	bool tag_player[2];
 	int lp[2];
+	int start_lp[2];
 	int card_count[2];
 	int total_attack[2];
 	int duel_rule;
@@ -92,6 +95,7 @@ struct DuelInfo {
 	video::SColor card_count_color[2];
 	video::SColor total_attack_color[2];
 	bool isReplaySwapped;
+	std::vector<unsigned int> announce_cache;
 };
 
 struct BotInfo {
@@ -139,6 +143,7 @@ public:
 	void DrawSelectionLine(irr::gui::IGUIElement* element, int width, irr::video::SColor color);
 	void DrawBackGround();
 	void DrawLinkedZones(ClientCard* pcard);
+	void DrawSpellLinkedZones(ClientCard* pcard);
 	void CheckMutual(ClientCard* pcard, int mark);
 	void DrawCards();
 	void DrawCard(ClientCard* pcard);
@@ -174,13 +179,6 @@ public:
 		irr::gui::IGUIElement* focus = env->getFocus();
 		return focus && focus->hasType(type);
 	}
-
-	void TrimText(irr::gui::IGUIElement* editbox) const {
-	    irr::core::stringw text(editbox->getText());
-	    text.trim();
-	    editbox->setText(text.c_str());
-	}
-
 
 	template<typename T>
 	static std::vector<T> TokenizeString(T input, const T& token);
@@ -774,7 +772,6 @@ private:
 #define BUTTON_MARKS_FILTER			322
 #define BUTTON_MARKERS_OK			323
 #define COMBOBOX_SORTTYPE			324
-#define EDITBOX_INPUTS				325
 
 #define WINDOW_DECK_MANAGE			330
 #define BUTTON_NEW_CATEGORY			331
@@ -810,7 +807,7 @@ private:
 #define CHECKBOX_MULTI_KEYWORDS		372
 #define CHECKBOX_PREFER_EXPANSION	373
 
-#define DEFAULT_DUEL_RULE			5
+#define DEFAULT_DUEL_RULE			4
 
 #define CARD_ARTWORK_VERSIONS_OFFSET	10
 

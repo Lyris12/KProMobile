@@ -2,10 +2,18 @@ apply plugin: 'com.android.application'
 //apply plugin: 'me.tatarka.retrolambda'
 
 android {
+    signingConfigs {
+        debug {
+            storeFile file('C:\\mobile\\tools\\Lyris.jks')
+            storePassword '123456'
+            keyAlias = 'ygo'
+            keyPassword '123456'
+        }
+    }
     compileSdkVersion rootProject.ext.compileSdkVersion
 
     defaultConfig {
-        applicationId "cn.garymb.ygomobile"
+        applicationId "cn.garymb.ygomobile.xxxx"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 370000502
@@ -15,6 +23,7 @@ android {
         ndk {
             abiFilters "armeabi-v7a","x86"
         }
+        signingConfig signingConfigs.debug
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

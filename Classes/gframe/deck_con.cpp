@@ -1,4 +1,3 @@
-
 #include "config.h"
 #include "deck_con.h"
 #include "data_manager.h"
@@ -831,7 +830,6 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 		}
 		case irr::gui::EGET_EDITBOX_ENTER: {
 			switch(id) {
-				case EDITBOX_INPUTS:
 			case EDITBOX_KEYWORD: {
 				StartFilter();
 				break;
@@ -988,7 +986,6 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 					break;
 				}
 				}
-				mainGame->env->setFocus(0);
 				InstantSearch();
 				break;
 			}
@@ -1006,14 +1003,12 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 						mainGame->ebDefense->setEnabled(true);
 					}
 				}
-				mainGame->env->setFocus(0);
 				InstantSearch();
 				break;
 			}
 			case COMBOBOX_ATTRIBUTE:
 			case COMBOBOX_RACE:
 			case COMBOBOX_LIMIT:
-				mainGame->env->setFocus(0);
 				InstantSearch();
 			}
 		}
@@ -1085,6 +1080,16 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			break;
 		}
 		case irr::EMIE_LMOUSE_LEFT_UP: {
+		    s32 x = event.MouseInput.X;
+        	s32 y = event.MouseInput.Y;
+        	irr::core::position2di pos(x, y);
+        	if (x < (200 * mainGame->xScale) && y < (270 * mainGame->yScale)) {
+                mainGame->gMutex.lock();
+        		mainGame->textFont->setTransparency(true);
+        		mainGame->ClearChatMsg();
+                mainGame->gMutex.unlock();
+        		break;
+        	}//touch the pic of detail to refresh textfonts
 			is_starting_dragging = false;
 			if(!is_draging)
 				break;
@@ -1209,13 +1214,6 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				is_starting_dragging = false;
 			}
 			mouse_pos.set(event.MouseInput.X, event.MouseInput.Y);
-         /*   if(hovered_pos == 4 && mainGame->scrFilter->isVisible()) {
-			    if(dragy - mouse_pos.Y > 0 && mainGame->scrFilter->getPos() < mainGame->scrFilter->getMax()) {
-			        mainGame->scrFilter->setPos(mainGame->scrFilter->getPos() + 1);
-			    } else if(dragy - mouse_pos.Y < 0 && mainGame->scrFilter->getPos() > 0){
-			        mainGame->scrFilter->setPos(mainGame->scrFilter->getPos() - 1);
-			    }
-            }*/
 			GetHoveredCard();
 			break;
 		}
@@ -1310,20 +1308,16 @@ void DeckBuilder::GetHoveredCard() {
 					is_lastcard = 1;
 			}
 		}
-	} else if(x >= 805 * mainGame->xScale && x <= 995 * mainGame->xScale && y >= 165 * mainGame->yScale && y <= 626 * mainGame->yScale) {
+	} else if(x >= 810 * mainGame->xScale && x <= 995 * mainGame->xScale && y >= 165 * mainGame->yScale && y <= 626 * mainGame->yScale) {
 		hovered_pos = 4;
-        hovered_seq = (y - 165 * mainGame->yScale) / (66 * mainGame->yScale);
+		hovered_seq = (y - 165 * mainGame->yScale) / (66 * mainGame->yScale);
 		int pos = mainGame->scrFilter->getPos() + hovered_seq;
 		if(pos >= (int)results.size()) {
 			hovered_seq = -1;
 			hovered_code = 0;
-			//} else if(x >= 805 * mainGame->xScale && x <= 850 * mainGame->xScale) {
 		} else {
 			hovered_code = results[pos]->first;
-		//} else if(x > 850 * mainGame->xScale && x <= 995 * mainGame->xScale) {
-		 //   mainGame->ShowCardInfo(results[pos]->first);
 		}
-
 	}
 	if(is_draging) {
 		dragx = x;
@@ -1486,7 +1480,7 @@ void DeckBuilder::FilterCards() {
 		if(filter_marks && (data.link_marker & filter_marks)!= filter_marks)
 			continue;
 		if(filter_lm) {
-			if(filter_lm <= 3 && (!filterList->count(ptr->first) || (*filterList).at(ptr->first) != filter_lm - 1))
+			if(filter_lm <= 3 && (!filterList->count(ptr->first) || (*filterList)[ptr->first] != filter_lm - 1))
 				continue;
 			if(filter_lm == 4 && data.ot != 1)
 				continue;
@@ -1639,7 +1633,6 @@ bool DeckBuilder::CardNameContains(const wchar_t *haystack, const wchar_t *needl
 				return true;
 			}
 		} else {
-			i -= j;
 			j = 0;
 		}
 		i++;

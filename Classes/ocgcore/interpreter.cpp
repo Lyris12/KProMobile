@@ -19,9 +19,12 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	pduel = pd;
 	no_action = 0;
 	call_depth = 0;
+	disable_action_check = 0;
+
 	set_duel_info(lua_state, pd);
 	//Initial
 	luaL_openlibs(lua_state);
+#ifdef YGOPRO_LUA_SAFE
 	lua_pushnil(lua_state);
 	lua_setglobal(lua_state, "io");
 	lua_pushnil(lua_state);
@@ -32,6 +35,10 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_pushnil(lua_state);
 	lua_setfield(lua_state, -2, "os");
 	lua_pop(lua_state, 1);
+#endif
+	//add bit lib back
+	lua_getglobal(lua_state, "bit32");
+	lua_setglobal(lua_state, "bit");
 	//open all libs
 	scriptlib::open_cardlib(lua_state);
 	scriptlib::open_effectlib(lua_state);
@@ -41,6 +48,83 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	//extra scripts
 	load_script("./script/constant.lua");
 	load_script("./script/utility.lua");
+	//load kpro constant
+	//card data constants
+	lua_pushinteger(lua_state, CARDDATA_CODE);
+	lua_setglobal(lua_state, "CARDDATA_CODE");
+	lua_pushinteger(lua_state, CARDDATA_ALIAS);
+	lua_setglobal(lua_state, "CARDDATA_ALIAS");
+	lua_pushinteger(lua_state, CARDDATA_SETCODE);
+	lua_setglobal(lua_state, "CARDDATA_SETCODE");
+	lua_pushinteger(lua_state, CARDDATA_TYPE);
+	lua_setglobal(lua_state, "CARDDATA_TYPE");
+	lua_pushinteger(lua_state, CARDDATA_LEVEL);
+	lua_setglobal(lua_state, "CARDDATA_LEVEL");
+	lua_pushinteger(lua_state, CARDDATA_ATTRIBUTE);
+	lua_setglobal(lua_state, "CARDDATA_ATTRIBUTE");
+	lua_pushinteger(lua_state, CARDDATA_ATTRIBUTE);
+	lua_setglobal(lua_state, "CARDDATA_ATTRIBUTE");
+	lua_pushinteger(lua_state, CARDDATA_RACE);
+	lua_setglobal(lua_state, "CARDDATA_RACE");
+	lua_pushinteger(lua_state, CARDDATA_ATTACK);
+	lua_setglobal(lua_state, "CARDDATA_ATTACK");
+	lua_pushinteger(lua_state, CARDDATA_DEFENSE);
+	lua_setglobal(lua_state, "CARDDATA_DEFENSE");
+	lua_pushinteger(lua_state, CARDDATA_LSCALE);
+	lua_setglobal(lua_state, "CARDDATA_LSCALE");
+	lua_pushinteger(lua_state, CARDDATA_RSCALE);
+	lua_setglobal(lua_state, "CARDDATA_RSCALE");
+	lua_pushinteger(lua_state, CARDDATA_LINK_MARKER);
+	lua_setglobal(lua_state, "CARDDATA_LINK_MARKER");
+	//effect flag2s
+	lua_pushinteger(lua_state, EFFECT_FLAG2_SPOSITCH);
+	lua_setglobal(lua_state, "EFFECT_FLAG2_SPOSITCH");
+	lua_pushinteger(lua_state, EFFECT_FLAG2_AVAILABLE_BD);
+	lua_setglobal(lua_state, "EFFECT_FLAG2_AVAILABLE_BD");
+	//effects
+	lua_pushinteger(lua_state, EFFECT_CHANGE_LINK_MARKER_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_CHANGE_LINK_MARKER_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_ADD_LINK_MARKER_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_ADD_LINK_MARKER_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_REMOVE_LINK_MARKER_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_REMOVE_LINK_MARKER_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_CANNOT_LOSE_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_CANNOT_LOSE_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_EXTRA_TOMAIN_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_EXTRA_TOMAIN_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_OVERLAY_REMOVE_COST_CHANGE_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_OVERLAY_REMOVE_COST_CHANGE_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_ALLOW_SYNCHRO_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_ALLOW_SYNCHRO_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_MINIATURE_GARDEN_GIRL);
+	lua_setglobal(lua_state, "EFFECT_MINIATURE_GARDEN_GIRL");
+	lua_pushinteger(lua_state, EFFECT_ADD_SUMMON_TYPE_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_ADD_SUMMON_TYPE_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_REMOVE_SUMMON_TYPE_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_REMOVE_SUMMON_TYPE_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_CHANGE_SUMMON_TYPE_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_CHANGE_SUMMON_TYPE_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_CHANGE_SUMMON_LOCATION_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_CHANGE_SUMMON_LOCATION_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_LINK_SPELL_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_LINK_SPELL_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_SEA_PULSE);
+	lua_setglobal(lua_state, "EFFECT_SEA_PULSE");
+	lua_pushinteger(lua_state, EFFECT_MAP_OF_HEAVEN);
+	lua_setglobal(lua_state, "EFFECT_MAP_OF_HEAVEN");
+
+	//music hints
+	lua_pushinteger(lua_state, HINT_MUSIC);
+	lua_setglobal(lua_state, "HINT_MUSIC");
+	lua_pushinteger(lua_state, HINT_SOUND);
+	lua_setglobal(lua_state, "HINT_SOUND");
+	lua_pushinteger(lua_state, HINT_MUSIC_OGG);
+	lua_setglobal(lua_state, "HINT_MUSIC_OGG");
+	//detect operating system
+#ifdef _WIN32
+	lua_pushboolean(lua_state, 1);
+	lua_setglobal(lua_state, "_WIN32");
+#endif
 }
 interpreter::~interpreter() {
 	lua_close(lua_state);
@@ -322,9 +406,16 @@ int32 interpreter::call_code_function(uint32 code, const char* f, uint32 param_c
 		params.clear();
 		return OPERATION_FAIL;
 	}
-	load_card_script(code);
+	if (code)
+		load_card_script(code);
+	else
+		lua_getglobal(current_state, "Auxiliary");
 	lua_getfield(current_state, -1, f);
 	if (!lua_isfunction(current_state, -1)) {
+		if(!code) {
+			params.clear();
+			return OPERATION_FAIL;
+		}
 		sprintf(pduel->strbuffer, "\"CallCodeFunction\": attempt to call an error function");
 		handle_message(pduel, 1);
 		lua_pop(current_state, 2);

@@ -3,24 +3,10 @@
     <version>2</version>
 
     <server>
-        <player-name>Knight of Hanoi</player-name>
-        <name>YGOPROES TCG</name>
-        <ip>ygoproes.ddns.net</ip>
-        <port>8005</port>
-        <keep>true</keep>
-    </server>
-    <server>
-        <player-name>Knight of Hanoi</player-name>
-        <name>Mercury233 OCG</name>
-        <ip>s1.ygo233.com</ip>
-        <port>233</port>
-        <keep>true</keep>
-    </server>
-    <server>
-        <player-name>Knight of Hanoi</player-name>
-        <name>Szefo server (Links +TCG)</name>
-        <ip>szefoserver.ddns.net</ip>
-        <port>7210</port>
+        <player-name>Lyris</player-name>
+        <name>YGOCC Koishi</name>
+        <ip>23.254.201.48</ip>
+        <port>7999</port>
         <keep>true</keep>
     </server>
 </servers>

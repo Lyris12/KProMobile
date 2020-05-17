@@ -463,7 +463,11 @@ public class AppsSettings {
      */
     public String getResourcePath() {
         String defPath;
-        defPath = new File(String.valueOf(context.getExternalFilesDir(Constants.PREF_DEF_GAME_DIR))).getAbsolutePath();
+        try {
+            defPath = new File(Environment.getExternalStorageDirectory(), Constants.PREF_DEF_GAME_DIR).getAbsolutePath();
+        } catch (Exception e) {
+            defPath = new File(context.getFilesDir(), Constants.PREF_DEF_GAME_DIR).getAbsolutePath();
+        }
         return mSharedPreferences.getString(Constants.PREF_GAME_PATH, defPath);
     }
 

@@ -8,7 +8,13 @@
 #ifndef INTERPRETER_H_
 #define INTERPRETER_H_
 
+#ifdef _IRR_ANDROID_PLATFORM_
 #include "lua.hpp"
+#else
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
+#endif
 #include "common.h"
 #include <unordered_map>
 #include <list>
@@ -35,6 +41,8 @@ public:
 	coroutine_map coroutines;
 	int32 no_action;
 	int32 call_depth;
+	int32 disable_action_check;
+	int32 preloaded;
 
 	explicit interpreter(duel* pd);
 	~interpreter();

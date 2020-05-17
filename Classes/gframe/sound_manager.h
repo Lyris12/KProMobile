@@ -50,6 +50,7 @@ public:
         ADVANTAGE,
         DISADVANTAGE,
         WIN,
+		CUSTOM,
         LOSE
     };
 	bool Init(double sounds_volume, double music_volume, bool sounds_enabled, bool music_enabled, void* payload = nullptr);

@@ -8,3 +8,5 @@ project "ocgcore"
         buildoptions { "-std=c++14" }
     configuration "not windows"
         includedirs { "/usr/include/lua5.3" }
+    configuration "macosx" 
+        includedirs { "../lua" }

@@ -334,6 +334,7 @@ int32 scriptlib::group_random_select(lua_State *L) {
 	group* pgroup = *(group**) lua_touserdata(L, 1);
 	int32 playerid = (int32)lua_tointeger(L, 2);
 	uint32 count = (uint32)lua_tointeger(L, 3);
+	int32 no_hint = lua_toboolean(L, 4);
 	duel* pduel = pgroup->pduel;
 	group* newgroup = pduel->new_group();
 	if(count > pgroup->container.size())
@@ -351,6 +352,10 @@ int32 scriptlib::group_random_select(lua_State *L) {
 			std::advance(cit, i);
 			newgroup->container.insert(*cit);
 		}
+	}
+	if(no_hint) {
+		interpreter::group2value(L, newgroup);
+		return 1;
 	}
 	pduel->write_buffer8(MSG_RANDOM_SELECTED);
 	pduel->write_buffer8(playerid);
