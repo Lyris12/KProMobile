@@ -48,7 +48,7 @@ libYGOMobile.so
 /mobile/assets/*.cdb
 /mobile/assets_ko/data/*.cdb
 /mobile/assets_en/data/*.cdb
-/mobile/assets_en/data/pics.zip
+/mobile/en/release/assets/data/pics.zip
 /mobile/libs/libWindbot.aar
 /*.zip
 /*.cdb
