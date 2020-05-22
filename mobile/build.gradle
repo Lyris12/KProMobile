@@ -13,11 +13,11 @@ android {
     compileSdkVersion rootProject.ext.compileSdkVersion
 
     defaultConfig {
-        applicationId "cn.garymb.ygomobile.xxxx"
+        applicationId "cn.garymb.ygomobile.lyris"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 370000502
-        versionName "3.7.0"
+        versionName "Mopemope"
         flavorDimensions "versionCode"
         vectorDrawables.useSupportLibrary = true
         ndk {
