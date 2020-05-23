@@ -35,7 +35,6 @@ import com.nightonke.boommenu.BoomMenuButton;
 import com.ourygo.assistant.base.listener.OnDuelAssistantListener;
 import com.ourygo.assistant.util.DuelAssistantManagement;
 import com.ourygo.assistant.util.Util;
-import com.tencent.bugly.beta.Beta;
 import com.tencent.smtt.sdk.QbSdk;
 import com.tubb.smrv.SwipeMenuRecyclerView;
 
@@ -137,7 +136,7 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
         //trpay
         TrPay.getInstance(HomeActivity.this).initPaySdk("e1014da420ea4405898c01273d6731b6", "YGOMobile");
         //check update
-        Beta.checkUpgrade(false, false);
+        //Beta.checkUpgrade(false, false);
         //初始化决斗助手
         initDuelAssistant();
         //萌卡

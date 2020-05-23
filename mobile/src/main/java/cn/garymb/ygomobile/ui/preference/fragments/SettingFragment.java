@@ -23,7 +23,6 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.signature.StringSignature;
-import com.tencent.bugly.beta.Beta;
 
 import java.io.DataOutputStream;
 import java.io.File;
@@ -216,7 +215,7 @@ public class SettingFragment extends PreferenceFragmentPlus {
                     .show();
         }
         if (PREF_CHECK_UPDATE.equals(key)) {
-            Beta.checkUpgrade();
+            //Beta.checkUpgrade();
         }
         if (PREF_PENDULUM_SCALE.equals(key)) {
             CheckBoxPreference checkBoxPreference = (CheckBoxPreference) preference;
@@ -354,12 +353,12 @@ public class SettingFragment extends PreferenceFragmentPlus {
             super.onChooseFileOk(preference, file);
             onPreferenceClick(preference);
         } else if (PREF_GAME_PATH.equalsIgnoreCase(preference.getKey())) {
-            if (!TextUtils.equals(mSettings.getResourcePath(), file)) {
-//                Toast.makeText(getActivity(), R.string.restart_app, Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(getActivity(), MainActivity.class).setAction(ACTION_RELOAD));
-                getActivity().finish();
-            }
             mSettings.setResourcePath(file);
+//            if (!TextUtils.equals(path, file)) {
+                Toast.makeText(getActivity(), R.string.restart_app, Toast.LENGTH_SHORT).show();
+//                startActivity(new Intent(getActivity(), MainActivity.class).setAction(ACTION_RELOAD));
+//                getActivity().finish();
+//            }
             super.onChooseFileOk(preference, file);
         } else if (PREF_USE_EXTRA_CARD_CARDS.equals(key)) {
             ((CheckBoxPreference) preference).setChecked(true);

@@ -35,8 +35,8 @@ class CardSearchInfo {
                 //code
                 long code = Long.parseLong(word);
                 return card.Code == code || card.Alias == code;
-            } else if (!((card.Name != null && card.Name.contains(word))
-                    || (card.Desc != null && card.Desc.contains(word)))) {
+            } else if (!((card.Name != null && card.Name.toLowerCase().contains(word.toLowerCase()))
+                    || (card.Desc != null && card.Desc.toLowerCase().contains(word.toLowerCase())))) {
                 return false;
             }
         } else if (!TextUtils.isEmpty(prefixWord) && !TextUtils.isEmpty(suffixWord)) {

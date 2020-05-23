@@ -48,6 +48,7 @@ public interface Constants {
     String PREF_DECK_DELETE_DILAOG = "pref_key_deck_delete_dialog";
     boolean PREF_DEF_DECK_DELETE_DILAOG = true;
 
+    String GAME_DIRECTORY = "";
     String SETTINGS_COVER = "settings_game_diy_card_cover";
     String SETTINGS_AVATAR = "settings_game_avatar";
     String SETTINGS_CARD_BG = "settings_game_diy_card_bg";
