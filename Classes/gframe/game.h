@@ -50,6 +50,7 @@ struct Config {
 	int enable_bot_mode;
 	int quick_animation;
 	int auto_save_replay;
+	int draw_single_chain;
 	int prefer_expansion_script;
 	//sound
 	bool enable_sound;
@@ -170,6 +171,8 @@ public:
 	void ErrorLog(const char* msgbuf);
 	void initUtils();
 	void ClearTextures();
+	void CloseGameButtons();
+	void CloseGameWindow();
 	void CloseDuelWindow();
 
 	int LocalPlayer(int player);
@@ -275,6 +278,7 @@ public:
 	irr::gui::IGUICheckBox* chkWaitChain;
 	irr::gui::IGUICheckBox* chkQuickAnimation;
 	irr::gui::IGUICheckBox* chkAutoSaveReplay;
+	irr::gui::IGUICheckBox* chkDrawSingleChain;
 	irr::gui::IGUIWindow* tabSystem;
 	irr::gui::IGUIElement* elmTabSystemLast;
 	irr::gui::IGUIScrollBar* scrTabSystem;
@@ -806,6 +810,7 @@ private:
 #define SCROLL_TAB_SYSTEM			371
 #define CHECKBOX_MULTI_KEYWORDS		372
 #define CHECKBOX_PREFER_EXPANSION	373
+#define CHECKBOX_DRAW_SINGLE_CHAIN	374
 
 #define DEFAULT_DUEL_RULE			4
 
