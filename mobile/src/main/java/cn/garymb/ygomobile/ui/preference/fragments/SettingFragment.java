@@ -23,6 +23,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.signature.StringSignature;
+import com.ourygo.assistant.service.DuelAssistantService;
 
 import java.io.DataOutputStream;
 import java.io.File;
@@ -34,18 +35,14 @@ import cn.garymb.ygomobile.App;
 import cn.garymb.ygomobile.AppsSettings;
 import cn.garymb.ygomobile.Constants;
 import cn.garymb.ygomobile.lite.R;
-import cn.garymb.ygomobile.ui.home.MainActivity;
 import cn.garymb.ygomobile.ui.plus.DialogPlus;
-import com.ourygo.assistant.service.DuelAssistantService;
 import cn.garymb.ygomobile.ui.plus.VUiKit;
 import cn.garymb.ygomobile.ui.preference.PreferenceFragmentPlus;
 import cn.garymb.ygomobile.utils.FileUtils;
 import cn.garymb.ygomobile.utils.IOUtils;
 import cn.garymb.ygomobile.utils.SystemUtils;
-import ocgcore.ConfigManager;
 import ocgcore.DataManager;
 
-import static cn.garymb.ygomobile.Constants.ACTION_RELOAD;
 import static cn.garymb.ygomobile.Constants.CORE_SKIN_AVATAR_SIZE;
 import static cn.garymb.ygomobile.Constants.CORE_SKIN_BG_SIZE;
 import static cn.garymb.ygomobile.Constants.CORE_SKIN_CARD_COVER_SIZE;
@@ -353,12 +350,12 @@ public class SettingFragment extends PreferenceFragmentPlus {
             super.onChooseFileOk(preference, file);
             onPreferenceClick(preference);
         } else if (PREF_GAME_PATH.equalsIgnoreCase(preference.getKey())) {
-            mSettings.setResourcePath(file);
-//            if (!TextUtils.equals(path, file)) {
+            if (!TextUtils.equals(mSettings.getResourcePath(), file)) {
                 Toast.makeText(getActivity(), R.string.restart_app, Toast.LENGTH_SHORT).show();
 //                startActivity(new Intent(getActivity(), MainActivity.class).setAction(ACTION_RELOAD));
 //                getActivity().finish();
-//            }
+            }
+            mSettings.setResourcePath(file);
             super.onChooseFileOk(preference, file);
         } else if (PREF_USE_EXTRA_CARD_CARDS.equals(key)) {
             ((CheckBoxPreference) preference).setChecked(true);

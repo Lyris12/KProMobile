@@ -3,6 +3,7 @@ package cn.garymb.ygomobile;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Point;
+import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.WindowManager;
@@ -462,18 +463,13 @@ public class AppsSettings {
      */
     public String getResourcePath() {
         String defPath;
-        defPath = new File(String.valueOf(context.getExternalFilesDir(Constants.PREF_DEF_GAME_DIR))).getAbsolutePath();
-        try {
-            defPath = new File(Constants.GAME_DIRECTORY).getAbsolutePath();
-            return mSharedPreferences.getString(Constants.PREF_GAME_PATH, defPath);
-        } catch (Exception e) {}
+        //defPath = new File(String.valueOf(context.getExternalFilesDir(Constants.PREF_DEF_GAME_DIR))).getAbsolutePath();
+        defPath = new File(Environment.getExternalStorageDirectory(), Constants.PREF_DEF_GAME_DIR).getAbsolutePath();
         return mSharedPreferences.getString(Constants.PREF_GAME_PATH, defPath);
     }
 
     public void setResourcePath(String path) {
         if (TextUtils.equals(path, getResourcePath())) return;
-        String gPath = Constants.GAME_DIRECTORY;
-        gPath = path;
         mSharedPreferences.putString(Constants.PREF_GAME_PATH, path);
     }
 
