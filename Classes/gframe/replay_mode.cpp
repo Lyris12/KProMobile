@@ -156,6 +156,7 @@ bool ReplayMode::StartDuel() {
 	}
 	pduel = create_duel(rnd.rand());
 	preload_script(pduel, "./script/special.lua", 0);
+	preload_script(pduel, "./script/init.lua", 0);
 	int start_lp = cur_replay.ReadInt32();
 	int start_hand = cur_replay.ReadInt32();
 	int draw_count = cur_replay.ReadInt32();
@@ -241,6 +242,7 @@ void ReplayMode::EndDuel() {
 		mainGame->dInfo.isStarted = false;
 		mainGame->dInfo.isFinished = true;
 		mainGame->dInfo.isReplay = false;
+		mainGame->dInfo.isSingleMode = false;
 		mainGame->gMutex.unlock();
 		mainGame->closeDoneSignal.Reset();
 		mainGame->closeSignal.Set();

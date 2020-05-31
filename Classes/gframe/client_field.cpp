@@ -12,6 +12,23 @@ namespace ygo {
 
 ClientField::ClientField() {
 	panel = 0;
+	//drag cardtext and lists
+	is_dragging_cardtext = false;
+	is_dragging_lstLog = false;
+	is_dragging_lstReplayList = false;
+	is_dragging_lstSinglePlayList = false;
+	is_dragging_lstBotList = false;
+	is_dragging_lstDecks = false;
+	is_dragging_lstANCard = false;
+	is_dragging_CardSelect = false;
+	is_dragging_CardDisplay = false;
+	is_dragging_tabHelper = false;
+	is_dragging_tabSystem = false;
+	is_selectable = true;
+	dragging_tab_start_pos = 0;
+    dragging_tab_start_x = 0;
+	dragging_tab_start_y = 0;
+
 	hovered_card = 0;
 	clicked_card = 0;
 	highlighting_card = 0;
@@ -1517,10 +1534,10 @@ void ClientField::RefreshCardCountDisplay() {
 	}
 	if(mainGame->dInfo.card_count[0] > mainGame->dInfo.card_count[1]) {
 		mainGame->dInfo.card_count_color[0] = 0xffffff00;
-		mainGame->dInfo.card_count_color[1] = 0xffff0000;
+		mainGame->dInfo.card_count_color[1] = 0xffff2a00;
 	} else if(mainGame->dInfo.card_count[1] > mainGame->dInfo.card_count[0]) {
 		mainGame->dInfo.card_count_color[1] = 0xffffff00;
-		mainGame->dInfo.card_count_color[0] = 0xffff0000;
+		mainGame->dInfo.card_count_color[0] = 0xffff2a00;
 	} else {
 		mainGame->dInfo.card_count_color[0] = 0xffffffff;
 		mainGame->dInfo.card_count_color[1] = 0xffffffff;

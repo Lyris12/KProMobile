@@ -12,7 +12,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -41,6 +40,7 @@ import static cn.garymb.ygomobile.Constants.NETWORK_IMAGE;
 import static cn.garymb.ygomobile.Constants.ORI_DECK;
 import static cn.garymb.ygomobile.Constants.ORI_PICS;
 import static cn.garymb.ygomobile.Constants.ORI_REPLAY;
+import static cn.garymb.ygomobile.Constants.ORI_TEXTURES;
 import static cn.garymb.ygomobile.ui.home.ResCheckTask.ResCheckListener;
 import static cn.garymb.ygomobile.ui.home.ResCheckTask.getDatapath;
 
@@ -93,7 +93,6 @@ public class MainActivity extends HomeActivity {
                 enableStart = true;
             }
             if (isNew) {
-                Toast.makeText(getContext(),"Please change the game path, 1st!",Toast.LENGTH_LONG).show();
                 if (!getGameUriManager().doIntent(getIntent())) {
                     final DialogPlus dialog = new DialogPlus(this);
                     dialog.showTitleBar();
