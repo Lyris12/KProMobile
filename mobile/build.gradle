@@ -17,7 +17,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 370100528
-        versionName "Latitude"
+        versionName "Doppelganger"
         flavorDimensions "versionCode"
         vectorDrawables.useSupportLibrary = true
         ndk {
