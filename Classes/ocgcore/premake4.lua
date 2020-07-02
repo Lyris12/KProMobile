@@ -6,7 +6,7 @@ project "ocgcore"
         includedirs { "../lua" }
     configuration "not vs*"
         buildoptions { "-std=c++14" }
-    configuration "not windows"
+    configuration "linux"
         includedirs { "/usr/include/lua5.3" }
     configuration "macosx" 
         includedirs { "../lua" }
