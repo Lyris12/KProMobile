@@ -77,6 +77,7 @@ int SingleMode::SinglePlayThread() {
 	mainGame->ClearCardInfo();
 	mainGame->wCardImg->setVisible(true);
 	mainGame->wInfos->setVisible(true);
+	mainGame->wPallet->setVisible(true);
 	mainGame->btnLeaveGame->setVisible(true);
 	mainGame->btnLeaveGame->setText(dataManager.GetSysString(1210));
 	mainGame->wPhase->setVisible(true);

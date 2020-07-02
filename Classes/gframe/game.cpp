@@ -207,6 +207,7 @@ bool Game::Initialize() {
 	adFont = irr::gui::CGUITTFont::createTTFont(driver, dataManager.FileSystem, gameConf.numfont, (int)12 * yScale, isAntialias, false);
 	lpcFont = irr::gui::CGUITTFont::createTTFont(driver, dataManager.FileSystem, gameConf.numfont, (int)48 * yScale, isAntialias, true);
 	guiFont = irr::gui::CGUITTFont::createTTFont(driver, dataManager.FileSystem, gameConf.textfont, (int)gameConf.textfontsize * yScale, isAntialias, true);
+    titleFont = irr::gui::CGUITTFont::createTTFont(driver, dataManager.FileSystem, gameConf.textfont, (int)32 * yScale, isAntialias, true);
 	textFont = guiFont;
 	if(!numFont || !textFont) {
 	  os::Printer::log("add font fail ");
@@ -218,18 +219,50 @@ bool Game::Initialize() {
 	newskin->setFont(textFont);
 	env->setSkin(newskin);
 	newskin->drop();
+#ifdef _IRR_ANDROID_PLATFORM_
 	//main menu
 	wchar_t strbuf[256];
 	myswprintf(strbuf, L"KoishiPro Mobile Version:%X.0%X.%X", PRO_VERSION >> 12, (PRO_VERSION >> 4) & 0xff, PRO_VERSION & 0xf);
-#ifdef _IRR_ANDROID_PLATFORM_
-	wMainMenu = env->addWindow(rect<s32>(370 * xScale, 150 * yScale, 650 * xScale, 465 * yScale), false, strbuf);
+	wMainMenu = env->addWindow(rect<s32>(450 * xScale, 40 * yScale, 900 * xScale, 600 * yScale), false, strbuf);
 	wMainMenu->getCloseButton()->setVisible(false);
-	btnLanMode = env->addButton(rect<s32>(15 * xScale, 30 * yScale, 265 * xScale, 80 * yScale), wMainMenu, BUTTON_LAN_MODE, dataManager.GetSysString(1200));
-	btnSingleMode = env->addButton(rect<s32>(15 * xScale, 85 * yScale, 265 * xScale, 135 * yScale), wMainMenu, BUTTON_SINGLE_MODE, dataManager.GetSysString(1201));
-	btnReplayMode = env->addButton(rect<s32>(15 * xScale, 140 * yScale, 265 * xScale, 190 * yScale), wMainMenu, BUTTON_REPLAY_MODE, dataManager.GetSysString(1202));
-	btnDeckEdit = env->addButton(rect<s32>(15 * xScale, 195 * yScale, 265 * xScale, 245 * yScale), wMainMenu, BUTTON_DECK_EDIT, dataManager.GetSysString(1204));
-	btnModeExit = env->addButton(rect<s32>(15 * xScale, 250 * yScale, 265 * xScale, 300 * yScale), wMainMenu, BUTTON_MODE_EXIT, dataManager.GetSysString(1210));
-
+	wMainMenu->setDrawBackground(false);
+    btnLanMode = irr::gui::CGUIImageButton::addImageButton(env, rect<s32>(15 * xScale, 30 * yScale, 350 * xScale, 106 * yScale), wMainMenu, BUTTON_LAN_MODE);
+    btnLanMode->setImageSize(core::dimension2di(400 * yScale, 76 * yScale));
+    btnLanMode->setDrawBorder(false);
+    btnLanMode->setImage(imageManager.tTitleBar);
+    env->addStaticText(strbuf, rect<s32>(55 * xScale, 2 * yScale, 280 * xScale, 35 * yScale), false, false, btnLanMode);
+	textLanMode = env->addStaticText(dataManager.GetSysString(1200), rect<s32>(115 * xScale, 25 * yScale, 300 * xScale, 65 * yScale), false, false, btnLanMode);
+	textLanMode->setOverrideFont(titleFont);
+	btnSingleMode = irr::gui::CGUIImageButton::addImageButton(env,  rect<s32>(15 * xScale, 110 * yScale, 350 * xScale, 186 * yScale), wMainMenu, BUTTON_SINGLE_MODE);
+	btnSingleMode->setImageSize(core::dimension2di(400 * yScale, 76 * yScale));
+	btnSingleMode->setDrawBorder(false);
+    btnSingleMode->setImage(imageManager.tTitleBar);
+	textSingleMode = env->addStaticText(dataManager.GetSysString(1201), rect<s32>(115 * xScale, 25 * yScale, 300 * xScale, 65 * yScale), false, false, btnSingleMode);
+	textSingleMode->setOverrideFont(titleFont);
+	btnReplayMode = irr::gui::CGUIImageButton::addImageButton(env, rect<s32>(15 * xScale, 190 * yScale, 350 * xScale, 266 * yScale), wMainMenu, BUTTON_REPLAY_MODE);
+    btnReplayMode->setImageSize(core::dimension2di(400 * yScale, 76 * yScale));
+    btnReplayMode->setDrawBorder(false);
+    btnReplayMode->setImage(imageManager.tTitleBar);
+	textReplayMode = env->addStaticText(dataManager.GetSysString(1202), rect<s32>(115 * xScale, 25 * yScale, 300 * xScale, 65 * yScale), false, false, btnReplayMode);
+	textReplayMode->setOverrideFont(titleFont);
+	btnDeckEdit = irr::gui::CGUIImageButton::addImageButton(env, rect<s32>(15 * xScale, 270 * yScale, 350 * xScale, 346 * yScale), wMainMenu, BUTTON_DECK_EDIT);
+    btnDeckEdit->setImageSize(core::dimension2di(400 * yScale, 76 * yScale));
+    btnDeckEdit->setDrawBorder(false);
+    btnDeckEdit->setImage(imageManager.tTitleBar);
+	textDeckEdit = env->addStaticText(dataManager.GetSysString(1204), rect<s32>(115 * xScale, 25 * yScale, 300 * xScale, 65 * yScale), false, false, btnDeckEdit);
+	textDeckEdit->setOverrideFont(titleFont);
+    btnSettings = irr::gui::CGUIImageButton::addImageButton(env, rect<s32>(15 * xScale, 350 * yScale, 350 * xScale, 426 * yScale), wMainMenu, BUTTON_SETTINGS);
+    btnSettings->setImageSize(core::dimension2di(400 * yScale, 76 * yScale));
+	btnSettings->setDrawBorder(false);
+	btnSettings->setImage(imageManager.tTitleBar);
+	textSettings = env->addStaticText(dataManager.GetSysString(1273), rect<s32>(115 * xScale, 25 * yScale, 300 * xScale, 65 * yScale), false, false, btnSettings);
+	textSettings->setOverrideFont(titleFont);
+    btnModeExit = irr::gui::CGUIImageButton::addImageButton(env, rect<s32>(15 * xScale, 430 * yScale, 350 * xScale, 506 * yScale), wMainMenu, BUTTON_MODE_EXIT);
+    btnModeExit->setImageSize(core::dimension2di(400 * yScale, 76 * yScale));
+	btnModeExit->setDrawBorder(false);
+	btnModeExit->setImage(imageManager.tTitleBar);
+	textModeExit = env->addStaticText(dataManager.GetSysString(1210), rect<s32>(145 * xScale, 25 * yScale, 300 * xScale, 65 * yScale), false, false, btnModeExit);
+	textModeExit->setOverrideFont(titleFont);
 	//lan mode
 	wLanWindow = env->addWindow(rect<s32>(200 * xScale, 80 * yScale, 820 * xScale, 590 * yScale), false, dataManager.GetSysString(1200));
 	wLanWindow->getCloseButton()->setVisible(false);
@@ -345,13 +378,11 @@ bool Game::Initialize() {
 	btnHostPrepStart = env->addButton(rect<s32>(280 * xScale, 380 * yScale, 390 * xScale, 420 * yScale), wHostPrepare, BUTTON_HP_START, dataManager.GetSysString(1215));
 	btnHostPrepCancel = env->addButton(rect<s32>(400 * xScale, 380 * yScale, 510 * xScale, 420 * yScale), wHostPrepare, BUTTON_HP_CANCEL, dataManager.GetSysString(1210));
 #endif
-	//img
-	float imgScale=xScale;
-	if (imgScale > yScale) imgScale=yScale;
-	wCardImg = env->addStaticText(L"", rect<s32>(1 * imgScale, 1 * imgScale, ( 1 + CARD_IMG_WIDTH + 20) * imgScale, (1 + CARD_IMG_HEIGHT + 18) * imgScale), true, false, 0, -1, true);
+	//img always use *yScale to keep proportion
+	wCardImg = env->addStaticText(L"", rect<s32>(1 * yScale, 1 * yScale, ( 1 + CARD_IMG_WIDTH + 20) * yScale, (1 + CARD_IMG_HEIGHT + 18) * yScale), true, false, 0, -1, true);
 	wCardImg->setBackgroundColor(0x6011113d);
 	wCardImg->setVisible(false);
-	imgCard = env->addImage(rect<s32>(10 * imgScale, 9 * imgScale, (10 + CARD_IMG_WIDTH) * imgScale, (9 + CARD_IMG_HEIGHT) * imgScale), wCardImg);
+	imgCard = env->addImage(rect<s32>(10 * yScale, 9 * yScale, (10 + CARD_IMG_WIDTH) * yScale, (9 + CARD_IMG_HEIGHT) * yScale), wCardImg);
 	imgCard->setImage(imageManager.tCover[0]);
 	imgCard->setScaleImage(true);
 	imgCard->setUseAlphaChannel(true);
@@ -370,139 +401,140 @@ bool Game::Initialize() {
 	btnEP = env->addButton(rect<s32>(320 * xScale, 0 * yScale, 370 * xScale, 30 * yScale), wPhase, BUTTON_EP, L"\xff25\xff30");
 	btnEP->setVisible(false);
 #endif
-	//tab
-	wInfos = env->addTabControl(rect<s32>(1 * xScale, 275 * yScale, 301 * xScale, 639 * yScale), 0, true);
-	wInfos->setTabExtraWidth(16 * xScale);
-	wInfos->setTabHeight(35 * yScale);
+    //tab（changed）
+	wInfos = env->addStaticText(L"", rect<s32>(1 * xScale, 275 * yScale, 260 * xScale, 639 * yScale), true, false, 0, -1, true);
+	wInfos->setBackgroundColor(0xab11113d);
 	wInfos->setVisible(false);
 	//info
-	irr::gui::IGUITab* tabInfo = wInfos->addTab(dataManager.GetSysString(1270));
-	stName = env->addStaticText(L"", rect<s32>(10 * xScale, 10 * yScale, 287 * xScale, 32 * yScale), true, false, tabInfo, -1, false);
+	stName = env->addStaticText(L"", rect<s32>(10 * xScale, 10 * yScale, 246 * xScale, 32 * yScale), true, false, wInfos, -1, false);
 	stName->setTextAlignment(irr::gui::EGUIA_CENTER, irr::gui::EGUIA_CENTER);
-	stInfo = env->addStaticText(L"", rect<s32>(15 * xScale, 37 * yScale, 296 * xScale, 60 * yScale), false, true, tabInfo, -1, false);
+	stInfo = env->addStaticText(L"", rect<s32>(10 * xScale, 37 * yScale, 250 * xScale, 60 * yScale), false, true, wInfos, -1, false);
 	stInfo->setOverrideColor(SColor(255, 149, 211, 137));//255, 0, 0, 255
-	stDataInfo = env->addStaticText(L"", rect<s32>(15 * xScale, 60 * yScale, 296 * xScale, 83 * yScale), false, true, tabInfo, -1, false);
+	stDataInfo = env->addStaticText(L"", rect<s32>(10 * xScale, 60 * yScale, 250 * xScale, 83 * yScale), false, true, wInfos, -1, false);
 	stDataInfo->setOverrideColor(SColor(255, 222, 215, 100));//255, 0, 0, 255
-	stSetName = env->addStaticText(L"", rect<s32>(15 * xScale, 83 * yScale, 296 * xScale, 106 * yScale), false, true, tabInfo, -1, false);
+	stSetName = env->addStaticText(L"", rect<s32>(10 * xScale, 83 * yScale, 250 * xScale, 106 * yScale), false, true, wInfos, -1, false);
 	stSetName->setOverrideColor(SColor(255, 255, 152, 42));//255, 0, 0, 255
-	stText = env->addStaticText(L"", rect<s32>(15 * xScale, 106 * yScale, 287 * xScale, 324 * yScale), false, true, tabInfo, -1, false);
+	stText = env->addStaticText(L"", rect<s32>(10 * xScale, 106 * yScale, 250 * xScale, 345 * yScale), false, true, wInfos, -1, false);
 #ifdef _IRR_ANDROID_PLATFORM_
-	scrCardText = env->addScrollBar(false, rect<s32>(425 * xScale, 106 * yScale, 495 * xScale, 580 * yScale), tabInfo, SCROLL_CARDTEXT);
+	scrCardText = env->addScrollBar(false, rect<s32>(235 * xScale, 106 * yScale, 255 * xScale, 345 * yScale), wInfos, SCROLL_CARDTEXT);
 #endif
 	scrCardText->setLargeStep(1);
 	scrCardText->setSmallStep(1);
 	scrCardText->setVisible(false);
-	//log
-	irr::gui::IGUITab* tabLog =  wInfos->addTab(dataManager.GetSysString(1271));
-	lstLog = env->addListBox(rect<s32>(10 * xScale, 10 * yScale, 290 * xScale, 290 * yScale), tabLog, LISTBOX_LOG, false);
+	//imageButtons pallet
+    wPallet = env->addWindow(rect<s32>(262 * xScale, 275 * yScale, 307 * xScale, 639 * yScale), false, L"");
+    wPallet->getCloseButton()->setVisible(false);
+    wPallet->setDraggable(false);
+    wPallet->setDrawTitlebar(false);
+    wPallet->setDrawBackground(false);
+    wPallet->setVisible(false);
+    //Logs
+    imgLog = irr::gui::CGUIImageButton::addImageButton(env, rect<s32>(0 * yScale, 55 * yScale, 45 * yScale, 100 * yScale), wPallet, BUTTON_SHOW_LOG);
+	imgLog->setImageSize(core::dimension2di(28 * yScale, 28 * yScale));
+	imgLog->setImage(imageManager.tLogs);
+	imgLog->setIsPushButton(true);
+	wLogs = env->addWindow(rect<s32>(720 * xScale, 5 * yScale, 1020 * xScale, 510 * yScale), false, dataManager.GetSysString(1271));
+    wLogs->getCloseButton()->setVisible(false);
+    wLogs->setVisible(false);
+    lstLog = env->addListBox(rect<s32>(1 * xScale, 25 * yScale, 299 * xScale, 455 * yScale), wLogs, LISTBOX_LOG, false);
 	lstLog->setItemHeight(25 * yScale);
-	btnClearLog = env->addButton(rect<s32>(160 * xScale, 300 * yScale, 260 * xScale, 325 * yScale), tabLog, BUTTON_CLEAR_LOG, dataManager.GetSysString(1272));
-	//helper
-	irr::gui::IGUITab* _tabHelper = wInfos->addTab(dataManager.GetSysString(1298));
-	_tabHelper->setRelativePosition(recti(16 * xScale, 49 * yScale, 299 * xScale, 362 * yScale));
-	tabHelper = env->addWindow(recti(0, 0, 250 * xScale, 300 * yScale), false, L"", _tabHelper);
-	tabHelper->setDrawTitlebar(false);
-	tabHelper->getCloseButton()->setVisible(false);
-	tabHelper->setDrawBackground(false);
-	tabHelper->setDraggable(false);
-	scrTabHelper = env->addScrollBar(false, rect<s32>(242 * xScale, 0 * yScale, 272 * xScale, 300 * yScale), _tabHelper, SCROLL_TAB_HELPER);
-	scrTabHelper->setLargeStep(1);
-	scrTabHelper->setSmallStep(1);
-	scrTabHelper->setVisible(false);
-	int posX = 0;
-	int posY = 0;
-	chkMAutoPos = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), tabHelper, -1, dataManager.GetSysString(1274));
+    btnClearLog = env->addButton(rect<s32>(60 * xScale, 460 * yScale, 130 * xScale, 500 * yScale), wLogs, BUTTON_CLEAR_LOG, dataManager.GetSysString(1304));
+    btnCloseLog = env->addButton(rect<s32>(170 * xScale, 460 * yScale, 240 * xScale, 500 * yScale), wLogs, BUTTON_CLOSE_LOG, dataManager.GetSysString(1211));
+    //vol play/mute
+	imgVol = irr::gui::CGUIImageButton::addImageButton(env, rect<s32>(0 * yScale, 110 * yScale, 45 * yScale, 155 * yScale), wPallet, BUTTON_BGM);
+    imgVol->setImageSize(core::dimension2di(28 * yScale, 28 * yScale));
+	if (gameConf.enable_music) {
+		imgVol->setImage(imageManager.tPlay);
+	} else {
+		imgVol->setImage(imageManager.tMute);
+	}
+	//Settings
+	imgSettings = irr::gui::CGUIImageButton::addImageButton(env, rect<s32>(0 * yScale, 0 * yScale, 45 * yScale, 45 * yScale), wPallet, BUTTON_SETTINGS);
+	imgSettings->setImageSize(core::dimension2di(28 * yScale, 28 * yScale));
+	imgSettings->setImage(imageManager.tSettings);
+	imgSettings->setIsPushButton(true);
+    wSettings = env->addWindow(rect<s32>(350 * xScale, 100 * yScale, 830 * xScale, 550 * yScale), false, dataManager.GetSysString(1273));
+    wSettings->setRelativePosition(recti(350 * xScale, 100 * yScale, 830 * xScale, 550 * yScale));
+    wSettings->getCloseButton()->setVisible(false);
+	wSettings->setVisible(false);
+	int posX = 20 * xScale;
+	int posY = 40 * yScale;
+	chkMAutoPos = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), wSettings, -1, dataManager.GetSysString(1274));
 	chkMAutoPos->setChecked(gameConf.chkMAutoPos != 0);
-	posY += 60;
-	chkSTAutoPos = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), tabHelper, -1, dataManager.GetSysString(1278));
+	posY += 40 * yScale;
+	chkSTAutoPos = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), wSettings, -1, dataManager.GetSysString(1278));
 	chkSTAutoPos->setChecked(gameConf.chkSTAutoPos != 0);
-	posY += 60;
-	chkRandomPos = env->addCheckBox(false, rect<s32>(posX + 20 * xScale, posY, posX + (20 + 260) * xScale, posY + 30 * yScale), tabHelper, -1, dataManager.GetSysString(1275));
+	posY += 40 * yScale;
+	chkRandomPos = env->addCheckBox(false, rect<s32>(posX + 20 * xScale, posY, posX + (20 + 260) * xScale, posY + 30 * yScale), wSettings, -1, dataManager.GetSysString(1275));
 	chkRandomPos->setChecked(gameConf.chkRandomPos != 0);
-	posY += 60;
-	chkAutoChain = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), tabHelper, -1, dataManager.GetSysString(1276));
+	posY += 40 * yScale;
+	chkAutoChain = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), wSettings, -1, dataManager.GetSysString(1276));
 	chkAutoChain->setChecked(gameConf.chkAutoChain != 0);
-	posY += 60;
-	chkWaitChain = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), tabHelper, -1, dataManager.GetSysString(1277));
+	posY += 40 * yScale;
+	chkWaitChain = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), wSettings, -1, dataManager.GetSysString(1277));
 	chkWaitChain->setChecked(gameConf.chkWaitChain != 0);
-	posY += 60;
-	chkEnableSound = env->addCheckBox(gameConf.enable_sound, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), tabHelper, CHECKBOX_ENABLE_SOUND, dataManager.GetSysString(1279));
+    posY += 40 * yScale;
+    chkQuickAnimation = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), wSettings, CHECKBOX_QUICK_ANIMATION, dataManager.GetSysString(1299));
+    chkQuickAnimation->setChecked(gameConf.quick_animation != 0);
+    posY += 40 * yScale;
+    chkMusicMode = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), wSettings, -1, dataManager.GetSysString(1281));
+    chkMusicMode->setChecked(gameConf.music_mode != 0);
+	posY += 40 * yScale;
+	chkEnableSound = env->addCheckBox(gameConf.enable_sound, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), wSettings, CHECKBOX_ENABLE_SOUND, dataManager.GetSysString(1279));
 	chkEnableSound->setChecked(gameConf.enable_sound);
-	scrSoundVolume = env->addScrollBar(true, rect<s32>(posX + 110 * xScale, posY, posX + 250 * xScale, posY + 30 * yScale), tabHelper, SCROLL_VOLUME);
+	scrSoundVolume = env->addScrollBar(true, rect<s32>(posX + 110 * xScale, posY, posX + 250 * xScale, posY + 30 * yScale), wSettings, SCROLL_VOLUME);
 	scrSoundVolume->setMax(100);
 	scrSoundVolume->setMin(0);
 	scrSoundVolume->setPos(gameConf.sound_volume);
 	scrSoundVolume->setLargeStep(1);
 	scrSoundVolume->setSmallStep(1);
-	posY += 60;
-	chkEnableMusic = env->addCheckBox(gameConf.enable_music, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), tabHelper, CHECKBOX_ENABLE_MUSIC, dataManager.GetSysString(1280));
+	posY += 40 * yScale;
+	chkEnableMusic = env->addCheckBox(gameConf.enable_music, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), wSettings, CHECKBOX_ENABLE_MUSIC, dataManager.GetSysString(1280));
 	chkEnableMusic->setChecked(gameConf.enable_music);
-	scrMusicVolume = env->addScrollBar(true, rect<s32>(posX + 110 * xScale, posY, posX + 250 * xScale, posY + 30 * yScale), tabHelper, SCROLL_VOLUME);
+	scrMusicVolume = env->addScrollBar(true, rect<s32>(posX + 110 * xScale, posY, posX + 250 * xScale, posY + 30 * yScale), wSettings, SCROLL_VOLUME);
 	scrMusicVolume->setMax(100);
 	scrMusicVolume->setMin(0);
 	scrMusicVolume->setPos(gameConf.music_volume);
 	scrMusicVolume->setLargeStep(1);
 	scrMusicVolume->setSmallStep(1);
-	posY += 60;
-	chkMusicMode = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), tabHelper, -1, dataManager.GetSysString(1281));
-	chkMusicMode->setChecked(gameConf.music_mode != 0);
-	elmTabHelperLast = chkMusicMode;
-	//show scroll
-	s32 tabHelperLastY = elmTabHelperLast->getRelativePosition().LowerRightCorner.Y;
-	s32 tabHelperHeight = 300 * yScale;
-	if(tabHelperLastY > tabHelperHeight) {
-		scrTabHelper->setMax(tabHelperLastY - tabHelperHeight + 5);
-		scrTabHelper->setPos(0);
-		scrTabHelper->setVisible(true);
-	}
-	else
-		scrTabHelper->setVisible(false);
-	//system
-	irr::gui::IGUITab* _tabSystem = wInfos->addTab(dataManager.GetSysString(1273));
-	_tabSystem->setRelativePosition(recti(16 * xScale, 49 * yScale, 299 * xScale, 362 * yScale));
-	tabSystem = env->addWindow(recti(0, 0, 250 * xScale, 300 * yScale), false, L"", _tabSystem);
-	tabSystem->setDrawTitlebar(false);
-	tabSystem->getCloseButton()->setVisible(false);
-	tabSystem->setDrawBackground(false);
-	tabSystem->setDraggable(false);
-	scrTabSystem = env->addScrollBar(false, rect<s32>(242 * xScale, 0, 272 * xScale, 300 * yScale), _tabSystem, SCROLL_TAB_SYSTEM);
-	scrTabSystem->setLargeStep(1);
-	scrTabSystem->setSmallStep(1);
-	scrTabSystem->setVisible(false);
-	posY = 0;
-	chkIgnore1 = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260, posY + 30 * yScale), tabSystem, CHECKBOX_DISABLE_CHAT, dataManager.GetSysString(1290));
+	posX = 220 * xScale;//another list
+	posY = 40 * yScale;
+	chkIgnore1 = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260, posY + 30 * yScale), wSettings, CHECKBOX_DISABLE_CHAT, dataManager.GetSysString(1290));
 	chkIgnore1->setChecked(gameConf.chkIgnore1 != 0);
-	posY += 60;
-	chkIgnore2 = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260, posY + 30 * yScale), tabSystem, -1, dataManager.GetSysString(1291));
+	posY += 40 * yScale;
+	chkIgnore2 = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260, posY + 30 * yScale), wSettings, -1, dataManager.GetSysString(1291));
 	chkIgnore2->setChecked(gameConf.chkIgnore2 != 0);
-	posY += 60;
-	chkIgnoreDeckChanges = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), tabSystem, -1, dataManager.GetSysString(1357));
+	posY += 40 * yScale;
+	chkIgnoreDeckChanges = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), wSettings, -1, dataManager.GetSysString(1357));
 	chkIgnoreDeckChanges->setChecked(gameConf.chkIgnoreDeckChanges != 0);
-	posY += 60;
-	chkAutoSaveReplay = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), tabSystem, -1, dataManager.GetSysString(1366));
+	posY += 40 * yScale;
+	chkAutoSaveReplay = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), wSettings, -1, dataManager.GetSysString(1366));
 	chkAutoSaveReplay->setChecked(gameConf.auto_save_replay != 0);
-	posY += 60;
-    chkDrawFieldSpell = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), tabSystem, CHECKBOX_DRAW_FIELD_SPELL, dataManager.GetSysString(1283));
+	posY += 40 * yScale;
+    chkDrawFieldSpell = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), wSettings, CHECKBOX_DRAW_FIELD_SPELL, dataManager.GetSysString(1283));
     chkDrawFieldSpell->setChecked(gameConf.draw_field_spell != 0);
-    posY += 60;
-    chkQuickAnimation = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), tabSystem, CHECKBOX_QUICK_ANIMATION, dataManager.GetSysString(1299));
-    chkQuickAnimation->setChecked(gameConf.quick_animation != 0);
-	posY += 60;
-	chkDrawSingleChain = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), tabSystem, CHECKBOX_DRAW_SINGLE_CHAIN, dataManager.GetSysString(1287));
+	posY += 40 * yScale;
+	chkDrawSingleChain = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), wSettings, CHECKBOX_DRAW_SINGLE_CHAIN, dataManager.GetSysString(1287));
 	chkDrawSingleChain->setChecked(gameConf.draw_single_chain != 0);
-	posY += 60;
-	chkPreferExpansionScript = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), tabSystem, CHECKBOX_PREFER_EXPANSION, dataManager.GetSysString(1379));
+	posY += 40 * yScale;
+	chkPreferExpansionScript = env->addCheckBox(false, rect<s32>(posX, posY, posX + 260 * xScale, posY + 30 * yScale), wSettings, CHECKBOX_PREFER_EXPANSION, dataManager.GetSysString(1379));
 	chkPreferExpansionScript->setChecked(gameConf.prefer_expansion_script != 0);
 	elmTabSystemLast = chkPreferExpansionScript;
+	btnCloseSettings =env->addButton(rect<s32>(180 * xScale, 400 * yScale, 280 * xScale, 440 * yScale), wSettings, BUTTON_CLOSE_SETTINGS, dataManager.GetSysString(1211));
 	//show scroll
+    scrTabSystem = env->addScrollBar(false, rect<s32>(435 * xScale, 60 * yScale, 465 * xScale, 419 * yScale), wSettings, SCROLL_SETTINGS);
+    scrTabSystem->setLargeStep(1);
+    scrTabSystem->setSmallStep(1);
+    scrTabSystem->setVisible(false);
 	s32 tabSystemLastY = elmTabSystemLast->getRelativePosition().LowerRightCorner.Y;
-	s32 tabSystemHeight = 300 * yScale;
+    s32 tabSystemHeight = 420 * yScale;
 	if(tabSystemLastY > tabSystemHeight) {
-		scrTabSystem->setMax(tabSystemLastY - tabSystemHeight + 5);
+        scrTabSystem->setMax(tabSystemLastY - tabSystemHeight);
 		scrTabSystem->setPos(0);
 		scrTabSystem->setVisible(true);
-	} else
+    } else {
 		scrTabSystem->setVisible(false);
+    }
 	//
 	wHand = env->addWindow(rect<s32>(500 * xScale, 450 * yScale, 825 * xScale, 605 * yScale), false, L"");
 	wHand->getCloseButton()->setVisible(false);
@@ -569,7 +601,7 @@ bool Game::Initialize() {
 	scrOption->setSmallStep(1);
 	scrOption->setMin(0);
 #endif
-	//pos selectimgCard->setScaleImage(true);
+	//pos
 	wPosSelect = env->addWindow(rect<s32>(340 * xScale, 200 * yScale, 935 * xScale, 410 * yScale), false, dataManager.GetSysString(561));
 	wPosSelect->getCloseButton()->setVisible(false);
 	wPosSelect->setVisible(false);
@@ -944,19 +976,26 @@ bool Game::Initialize() {
 	btnReplaySwap = env->addButton(rect<s32>(5 * xScale, 140 * yScale, 85 * xScale, 180 * yScale), wReplayControl, BUTTON_REPLAY_SWAP, dataManager.GetSysString(1346));
 	btnReplayExit = env->addButton(rect<s32>(5 * xScale, 185 * yScale, 85 * xScale, 225 * yScale), wReplayControl, BUTTON_REPLAY_EXIT, dataManager.GetSysString(1347));
 	//chat
+    imgChat = irr::gui::CGUIImageButton::addImageButton(env, rect<s32>(0 * yScale, 319 * yScale, 45 * yScale, 364 * yScale), wPallet, BUTTON_CHATTING);
+    imgChat->setImageSize(core::dimension2di(28 * yScale, 28 * yScale));
+    if (gameConf.chkIgnore1) {
+        imgChat->setImage(imageManager.tShut);
+    } else {
+        imgChat->setImage(imageManager.tTalk);
+    }
 	wChat = env->addWindow(rect<s32>(305 * xScale, 610 * yScale, 1020 * xScale, 640 * yScale), false, L"");
 	wChat->getCloseButton()->setVisible(false);
 	wChat->setDraggable(false);
 	wChat->setDrawTitlebar(false);
 	wChat->setVisible(false);
-	ebChatInput = CAndroidGUIEditBox::addAndroidEditBox(L"", true, env, rect<s32>(3 * xScale, 2 * yScale, 710 * xScale, 22 * yScale), wChat, EDITBOX_CHAT);
+	ebChatInput = CAndroidGUIEditBox::addAndroidEditBox(L"", true, env, rect<s32>(3 * xScale, 2 * yScale, 710 * xScale, 28 * yScale), wChat, EDITBOX_CHAT);
 	//swap
-	btnSpectatorSwap = env->addButton(rect<s32>(205 * xScale, 100 * yScale, 305 * xScale, 135 * yScale), 0, BUTTON_REPLAY_SWAP, dataManager.GetSysString(1346));
+	btnSpectatorSwap = env->addButton(rect<s32>(200 * yScale, 100 * yScale, 307 * yScale, 135 * yScale), 0, BUTTON_REPLAY_SWAP, dataManager.GetSysString(1346));
 	btnSpectatorSwap->setVisible(false);
 	//chain buttons
-	btnChainIgnore = env->addButton(rect<s32>(205 * xScale, 100 * yScale, 305 * xScale, 135 * yScale), 0, BUTTON_CHAIN_IGNORE, dataManager.GetSysString(1292));
-	btnChainAlways = env->addButton(rect<s32>(205 * xScale, 140 * yScale, 305 * xScale, 175 * yScale), 0, BUTTON_CHAIN_ALWAYS, dataManager.GetSysString(1293));
-	btnChainWhenAvail = env->addButton(rect<s32>(205 * xScale, 180 * yScale, 305 * xScale, 215 * yScale), 0, BUTTON_CHAIN_WHENAVAIL, dataManager.GetSysString(1294));
+	btnChainIgnore = env->addButton(rect<s32>(200 * yScale, 100 * yScale, 307 * yScale, 135 * yScale), 0, BUTTON_CHAIN_IGNORE, dataManager.GetSysString(1292));
+	btnChainAlways = env->addButton(rect<s32>(200 * yScale, 140 * yScale, 307 * yScale, 175 * yScale), 0, BUTTON_CHAIN_ALWAYS, dataManager.GetSysString(1293));
+	btnChainWhenAvail = env->addButton(rect<s32>(200 * yScale, 180 * yScale, 307 * yScale, 215 * yScale), 0, BUTTON_CHAIN_WHENAVAIL, dataManager.GetSysString(1294));
 	btnChainIgnore->setIsPushButton(true);
 	btnChainAlways->setIsPushButton(true);
 	btnChainWhenAvail->setIsPushButton(true);
@@ -964,10 +1003,10 @@ bool Game::Initialize() {
 	btnChainAlways->setVisible(false);
 	btnChainWhenAvail->setVisible(false);
 	//shuffle
-	btnShuffle = env->addButton(rect<s32>(205 * xScale, 220 * yScale, 305 * xScale, 255 * yScale), 0, BUTTON_CMD_SHUFFLE, dataManager.GetSysString(1297));
+	btnShuffle = env->addButton(rect<s32>(200 * yScale, 220 * yScale, 307 * yScale, 255 * yScale), 0, BUTTON_CMD_SHUFFLE, dataManager.GetSysString(1297));
 	btnShuffle->setVisible(false);
 	//cancel or finish
-	btnCancelOrFinish = env->addButton(rect<s32>(205 * xScale, 220 * yScale, 305 * xScale, 275 * yScale), 0, BUTTON_CANCEL_OR_FINISH, dataManager.GetSysString(1295));
+	btnCancelOrFinish = env->addButton(rect<s32>(200 * yScale, 220 * yScale, 307 * yScale, 275 * yScale), 0, BUTTON_CANCEL_OR_FINISH, dataManager.GetSysString(1295));
 	btnCancelOrFinish->setVisible(false);
 	soundManager = Utils::make_unique<SoundManager>();
 	if(!soundManager->Init((double)gameConf.sound_volume / 100, (double)gameConf.music_volume / 100, gameConf.enable_sound, gameConf.enable_music, nullptr)) {
@@ -984,7 +1023,7 @@ bool Game::Initialize() {
 	}
 #endif
 	//leave/surrender/exit
-	btnLeaveGame = env->addButton(rect<s32>(205 * xScale, 1 * yScale, 305 * xScale, 80 * yScale), 0, BUTTON_LEAVE_GAME, L"");
+	btnLeaveGame = env->addButton(rect<s32>(200 * yScale, 1 * yScale, 307 * yScale, 80 * yScale), 0, BUTTON_LEAVE_GAME, L"");
 	btnLeaveGame->setVisible(false);
 	//tip
 	stTip = env->addStaticText(L"", rect<s32>(0, 0, 150 * xScale, 150 * yScale), false, true, 0, -1, true);
@@ -1631,16 +1670,16 @@ void Game::ShowCardInfo(int code) {
 			wcscat(formatBuffer, scaleBuffer);
 		}
 		stDataInfo->setText(formatBuffer);
-		stSetName->setRelativePosition(rect<s32>(15 * xScale, 83 * yScale, 296 * xScale, 106 * yScale));
-		stText->setRelativePosition(rect<s32>(15 * xScale, (83 + offset) * yScale, 287 * xScale, 324 * yScale));
-		scrCardText->setRelativePosition(rect<s32>(277 * xScale, (83 + offset) * yScale, 297 * xScale, 324 * yScale));
+		stSetName->setRelativePosition(rect<s32>(10 * xScale, 83 * yScale, 255 * xScale, 106 * yScale));
+		stText->setRelativePosition(rect<s32>(10 * xScale, (83 + offset) * yScale, 255 * xScale, 345 * yScale));
+		scrCardText->setRelativePosition(rect<s32>(235 * xScale, (83 + offset) * yScale, 255 * xScale, 345 * yScale));
 	} else {
 		myswprintf(formatBuffer, L"[%ls]", dataManager.FormatType(cd.type));
 		stInfo->setText(formatBuffer);
 		stDataInfo->setText(L"");
-		stSetName->setRelativePosition(rect<s32>(15 * xScale, 60 * yScale, 296 * xScale, 83 * yScale));
-		stText->setRelativePosition(rect<s32>(15 * xScale, (60 + offset) * yScale, 287 * xScale, 324 * yScale));
-		scrCardText->setRelativePosition(rect<s32>(277 * xScale, (60 + offset) * yScale, 297 * xScale, 324 * yScale));
+		stSetName->setRelativePosition(rect<s32>(10 * xScale, 60 * yScale, 255 * xScale, 83 * yScale));
+		stText->setRelativePosition(rect<s32>(10 * xScale, (60 + offset) * yScale, 255 * xScale, 345 * yScale));
+		scrCardText->setRelativePosition(rect<s32>(235 * xScale, (60 + offset) * yScale, 255 * xScale, 345 * yScale));
 	}
 	showingtext = dataManager.GetText(code);
 	const auto& tsize = stText->getRelativePosition();
@@ -1793,6 +1832,10 @@ void Game::CloseDuelWindow() {
 	wCardImg->setVisible(false);
 	wInfos->setVisible(false);
 	wChat->setVisible(false);
+	wPallet->setVisible(false);
+	imgChat->setVisible(true);
+	wSettings->setVisible(false);
+	wLogs->setVisible(false);
 	btnSideOK->setVisible(false);
 	btnSideShuffle->setVisible(false);
 	btnSideSort->setVisible(false);

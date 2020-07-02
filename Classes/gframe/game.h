@@ -256,28 +256,39 @@ public:
 	irr::gui::CGUITTFont* numFont;
 	irr::gui::CGUITTFont* adFont;
 	irr::gui::CGUITTFont* lpcFont;
+	irr::gui::CGUITTFont* titleFont;
 	std::map<irr::gui::CGUIImageButton*, int> imageLoading;
 	//card image
 	irr::gui::IGUIStaticText* wCardImg;
 	irr::gui::IGUIImage* imgCard;
+	//imageButtons pallet
+	irr::gui::IGUIWindow* wPallet;
+	//Logs
+	irr::gui::CGUIImageButton* imgLog;
+	irr::gui::IGUIWindow* wLogs;
+	irr::gui::IGUIListBox* lstLog;
+	irr::gui::IGUIButton* btnClearLog;
+	irr::gui::IGUIButton* btnCloseLog;
+	//imageButton BGM
+	irr::gui::CGUIImageButton* imgVol;
+	//imageButton Chatting
+    irr::gui::CGUIImageButton* imgChat;
+	//Settings
+	irr::gui::CGUIImageButton* imgSettings;
+	irr::gui::IGUIWindow* wSettings;
+	irr::gui::IGUIButton* btnCloseSettings;
 	//hint text
 	irr::gui::IGUIStaticText* stHintMsg;
 	irr::gui::IGUIStaticText* stTip;
 	irr::gui::IGUIStaticText* stCardListTip;
 	//infos
-	irr::gui::IGUITabControl* wInfos;
+	irr::gui::IGUIStaticText* wInfos;
 	irr::gui::IGUIStaticText* stName;
 	irr::gui::IGUIStaticText* stInfo;
 	irr::gui::IGUIStaticText* stDataInfo;
 	irr::gui::IGUIStaticText* stSetName;
 	irr::gui::IGUIStaticText* stText;
 	irr::gui::IGUIScrollBar* scrCardText;
-	irr::gui::IGUIListBox* lstLog;
-	irr::gui::IGUIButton* btnClearLog;
-	irr::gui::IGUIButton* btnSaveLog;
-	irr::gui::IGUIWindow* tabHelper;
-	irr::gui::IGUIElement* elmTabHelperLast;
-	irr::gui::IGUIScrollBar* scrTabHelper;
 	irr::gui::IGUICheckBox* chkMAutoPos;
 	irr::gui::IGUICheckBox* chkSTAutoPos;
 	irr::gui::IGUICheckBox* chkRandomPos;
@@ -286,7 +297,6 @@ public:
 	irr::gui::IGUICheckBox* chkQuickAnimation;
 	irr::gui::IGUICheckBox* chkAutoSaveReplay;
 	irr::gui::IGUICheckBox* chkDrawSingleChain;
-	irr::gui::IGUIWindow* tabSystem;
 	irr::gui::IGUIElement* elmTabSystemLast;
 	irr::gui::IGUIScrollBar* scrTabSystem;
 	irr::gui::IGUICheckBox* chkDrawFieldSpell;
@@ -302,12 +312,19 @@ public:
 	irr::gui::IGUICheckBox* chkMusicMode;
 	//main menu
 	irr::gui::IGUIWindow* wMainMenu;
-	irr::gui::IGUIButton* btnLanMode;
-	irr::gui::IGUIButton* btnSingleMode;
-	irr::gui::IGUIButton* btnReplayMode;
+	irr::gui::CGUIImageButton* btnLanMode;
+	    irr::gui::IGUIStaticText* textLanMode;
+	irr::gui::CGUIImageButton* btnSingleMode;
+	    irr::gui::IGUIStaticText* textSingleMode;
+	irr::gui::CGUIImageButton* btnReplayMode;
+	    irr::gui::IGUIStaticText* textReplayMode;
 	irr::gui::IGUIButton* btnTestMode;
-	irr::gui::IGUIButton* btnDeckEdit;
-	irr::gui::IGUIButton* btnModeExit;
+	irr::gui::CGUIImageButton* btnDeckEdit;
+        irr::gui::IGUIStaticText* textDeckEdit;
+	irr::gui::CGUIImageButton* btnSettings;
+        irr::gui::IGUIStaticText* textSettings;
+	irr::gui::CGUIImageButton* btnModeExit;
+        irr::gui::IGUIStaticText* textModeExit;
 	//lan
 	irr::gui::IGUIWindow* wLanWindow;
 	irr::gui::IGUIEditBox* ebNickName;
@@ -803,19 +820,20 @@ private:
 #define BUTTON_CLEAR_LOG			350
 #define LISTBOX_LOG					351
 #define SCROLL_CARDTEXT				352
+#define BUTTON_CLOSE_SETTINGS		353
+#define BUTTON_CLOSE_LOG            354
 #define CHECKBOX_AUTO_SEARCH		360
-#define CHECKBOX_DRAW_FIELD_SPELL	361
-#define CHECKBOX_MULTI_KEYWORDS		372
-#define CHECKBOX_PREFER_EXPANSION	373
+#define CHECKBOX_ENABLE_SOUND		361
+#define CHECKBOX_ENABLE_MUSIC		362
+#define SCROLL_VOLUME				363
 #define CHECKBOX_DISABLE_CHAT		364
-
-#define SCROLL_VOLUME				365
-#define CHECKBOX_ENABLE_SOUND		366
-#define CHECKBOX_ENABLE_MUSIC		367
-
+#define BUTTON_SETTINGS				365
+#define BUTTON_BGM					366
+#define BUTTON_SHOW_LOG				367
+#define CHECKBOX_DRAW_FIELD_SPELL	368
 #define CHECKBOX_QUICK_ANIMATION	369
-#define SCROLL_TAB_HELPER			370
-#define SCROLL_TAB_SYSTEM			371
+#define BUTTON_CHATTING             370
+#define SCROLL_SETTINGS			    371
 #define CHECKBOX_MULTI_KEYWORDS		372
 #define CHECKBOX_PREFER_EXPANSION	373
 #define CHECKBOX_DRAW_SINGLE_CHAIN	374

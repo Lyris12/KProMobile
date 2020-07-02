@@ -134,6 +134,8 @@ void DeckBuilder::Initialize() {
 	mainGame->wSort->setVisible(true);
 	mainGame->btnLeaveGame->setVisible(true);
 	mainGame->btnLeaveGame->setText(dataManager.GetSysString(1306));
+	mainGame->wPallet->setVisible(true);
+	mainGame->imgChat->setVisible(false);
 	mainGame->btnSideOK->setVisible(false);
 	mainGame->btnSideShuffle->setVisible(false);
 	mainGame->btnSideSort->setVisible(false);
@@ -168,6 +170,10 @@ void DeckBuilder::Terminate() {
 	mainGame->wCardImg->setVisible(false);
 	mainGame->wInfos->setVisible(false);
 	mainGame->btnLeaveGame->setVisible(false);
+    mainGame->wPallet->setVisible(false);
+    mainGame->imgChat->setVisible(true);
+    mainGame->wSettings->setVisible(false);
+    mainGame->wLogs->setVisible(false);
 	mainGame->PopupElement(mainGame->wMainMenu);
 	mainGame->device->setEventReceiver(&mainGame->menuHandler);
 	mainGame->wACMessage->setVisible(false);
@@ -308,6 +314,53 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				}
 				Terminate();
 				break;
+			}
+			case BUTTON_SETTINGS: {
+                mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::BUTTON);
+                if (mainGame->imgSettings->isPressed()) {
+			        mainGame->ShowElement(mainGame->wSettings);
+                    mainGame->imgSettings->setPressed(true);
+                } else {
+                    mainGame->HideElement(mainGame->wSettings);
+                    mainGame->imgSettings->setPressed(false);
+                }
+			    break;
+			}
+			case BUTTON_CLOSE_SETTINGS: {
+			    mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::BUTTON);
+			    mainGame->HideElement(mainGame->wSettings);
+                mainGame->imgSettings->setPressed(false);
+			    break;
+			}
+			case BUTTON_SHOW_LOG: {
+                mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::BUTTON);
+                if (mainGame->imgLog->isPressed()) {
+			        mainGame->ShowElement(mainGame->wLogs);
+			        mainGame->imgLog->setPressed(true);
+                } else {
+                    mainGame->HideElement(mainGame->wLogs);
+                    mainGame->imgLog->setPressed(false);
+                }
+			    break;
+			}
+			case BUTTON_CLOSE_LOG: {
+			    mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::BUTTON);
+			    mainGame->HideElement(mainGame->wLogs);
+                mainGame->imgLog->setPressed(false);
+			    break;
+			}
+			case BUTTON_BGM: {
+			    mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::BUTTON);
+			    if (mainGame->gameConf.enable_music) {
+			        mainGame->gameConf.enable_music = false;
+			        mainGame->imgVol->setImage(imageManager.tMute);
+			    } else {
+			        mainGame->gameConf.enable_music = true;
+			        mainGame->imgVol->setImage(imageManager.tPlay);
+			    }
+			    mainGame->chkEnableMusic->setChecked(mainGame->gameConf.enable_music);
+			    mainGame->soundManager->EnableMusic(mainGame->chkEnableMusic->isChecked());
+			    break;
 			}
 			case BUTTON_EFFECT_FILTER: {
 				mainGame->PopupElement(mainGame->wCategories);
@@ -714,6 +767,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 					break;
 				}
 				mainGame->ClearCardInfo();
+                mainGame->imgChat->setVisible(true);
 				char deckbuf[1024];
 				char* pdeck = deckbuf;
 				BufferIO::WriteInt32(pdeck, deckManager.current_deck.main.size() + deckManager.current_deck.extra.size());
