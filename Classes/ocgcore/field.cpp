@@ -1827,10 +1827,15 @@ int32 field::get_summon_count_limit(uint8 playerid) {
 }
 int32 field::get_draw_count(uint8 playerid) {
 	effect_set eset;
-	filter_player_effect(infos.turn_player, EFFECT_DRAW_COUNT, &eset);
+	filter_player_effect(playerid, EFFECT_DRAW_COUNT, &eset);
 	int32 count = player[playerid].draw_count;
-	if(eset.size())
-		count = eset.get_last()->get_value();
+	for(int32 i = 0; i < eset.size(); ++i) {
+		int32 c = eset[i]->get_value();
+		if(c == 0)
+			return 0;
+		if(c > count)
+			count = c;
+	}
 	return count;
 }
 void field::get_ritual_material(uint8 playerid, effect* peffect, card_set* material) {
@@ -2783,6 +2788,14 @@ int32 field::check_xyz_material(card* scard, int32 findex, int32 lv, int32 min, 
 				ft++;
 		}
 		if(ft <= 0)
+			return FALSE;
+	}
+	int32 mzone_limit = get_mzone_limit(playerid, playerid, LOCATION_REASON_TOFIELD);
+	if(mzone_limit <= 0) {
+		int32 ft = -mzone_limit + 1;
+		if(ft > min)
+			min = ft;
+		if(min > max)
 			return FALSE;
 	}
 	effect_set eset;

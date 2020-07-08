@@ -41,8 +41,6 @@ void Game::process(irr::SEvent &event) {
 #ifdef _IRR_ANDROID_PLATFORM_
 bool Game::Initialize(ANDROID_APP app) {
 	this->appMain = app;
-#else
-bool Game::Initialize() {
 #endif
 	srand(time(0));
 	irr::SIrrlichtCreationParameters params = irr::SIrrlichtCreationParameters();
@@ -60,19 +58,12 @@ bool Game::Initialize() {
 	params.ZBufferBits = 16;
 	params.AntiAlias  = 0;
 	params.WindowSize = irr::core::dimension2d<u32>(0, 0);
-#else
-	if(gameConf.use_d3d)
-		params.DriverType = irr::video::EDT_DIRECT3D9;
-	else
-		params.DriverType = irr::video::EDT_OPENGL;
-	params.WindowSize = irr::core::dimension2d<u32>(1280, 720);
 #endif
 
 	device = irr::createDeviceEx(params);
 	if(!device)
 		return false;
 #ifdef _IRR_ANDROID_PLATFORM_
-
 	if (!android::perfromTrick(app)) {
 		return false;
 	}
@@ -126,10 +117,6 @@ bool Game::Initialize() {
 			os::Printer::log("add arrchive fail ", zip_path.c_str());
 		}
 	}
-	
-#else
-	xScale = 1.0;
-	yScale = 1.0;
 #endif
 	LoadConfig();
 	linePatternD3D = 0;
@@ -171,8 +158,6 @@ bool Game::Initialize() {
 		driver->setTextureCreationFlag(irr::video::ETCF_ALLOW_NON_POWER_2, true);
 		driver->setTextureCreationFlag(irr::video::ETCF_CREATE_MIP_MAPS, false);
 	}
-#else
-	driver->setTextureCreationFlag(irr::video::ETCF_CREATE_MIP_MAPS, false);
 #endif
 	driver->setTextureCreationFlag(irr::video::ETCF_OPTIMIZED_FOR_QUALITY, true);
 
@@ -406,17 +391,17 @@ bool Game::Initialize() {
 	wInfos->setBackgroundColor(0xab11113d);
 	wInfos->setVisible(false);
 	//info
-	stName = env->addStaticText(L"", rect<s32>(10 * xScale, 10 * yScale, 246 * xScale, 32 * yScale), true, false, wInfos, -1, false);
+	stName = env->addStaticText(L"", rect<s32>(10 * xScale, 10 * yScale, 250 * xScale, 32 * yScale), true, false, wInfos, -1, false);
 	stName->setTextAlignment(irr::gui::EGUIA_CENTER, irr::gui::EGUIA_CENTER);
-	stInfo = env->addStaticText(L"", rect<s32>(10 * xScale, 37 * yScale, 250 * xScale, 60 * yScale), false, true, wInfos, -1, false);
+	stInfo = env->addStaticText(L"", rect<s32>(10 * xScale, 37 * yScale, 260 * xScale, 60 * yScale), false, true, wInfos, -1, false);
 	stInfo->setOverrideColor(SColor(255, 149, 211, 137));//255, 0, 0, 255
-	stDataInfo = env->addStaticText(L"", rect<s32>(10 * xScale, 60 * yScale, 250 * xScale, 83 * yScale), false, true, wInfos, -1, false);
+	stDataInfo = env->addStaticText(L"", rect<s32>(10 * xScale, 60 * yScale, 260 * xScale, 83 * yScale), false, true, wInfos, -1, false);
 	stDataInfo->setOverrideColor(SColor(255, 222, 215, 100));//255, 0, 0, 255
-	stSetName = env->addStaticText(L"", rect<s32>(10 * xScale, 83 * yScale, 250 * xScale, 106 * yScale), false, true, wInfos, -1, false);
+	stSetName = env->addStaticText(L"", rect<s32>(10 * xScale, 83 * yScale, 260 * xScale, 106 * yScale), false, true, wInfos, -1, false);
 	stSetName->setOverrideColor(SColor(255, 255, 152, 42));//255, 0, 0, 255
-	stText = env->addStaticText(L"", rect<s32>(10 * xScale, 106 * yScale, 250 * xScale, 345 * yScale), false, true, wInfos, -1, false);
+	stText = env->addStaticText(L"", rect<s32>(10 * xScale, 106 * yScale, 260 * xScale, 345 * yScale), false, true, wInfos, -1, false);
 #ifdef _IRR_ANDROID_PLATFORM_
-	scrCardText = env->addScrollBar(false, rect<s32>(235 * xScale, 106 * yScale, 255 * xScale, 345 * yScale), wInfos, SCROLL_CARDTEXT);
+	scrCardText = env->addScrollBar(false, rect<s32>(238 * xScale, 106 * yScale, 258 * xScale, 639 * yScale), wInfos, SCROLL_CARDTEXT);
 #endif
 	scrCardText->setLargeStep(1);
 	scrCardText->setSmallStep(1);
@@ -967,14 +952,14 @@ bool Game::Initialize() {
 	btnRSYes = env->addButton(rect<s32>(70 * xScale, 100 * yScale, 160 * xScale, 150 * yScale), wReplaySave, BUTTON_REPLAY_SAVE, dataManager.GetSysString(1341));
 	btnRSNo = env->addButton(rect<s32>(180 * xScale, 100 * yScale, 270 * xScale, 150 * yScale), wReplaySave, BUTTON_REPLAY_CANCEL, dataManager.GetSysString(1212));
 	//replay control
-	wReplayControl = env->addStaticText(L"", rect<s32>(205 * xScale, 48 * yScale, 295 * xScale, 273 * yScale), true, false, 0, -1, true);
+	wReplayControl = env->addStaticText(L"", rect<s32>(200 * yScale, 43 * yScale, 305 * yScale, 273 * yScale), true, false, 0, -1, true);
 	wReplayControl->setVisible(false);
-	btnReplayStart = env->addButton(rect<s32>(5 * xScale, 5 * yScale, 85 * xScale, 45 * yScale), wReplayControl, BUTTON_REPLAY_START, dataManager.GetSysString(1343));
-	btnReplayPause = env->addButton(rect<s32>(5 * xScale, 50 * yScale, 85 * xScale, 90 * yScale), wReplayControl, BUTTON_REPLAY_PAUSE, dataManager.GetSysString(1344));
-	btnReplayStep = env->addButton(rect<s32>(5 * xScale, 95 * yScale, 85 * xScale, 135 * yScale), wReplayControl, BUTTON_REPLAY_STEP, dataManager.GetSysString(1345));
-	btnReplayUndo = env->addButton(rect<s32>(5 * xScale, 50 * yScale, 85 * xScale, 90 * yScale), wReplayControl, BUTTON_REPLAY_UNDO, dataManager.GetSysString(1360));
-	btnReplaySwap = env->addButton(rect<s32>(5 * xScale, 140 * yScale, 85 * xScale, 180 * yScale), wReplayControl, BUTTON_REPLAY_SWAP, dataManager.GetSysString(1346));
-	btnReplayExit = env->addButton(rect<s32>(5 * xScale, 185 * yScale, 85 * xScale, 225 * yScale), wReplayControl, BUTTON_REPLAY_EXIT, dataManager.GetSysString(1347));
+	btnReplayStart = env->addButton(rect<s32>(5 * yScale, 5 * yScale, 100 * yScale, 45 * yScale), wReplayControl, BUTTON_REPLAY_START, dataManager.GetSysString(1343));
+	btnReplayPause = env->addButton(rect<s32>(5 * yScale, 50 * yScale, 100 * yScale, 90 * yScale), wReplayControl, BUTTON_REPLAY_PAUSE, dataManager.GetSysString(1344));
+	btnReplayStep = env->addButton(rect<s32>(5 * yScale, 95 * yScale, 100 * yScale, 135 * yScale), wReplayControl, BUTTON_REPLAY_STEP, dataManager.GetSysString(1345));
+	btnReplayUndo = env->addButton(rect<s32>(5 * yScale, 50 * yScale, 100 * yScale, 90 * yScale), wReplayControl, BUTTON_REPLAY_UNDO, dataManager.GetSysString(1360));
+	btnReplaySwap = env->addButton(rect<s32>(5 * yScale, 140 * yScale, 100 * yScale, 180 * yScale), wReplayControl, BUTTON_REPLAY_SWAP, dataManager.GetSysString(1346));
+	btnReplayExit = env->addButton(rect<s32>(5 * yScale, 185 * yScale, 100 * yScale, 225 * yScale), wReplayControl, BUTTON_REPLAY_EXIT, dataManager.GetSysString(1347));
 	//chat
     imgChat = irr::gui::CGUIImageButton::addImageButton(env, rect<s32>(0 * yScale, 319 * yScale, 45 * yScale, 364 * yScale), wPallet, BUTTON_CHATTING);
     imgChat->setImageSize(core::dimension2di(28 * yScale, 28 * yScale));
@@ -990,12 +975,12 @@ bool Game::Initialize() {
 	wChat->setVisible(false);
 	ebChatInput = CAndroidGUIEditBox::addAndroidEditBox(L"", true, env, rect<s32>(3 * xScale, 2 * yScale, 710 * xScale, 28 * yScale), wChat, EDITBOX_CHAT);
 	//swap
-	btnSpectatorSwap = env->addButton(rect<s32>(200 * yScale, 100 * yScale, 307 * yScale, 135 * yScale), 0, BUTTON_REPLAY_SWAP, dataManager.GetSysString(1346));
+	btnSpectatorSwap = env->addButton(rect<s32>(200 * yScale, 100 * yScale, 305 * yScale, 135 * yScale), 0, BUTTON_REPLAY_SWAP, dataManager.GetSysString(1346));
 	btnSpectatorSwap->setVisible(false);
 	//chain buttons
-	btnChainIgnore = env->addButton(rect<s32>(200 * yScale, 100 * yScale, 307 * yScale, 135 * yScale), 0, BUTTON_CHAIN_IGNORE, dataManager.GetSysString(1292));
-	btnChainAlways = env->addButton(rect<s32>(200 * yScale, 140 * yScale, 307 * yScale, 175 * yScale), 0, BUTTON_CHAIN_ALWAYS, dataManager.GetSysString(1293));
-	btnChainWhenAvail = env->addButton(rect<s32>(200 * yScale, 180 * yScale, 307 * yScale, 215 * yScale), 0, BUTTON_CHAIN_WHENAVAIL, dataManager.GetSysString(1294));
+	btnChainIgnore = env->addButton(rect<s32>(200 * yScale, 100 * yScale, 305 * yScale, 135 * yScale), 0, BUTTON_CHAIN_IGNORE, dataManager.GetSysString(1292));
+	btnChainAlways = env->addButton(rect<s32>(200 * yScale, 140 * yScale, 305 * yScale, 175 * yScale), 0, BUTTON_CHAIN_ALWAYS, dataManager.GetSysString(1293));
+	btnChainWhenAvail = env->addButton(rect<s32>(200 * yScale, 180 * yScale, 305 * yScale, 215 * yScale), 0, BUTTON_CHAIN_WHENAVAIL, dataManager.GetSysString(1294));
 	btnChainIgnore->setIsPushButton(true);
 	btnChainAlways->setIsPushButton(true);
 	btnChainWhenAvail->setIsPushButton(true);
@@ -1003,10 +988,10 @@ bool Game::Initialize() {
 	btnChainAlways->setVisible(false);
 	btnChainWhenAvail->setVisible(false);
 	//shuffle
-	btnShuffle = env->addButton(rect<s32>(200 * yScale, 220 * yScale, 307 * yScale, 255 * yScale), 0, BUTTON_CMD_SHUFFLE, dataManager.GetSysString(1297));
+	btnShuffle = env->addButton(rect<s32>(200 * yScale, 220 * yScale, 305 * yScale, 255 * yScale), 0, BUTTON_CMD_SHUFFLE, dataManager.GetSysString(1297));
 	btnShuffle->setVisible(false);
 	//cancel or finish
-	btnCancelOrFinish = env->addButton(rect<s32>(200 * yScale, 220 * yScale, 307 * yScale, 275 * yScale), 0, BUTTON_CANCEL_OR_FINISH, dataManager.GetSysString(1295));
+	btnCancelOrFinish = env->addButton(rect<s32>(200 * yScale, 220 * yScale, 305 * yScale, 275 * yScale), 0, BUTTON_CANCEL_OR_FINISH, dataManager.GetSysString(1295));
 	btnCancelOrFinish->setVisible(false);
 	soundManager = Utils::make_unique<SoundManager>();
 	if(!soundManager->Init((double)gameConf.sound_volume / 100, (double)gameConf.music_volume / 100, gameConf.enable_sound, gameConf.enable_music, nullptr)) {
@@ -1022,8 +1007,25 @@ bool Game::Initialize() {
 		chkMusicMode->setVisible(false);
 	}
 #endif
+	//big picture
+	wBigCard = env->addWindow(rect<s32>(0, 0, 0, 0), false, L"");
+	wBigCard->getCloseButton()->setVisible(false);
+	wBigCard->setDrawTitlebar(false);
+	wBigCard->setDrawBackground(false);
+	wBigCard->setVisible(false);
+	imgBigCard = env->addImage(rect<s32>(0, 0, 0, 0), wBigCard);
+	imgBigCard->setScaleImage(false);
+	imgBigCard->setUseAlphaChannel(true);
+	btnBigCardOriginalSize = env->addButton(rect<s32>(200 * yScale, 100 * yScale, 305 * yScale, 135 * yScale), 0, BUTTON_BIG_CARD_ORIG_SIZE, dataManager.GetSysString(1443));
+	btnBigCardZoomIn = env->addButton(rect<s32>(200 * yScale, 140 * yScale, 305 * yScale, 175 * yScale), 0, BUTTON_BIG_CARD_ZOOM_IN, dataManager.GetSysString(1441));
+	btnBigCardZoomOut = env->addButton(rect<s32>(200 * yScale, 180 * yScale, 305 * yScale, 215 * yScale), 0, BUTTON_BIG_CARD_ZOOM_OUT, dataManager.GetSysString(1442));
+	btnBigCardClose = env->addButton(rect<s32>(200 * yScale, 220 * yScale, 305 * yScale, 275 * yScale), 0, BUTTON_BIG_CARD_CLOSE, dataManager.GetSysString(1440));
+	btnBigCardOriginalSize->setVisible(false);
+	btnBigCardZoomIn->setVisible(false);
+	btnBigCardZoomOut->setVisible(false);
+	btnBigCardClose->setVisible(false);
 	//leave/surrender/exit
-	btnLeaveGame = env->addButton(rect<s32>(200 * yScale, 1 * yScale, 307 * yScale, 80 * yScale), 0, BUTTON_LEAVE_GAME, L"");
+	btnLeaveGame = env->addButton(rect<s32>(200 * yScale, 1 * yScale, 305 * yScale, 80 * yScale), 0, BUTTON_LEAVE_GAME, L"");
 	btnLeaveGame->setVisible(false);
 	//tip
 	stTip = env->addStaticText(L"", rect<s32>(0, 0, 150 * xScale, 150 * yScale), false, true, 0, -1, true);
@@ -1031,7 +1033,7 @@ bool Game::Initialize() {
 	stTip->setTextAlignment(irr::gui::EGUIA_CENTER, irr::gui::EGUIA_CENTER);
 	stTip->setVisible(false);
 	//tip for cards in select / display list
-	stCardListTip = env->addStaticText(L"", rect<s32>(0, 0, 150, 150), false, true, wCardSelect, TEXT_CARD_LIST_TIP, true);
+	stCardListTip = env->addStaticText(L"", rect<s32>(0, 0, 150 * xScale, 150 * yScale), false, true, wCardSelect, TEXT_CARD_LIST_TIP, true);
  	stCardListTip->setBackgroundColor(0x6011113d);
 	stCardListTip->setTextAlignment(irr::gui::EGUIA_CENTER, irr::gui::EGUIA_CENTER);
 	stCardListTip->setVisible(false);
@@ -1670,16 +1672,16 @@ void Game::ShowCardInfo(int code) {
 			wcscat(formatBuffer, scaleBuffer);
 		}
 		stDataInfo->setText(formatBuffer);
-		stSetName->setRelativePosition(rect<s32>(10 * xScale, 83 * yScale, 255 * xScale, 106 * yScale));
-		stText->setRelativePosition(rect<s32>(10 * xScale, (83 + offset) * yScale, 255 * xScale, 345 * yScale));
-		scrCardText->setRelativePosition(rect<s32>(235 * xScale, (83 + offset) * yScale, 255 * xScale, 345 * yScale));
+		stSetName->setRelativePosition(rect<s32>(10 * xScale, 83 * yScale, 250 * xScale, 106 * yScale));
+		stText->setRelativePosition(rect<s32>(10 * xScale, (83 + offset) * yScale, 250 * xScale, 345 * yScale));
+		scrCardText->setRelativePosition(rect<s32>(238 * xScale, (83 + offset) * yScale, 258 * xScale, 345 * yScale));
 	} else {
 		myswprintf(formatBuffer, L"[%ls]", dataManager.FormatType(cd.type));
 		stInfo->setText(formatBuffer);
 		stDataInfo->setText(L"");
-		stSetName->setRelativePosition(rect<s32>(10 * xScale, 60 * yScale, 255 * xScale, 83 * yScale));
-		stText->setRelativePosition(rect<s32>(10 * xScale, (60 + offset) * yScale, 255 * xScale, 345 * yScale));
-		scrCardText->setRelativePosition(rect<s32>(235 * xScale, (60 + offset) * yScale, 255 * xScale, 345 * yScale));
+		stSetName->setRelativePosition(rect<s32>(10 * xScale, 60 * yScale, 250 * xScale, 106 * yScale));
+		stText->setRelativePosition(rect<s32>(10 * xScale, (60 + offset) * yScale, 250 * xScale, 345 * yScale));
+		scrCardText->setRelativePosition(rect<s32>(238 * xScale, (60 + offset) * yScale, 258 * xScale, 345 * yScale));
 	}
 	showingtext = dataManager.GetText(code);
 	const auto& tsize = stText->getRelativePosition();
