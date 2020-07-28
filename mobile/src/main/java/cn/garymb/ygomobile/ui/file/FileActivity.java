@@ -68,6 +68,32 @@ public class FileActivity extends BaseActivity implements AdapterView.OnItemClic
             }
         });
         headText = $(R.id.path);
+        headText.setOnClickListener((v) -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            final EditText editText = new EditText(this);
+            editText.setSingleLine();
+            builder.setTitle(R.string.question);
+            builder.setMessage("Type path to navigate to");
+            builder.setView(editText);
+            builder.setNegativeButton(android.R.string.ok, (d, s) -> {
+                if (editText.getText() != null) {
+                    String name = String.valueOf(editText.getText());
+                    if (TextUtils.isEmpty(name)) {
+                        return;
+                    }
+                    File dir = new File(name);
+                    if (dir.exists() && dir.isDirectory()) {
+                        mFileAdapter.setPath(dir.getAbsolutePath());
+                    }
+                    mFileAdapter.loadFiles();
+                }
+                d.dismiss();
+            });
+            builder.setNeutralButton(android.R.string.cancel, (d, s) -> {
+                d.dismiss();
+            });
+            builder.show();
+        });
         newFolderButton = $(R.id.new_folder);
         newFolderButton.setOnClickListener((v) -> {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
