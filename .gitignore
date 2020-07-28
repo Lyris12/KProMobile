@@ -55,7 +55,7 @@ libYGOMobile.so
 /mobile/assets/data/textures/Thumbs.db
 /mobile/src/main/res/drawable-xhdpi/Thumbs.db
 Thumbs.db
-output.json
+output*.json
 
 /libcore/.cxx
 /libygo/.cxx

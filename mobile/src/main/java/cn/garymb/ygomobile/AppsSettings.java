@@ -382,13 +382,7 @@ public class AppsSettings {
      * 当前数据库文件夹
      */
     public String getDataBasePath() {
-        if (isUseExtraCards()) {
-            return getResourcePath();
-        } else {
-            //返回游戏根目录，即ygocore文件夹
-            return getResourcePath();
-            // return getDataBaseDefault();
-        }
+        return getResourcePath();
     }
 
     public boolean isLockSreenOrientation() {
