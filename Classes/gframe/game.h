@@ -174,6 +174,8 @@ public:
 	void CloseGameButtons();
 	void CloseGameWindow();
 	void CloseDuelWindow();
+	void ChangeToIGUIImageWindow(irr::gui::IGUIWindow* window, irr::gui::IGUIImage* bgwindow, irr::video::ITexture* image);
+	void ChangeToIGUIImageButton(irr::gui::IGUIButton* button, irr::video::ITexture* image, irr::video::ITexture* pressedImage, irr::gui::CGUITTFont* font);
 
 	int LocalPlayer(int player);
 	const wchar_t* LocalName(int local_player);
@@ -266,6 +268,7 @@ public:
 	//Logs
 	irr::gui::CGUIImageButton* imgLog;
 	irr::gui::IGUIWindow* wLogs;
+	irr::gui::IGUIImage* bgLogs;
 	irr::gui::IGUIListBox* lstLog;
 	irr::gui::IGUIButton* btnClearLog;
 	irr::gui::IGUIButton* btnCloseLog;
@@ -314,18 +317,18 @@ public:
 	//main menu
 	irr::gui::IGUIWindow* wMainMenu;
 	irr::gui::CGUIImageButton* btnLanMode;
-	    irr::gui::IGUIStaticText* textLanMode;
+	irr::gui::IGUIStaticText* textLanMode;
 	irr::gui::CGUIImageButton* btnSingleMode;
-	    irr::gui::IGUIStaticText* textSingleMode;
+	irr::gui::IGUIStaticText* textSingleMode;
 	irr::gui::CGUIImageButton* btnReplayMode;
-	    irr::gui::IGUIStaticText* textReplayMode;
+	irr::gui::IGUIStaticText* textReplayMode;
 	irr::gui::IGUIButton* btnTestMode;
 	irr::gui::CGUIImageButton* btnDeckEdit;
-        irr::gui::IGUIStaticText* textDeckEdit;
+	irr::gui::IGUIStaticText* textDeckEdit;
 	irr::gui::CGUIImageButton* btnSettings;
-        irr::gui::IGUIStaticText* textSettings;
+	irr::gui::IGUIStaticText* textSettings;
 	irr::gui::CGUIImageButton* btnModeExit;
-        irr::gui::IGUIStaticText* textModeExit;
+	irr::gui::IGUIStaticText* textModeExit;
 	//lan
 	irr::gui::IGUIWindow* wLanWindow;
 	irr::gui::IGUIImage* bgLanWindow;
@@ -404,10 +407,12 @@ public:
 	irr::gui::CGUIImageButton* btnHand[3];
 	//
 	irr::gui::IGUIWindow* wFTSelect;
+	irr::gui::IGUIImage* bgFTSelect;
 	irr::gui::IGUIButton* btnFirst;
 	irr::gui::IGUIButton* btnSecond;
 	//message
 	irr::gui::IGUIWindow* wMessage;
+	irr::gui::IGUIImage* bgMessage;
 	irr::gui::IGUIStaticText* stMessage;
 	irr::gui::IGUIButton* btnMsgOK;
 	//auto close message
@@ -415,16 +420,19 @@ public:
 	irr::gui::IGUIStaticText* stACMessage;
 	//yes/no
 	irr::gui::IGUIWindow* wQuery;
+	irr::gui::IGUIImage* bgQuery;
 	irr::gui::IGUIStaticText* stQMessage;
 	irr::gui::IGUIButton* btnYes;
 	irr::gui::IGUIButton* btnNo;
 	//surrender yes/no
 	irr::gui::IGUIWindow* wSurrender;
+	irr::gui::IGUIImage* bgSurrender;
 	irr::gui::IGUIStaticText* stSurrenderMessage;
 	irr::gui::IGUIButton* btnSurrenderYes;
 	irr::gui::IGUIButton* btnSurrenderNo;
 	//options
 	irr::gui::IGUIWindow* wOptions;
+	irr::gui::IGUIImage* bgOptions;
 	irr::gui::IGUIStaticText* stOptions;
 	irr::gui::IGUIButton* btnOptionp;
 	irr::gui::IGUIButton* btnOptionn;
@@ -433,37 +441,44 @@ public:
 	irr::gui::IGUIScrollBar* scrOption;
 	//pos selection
 	irr::gui::IGUIWindow* wPosSelect;
+	irr::gui::IGUIImage* bgPosSelect;
 	irr::gui::CGUIImageButton* btnPSAU;
 	irr::gui::CGUIImageButton* btnPSAD;
 	irr::gui::CGUIImageButton* btnPSDU;
 	irr::gui::CGUIImageButton* btnPSDD;
 	//card selection
 	irr::gui::IGUIWindow* wCardSelect;
+	irr::gui::IGUIImage* bgCardSelect;
 	irr::gui::CGUIImageButton* btnCardSelect[5];
 	irr::gui::IGUIStaticText *stCardPos[5];
 	irr::gui::IGUIScrollBar *scrCardList;
 	irr::gui::IGUIButton* btnSelectOK;
 	//card display
 	irr::gui::IGUIWindow* wCardDisplay;
+	irr::gui::IGUIImage* bgCardDisplay;
 	irr::gui::CGUIImageButton* btnCardDisplay[5];
 	irr::gui::IGUIStaticText *stDisplayPos[5];
 	irr::gui::IGUIScrollBar *scrDisplayList;
 	irr::gui::IGUIButton* btnDisplayOK;
 	//announce number
 	irr::gui::IGUIWindow* wANNumber;
+	irr::gui::IGUIImage* bgANNumber;
 	irr::gui::IGUIComboBox* cbANNumber;
 	irr::gui::IGUIButton* btnANNumber[12];
 	irr::gui::IGUIButton* btnANNumberOK;
 	//announce card
 	irr::gui::IGUIWindow* wANCard;
+	irr::gui::IGUIImage* bgANCard;
 	irr::gui::IGUIEditBox* ebANCard;
 	irr::gui::IGUIListBox* lstANCard;
 	irr::gui::IGUIButton* btnANCardOK;
 	//announce attribute
 	irr::gui::IGUIWindow* wANAttribute;
+	irr::gui::IGUIImage* bgANAttribute;
 	irr::gui::IGUICheckBox* chkAttribute[7];
 	//announce race
 	irr::gui::IGUIWindow* wANRace;
+	irr::gui::IGUIImage* bgANRace;
 	irr::gui::IGUICheckBox* chkRace[25];
 	//cmd menu
 	irr::gui::IGUIWindow* wCmdMenu;
@@ -566,6 +581,7 @@ public:
 	irr::gui::IGUIComboBox* cbSortType;
 	//replay save
 	irr::gui::IGUIWindow* wReplaySave;
+	irr::gui::IGUIImage* bgReplaySave;
 	irr::gui::IGUIEditBox* ebRSName;
 	irr::gui::IGUIButton* btnRSYes;
 	irr::gui::IGUIButton* btnRSNo;
