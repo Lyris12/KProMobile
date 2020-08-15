@@ -153,7 +153,6 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
     @Override
     protected void onResume() {
         super.onResume();
-        setRandomCardDetail();
         BacktoDuel();
     }
 
@@ -314,6 +313,7 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
             }
             break;
             case R.id.action_game:
+                setRandomCardDetail();
                 CardDetailRandom.showRandromCardDetailToast(this);
                 openGame();
                 break;
