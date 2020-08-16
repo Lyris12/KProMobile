@@ -16,8 +16,8 @@ android {
         applicationId "cn.garymb.ygomobile.lyris"
         minSdkVersion 21
         targetSdkVersion 29
-        versionCode 370400707
-        versionName "Kitasaitama"
+        versionCode 370500816
+        versionName "IZANA"
         flavorDimensions "versionCode"
         vectorDrawables.useSupportLibrary = true
         ndk {
