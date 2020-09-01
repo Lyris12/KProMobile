@@ -450,13 +450,15 @@ public:
 	//card selection
 	irr::gui::IGUIWindow* wCardSelect;
 	irr::gui::IGUIImage* bgCardSelect;
+	irr::gui::IGUIStaticText* stCardSelect;
 	irr::gui::CGUIImageButton* btnCardSelect[5];
-	irr::gui::IGUIStaticText *stCardPos[5];
-	irr::gui::IGUIScrollBar *scrCardList;
+	irr::gui::IGUIStaticText* stCardPos[5];
+	irr::gui::IGUIScrollBar* scrCardList;
 	irr::gui::IGUIButton* btnSelectOK;//
 	//card display
 	irr::gui::IGUIWindow* wCardDisplay;
 	irr::gui::IGUIImage* bgCardDisplay;
+	irr::gui::IGUIStaticText* stCardDisplay;
 	irr::gui::CGUIImageButton* btnCardDisplay[5];
 	irr::gui::IGUIStaticText *stDisplayPos[5];
 	irr::gui::IGUIScrollBar *scrDisplayList;
@@ -464,22 +466,26 @@ public:
 	//announce number
 	irr::gui::IGUIWindow* wANNumber;
 	irr::gui::IGUIImage* bgANNumber;
+	irr::gui::IGUIStaticText* stANNumber;
 	irr::gui::IGUIComboBox* cbANNumber;
 	irr::gui::IGUIButton* btnANNumber[12];//
 	irr::gui::IGUIButton* btnANNumberOK;//
 	//announce card
 	irr::gui::IGUIWindow* wANCard;
 	irr::gui::IGUIImage* bgANCard;
+	irr::gui::IGUIStaticText* stANCard;
 	irr::gui::IGUIEditBox* ebANCard;
 	irr::gui::IGUIListBox* lstANCard;
 	irr::gui::IGUIButton* btnANCardOK;//
 	//announce attribute
 	irr::gui::IGUIWindow* wANAttribute;
 	irr::gui::IGUIImage* bgANAttribute;
+	irr::gui::IGUIStaticText* stANAttribute;
 	irr::gui::IGUICheckBox* chkAttribute[7];
 	//announce race
 	irr::gui::IGUIWindow* wANRace;
 	irr::gui::IGUIImage* bgANRace;
+	irr::gui::IGUIStaticText* stANRace;
 	irr::gui::IGUICheckBox* chkRace[25];
 	//cmd menu
 	irr::gui::IGUIWindow* wCmdMenu;
