@@ -230,6 +230,23 @@ int32 scriptlib::duel_load_script(lua_State *L) {
 	return 1;
 }
 
+int32 scriptlib::duel_reset_time_limit(lua_State * L) {
+	check_param_count(L, 1);
+	int32 p = lua_tointeger(L, 1);
+	int32 time = 0;
+	if(p != 0 && p != 1)
+		luaL_error(L, "Parameter 1 should be 0 or 1.", 2);
+	if(lua_gettop(L) >= 2)
+		time = lua_tointeger(L, 2);
+	if(time < 0 || time > 0x7fff)
+		luaL_error(L, "Invalid time value.", 2);
+	duel* pduel = interpreter::get_duel_info(L);
+	pduel->write_buffer8(MSG_RESET_TIME);
+	pduel->write_buffer8(p);
+	pduel->write_buffer16(time);	
+	return 0;
+}
+
 int32 scriptlib::duel_enable_global_flag(lua_State *L) {
 	check_param_count(L, 1);
 	int32 flag = (int32)lua_tointeger(L, 1);
@@ -4696,6 +4713,7 @@ static const struct luaL_Reg duellib[] = {
 	{ "XyzSummonByRose", scriptlib::duel_xyz_summon_by_rose },
 	{ "LoadScript", scriptlib::duel_load_script },
 	{ "AnnounceCardFilter", scriptlib::duel_announce_card }, // For compat
+	{ "ResetTimeLimit", scriptlib::duel_reset_time_limit },
 
 	{ "EnableGlobalFlag", scriptlib::duel_enable_global_flag },
 	{ "GetLP", scriptlib::duel_get_lp },

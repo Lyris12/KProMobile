@@ -320,6 +320,8 @@ struct card_sort {
 #define MSG_MATCH_KILL			170
 #define MSG_CUSTOM_MSG			180
 
+#define MSG_RESET_TIME			221
+
 //Hints
 #define HINT_EVENT				1
 #define HINT_MESSAGE			2
