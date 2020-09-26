@@ -8,9 +8,11 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.MenuItem;
 import android.view.View;
@@ -22,20 +24,12 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
-import java.io.IOException;
-
 import cn.garymb.ygomobile.lite.R;
-import cn.garymb.ygomobile.utils.FileLogUtil;
 import ocgcore.data.Card;
 
 
 public class BaseActivity extends AppCompatActivity {
     protected final static int REQUEST_PERMISSIONS = 0x1000 + 1;
-    private boolean mExitAnim = true;
-    private boolean mEnterAnim = true;
-
-    private Toast mToast;
-
     public static int[] enImgs = new int[]{
             R.drawable.right_top_1,
             R.drawable.top_1,
@@ -69,11 +63,6 @@ public class BaseActivity extends AppCompatActivity {
             R.id.iv_2,
             R.id.iv_1
     };
-
-    protected String[] getPermissions() {
-        return PERMISSIONS;
-    }
-
     protected final String[] PERMISSIONS = {
 //            Manifest.permission.RECORD_AUDIO,
             //Manifest.permission.READ_PHONE_STATE,
@@ -81,6 +70,28 @@ public class BaseActivity extends AppCompatActivity {
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.READ_EXTERNAL_STORAGE,
     };
+    private boolean mExitAnim = true;
+    private boolean mEnterAnim = true;
+    private Toast mToast;
+
+    public static void showLinkArrows(Card cardInfo, View view) {
+        String lk = Integer.toBinaryString(cardInfo.Defense);
+        String Linekey = String.format("%09d", Integer.parseInt(lk));
+        for (int i = 0; i < ids.length; i++) {
+            String arrow = Linekey.substring(i, i + 1);
+            if (i != 4) {
+                if ("1".equals(arrow)) {
+                    view.findViewById(ids[i]).setBackgroundResource(enImgs[i]);
+                } else {
+                    view.findViewById(ids[i]).setBackgroundResource(disImgs[i]);
+                }
+            }
+        }
+    }
+
+    protected String[] getPermissions() {
+        return PERMISSIONS;
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -157,6 +168,14 @@ public class BaseActivity extends AppCompatActivity {
         return rect.top;
     }
 
+//    @Override
+//    public void onWindowFocusChanged(boolean hasFocus) {
+//        if (hasFocus) {
+//            hideSystemNavBar();
+//        }
+//        super.onWindowFocusChanged(hasFocus);
+//    }
+
     protected void hideSystemNavBar() {
         if (Build.VERSION.SDK_INT >= 19) {
 //            final WindowManager.LayoutParams params = getWindow().getAttributes();
@@ -168,14 +187,6 @@ public class BaseActivity extends AppCompatActivity {
 //            getWindow().setAttributes(params);
         }
     }
-
-//    @Override
-//    public void onWindowFocusChanged(boolean hasFocus) {
-//        if (hasFocus) {
-//            hideSystemNavBar();
-//        }
-//        super.onWindowFocusChanged(hasFocus);
-//    }
 
     public void setActionBarTitle(String title) {
         if (TextUtils.isEmpty(title)) {
@@ -239,11 +250,27 @@ public class BaseActivity extends AppCompatActivity {
         setActionBarTitle(getString(rid));
     }
 
+    /**
+     * 权限申请
+     *
+     * @return 是否满足权限申请条件
+     */
     protected boolean startPermissionsActivity() {
-        String[] PERMISSIONS = getPermissions();
-        if (PERMISSIONS == null || PERMISSIONS.length == 0)
+        return startPermissionsActivity(getPermissions());
+    }
+
+    /**
+     * 权限申请
+     *
+     * @param permissions 要申请的权限列表
+     * @return 是否满足权限申请条件
+     */
+    protected boolean startPermissionsActivity(String[] permissions) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
             return false;
-        return PermissionsActivity.startActivityForResult(this, REQUEST_PERMISSIONS, PERMISSIONS);
+        if (permissions == null || permissions.length == 0)
+            return false;
+        return PermissionsActivity.startActivityForResult(this, REQUEST_PERMISSIONS, permissions);
     }
 
     @Override
@@ -259,7 +286,29 @@ public class BaseActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         // 拒绝时, 关闭页面, 缺少主要权限, 无法运行
-        if (requestCode == REQUEST_PERMISSIONS && resultCode == PermissionsActivity.PERMISSIONS_DENIED) {
+        if (requestCode == REQUEST_PERMISSIONS) {
+            switch (resultCode) {
+                case PermissionsActivity.PERMISSIONS_DENIED:
+                    onPermission(false);
+                    break;
+                case PermissionsActivity.PERMISSIONS_GRANTED:
+                    onPermission(true);
+                    break;
+            }
+        }
+    }
+
+    /**
+     * 权限申请回调
+     *
+     * @param isOk 权限申请是否成功
+     */
+    protected void onPermission(boolean isOk) {
+        if (isOk) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getContext().getPackageManager().canRequestPackageInstalls()) {
+                getContext().startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getContext().getPackageName())).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            }
+        } else {
             showToast("喵不给我权限让我怎么运行？！");
             finish();
         }
@@ -306,20 +355,5 @@ public class BaseActivity extends AppCompatActivity {
         toast.setText(text);
         toast.setDuration(duration);
         toast.show();
-    }
-
-    public static void showLinkArrows(Card cardInfo, View view) {
-        String lk = Integer.toBinaryString(cardInfo.Defense);
-        String Linekey = String.format("%09d", Integer.parseInt(lk));
-        for (int i = 0; i < ids.length; i++) {
-            String arrow = Linekey.substring(i, i + 1);
-            if (i != 4) {
-                if ("1".equals(arrow)) {
-                    view.findViewById(ids[i]).setBackgroundResource(enImgs[i]);
-                } else {
-                    view.findViewById(ids[i]).setBackgroundResource(disImgs[i]);
-                }
-            }
-        }
     }
 }
