@@ -4,7 +4,7 @@ apply plugin: 'com.android.application'
 android {
     signingConfigs {
         debug {
-            storeFile file('C:\\mobile\\tools\\Lyris.jks')
+            storeFile file('D:\\mobile\\tools\\Lyris.jks')
             storePassword '123456'
             keyAlias = 'ygo'
             keyPassword '123456'
