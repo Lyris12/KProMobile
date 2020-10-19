@@ -4,7 +4,7 @@ apply plugin: 'com.android.application'
 android {
     signingConfigs {
         debug {
-            storeFile file('D:\\mobile\\tools\\Lyris.jks')
+            storeFile file('C:\\mobile\\tools\\Lyris.jks')
             storePassword '123456'
             keyAlias = 'ygo'
             keyPassword '123456'
@@ -16,8 +16,8 @@ android {
         applicationId "cn.garymb.ygomobile.lyris"
         minSdkVersion 21
         targetSdkVersion 29
-        versionCode 370700930
-        versionName "Koikokoro"
+        versionCode 370701018
+        versionName "Brainpower"
         flavorDimensions "versionCode"
         vectorDrawables.useSupportLibrary = true
         ndk {
