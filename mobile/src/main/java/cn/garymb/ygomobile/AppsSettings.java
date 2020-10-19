@@ -354,6 +354,8 @@ public class AppsSettings {
      * @return
      */
     public String getCardImagePath(int code) {
+        File png = new File(getCardImagePath(), code + ".png");
+        if (png.exists()) return png.getAbsolutePath();
         return new File(getCardImagePath(), code + ".jpg").getAbsolutePath();
     }
 
