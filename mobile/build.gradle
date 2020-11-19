@@ -16,7 +16,7 @@ android {
         applicationId "cn.garymb.ygomobile.lyris"
         minSdkVersion 21
         targetSdkVersion 29
-        versionCode 370701018
+        versionCode 370901119
         versionName "Brainpower"
         flavorDimensions "versionCode"
         vectorDrawables.useSupportLibrary = true
@@ -124,4 +124,5 @@ dependencies {
     api 'com.tencent.tbs.tbssdk:sdk:43903'
     //http请求库
     implementation 'com.squareup.okhttp3:okhttp:3.12.0'
+    implementation 'com.bm.photoview:library:1.4.1'
 }

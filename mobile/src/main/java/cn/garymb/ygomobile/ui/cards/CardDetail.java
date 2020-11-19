@@ -11,6 +11,8 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -20,6 +22,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.bm.library.PhotoView;
 import com.feihua.dialogutils.util.DialogUtils;
 
 import java.io.File;
@@ -88,19 +91,11 @@ public class CardDetail extends BaseAdapterPlus.BaseViewHolder {
     private CardListProvider mProvider;
     private OnCardClickListener mListener;
     private DialogUtils dialog;
-    private ImageView photoView;
+    private PhotoView photoView;
     private LinearLayout ll_bar;
     private ProgressBar pb_loading;
     private TextView tv_loading;
     private boolean isDownloadCardImage = true;
-    private CallBack mCallBack;
-
-    public interface CallBack {
-        void onSearchStart();
-
-        void onSearchResult(List<Card> Cards, boolean isHide);
-    }
-
     @SuppressLint("HandlerLeak")
     Handler handler = new Handler() {
 
@@ -129,7 +124,7 @@ public class CardDetail extends BaseAdapterPlus.BaseViewHolder {
             }
         }
     };
-
+    private CallBack mCallBack;
 
     public CardDetail(BaseActivity context, ImageLoader imageLoader, StringManager stringManager) {
         super(LayoutInflater.from(context).inflate(R.layout.dialog_cardinfo, null));
@@ -302,12 +297,14 @@ public class CardDetail extends BaseAdapterPlus.BaseViewHolder {
         } else {
             cardcode.setText(String.format("%08d", cardInfo.Alias));
         }
+
         //按是否存在于收藏夹切换显示图标
         if (ConfigManager.mLines.contains(cardInfo.Code)) {
             mImageFav.setBackgroundResource(R.drawable.ic_fav);
         } else {
             mImageFav.setBackgroundResource(R.drawable.ic_control_point);
         }
+
         type.setText(CardUtils.getAllTypeString(cardInfo, mStringManager).replace("/", "|"));
         attrView.setText(mStringManager.getAttributeString(cardInfo.Attribute));
         otView.setText(mStringManager.getOtString(cardInfo.Ot, "" + cardInfo.Ot));
@@ -331,6 +328,7 @@ public class CardDetail extends BaseAdapterPlus.BaseViewHolder {
             setname.setVisibility(View.VISIBLE);
             lb_setcode.setVisibility(View.VISIBLE);
         }
+
         if (cardInfo.isType(CardType.Monster)) {
             atkdefView.setVisibility(View.VISIBLE);
             monsterlayout.setVisibility(View.VISIBLE);
@@ -377,12 +375,23 @@ public class CardDetail extends BaseAdapterPlus.BaseViewHolder {
         AppsSettings appsSettings = AppsSettings.get();
         File file = new File(appsSettings.getCardImagePath(code));
         View view = dialog.initDialog(context, R.layout.dialog_photo);
+
         dialog.setDialogWidth(ViewGroup.LayoutParams.MATCH_PARENT);
+        Window dialogWindow = dialog.getDialog().getWindow();
+        WindowManager.LayoutParams lp = dialogWindow.getAttributes();
+        lp.width = WindowManager.LayoutParams.MATCH_PARENT;
+        lp.height = WindowManager.LayoutParams.MATCH_PARENT;
+        dialogWindow.setAttributes(lp);
+
         photoView = view.findViewById(R.id.photoView);
         ll_bar = view.findViewById(R.id.ll_bar);
         pb_loading = view.findViewById(R.id.pb_loading);
         tv_loading = view.findViewById(R.id.tv_name);
         pb_loading.setMax(100);
+
+        // 启用图片缩放功能
+        photoView.enable();
+
         photoView.setOnClickListener(View -> {
             dialog.dis();
         });
@@ -521,6 +530,12 @@ public class CardDetail extends BaseAdapterPlus.BaseViewHolder {
 
     private <T extends View> T bind(int id) {
         return (T) findViewById(id);
+    }
+
+    public interface CallBack {
+        void onSearchStart();
+
+        void onSearchResult(List<Card> Cards, boolean isHide);
     }
 
     public interface OnCardClickListener {
