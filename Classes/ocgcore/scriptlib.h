@@ -27,7 +27,6 @@ public:
 	static int32 effect_set_owner(lua_State *L);
 	static int32 effect_get_range(lua_State *L);
 	static int32 effect_get_count_limit(lua_State *L);
-	static int32 duel_select_field(lua_State *L);
 	static int32 duel_get_master_rule(lua_State *L);
 	static int32 duel_read_card(lua_State *L);
 	static int32 duel_exile(lua_State *L);
@@ -558,6 +557,7 @@ public:
 	static int32 duel_select_sequence(lua_State *L);
 	static int32 duel_select_position(lua_State *L);
 	static int32 duel_select_disable_field(lua_State *L);
+	static int32 duel_select_field(lua_State *L);
 	static int32 duel_announce_race(lua_State *L);
 	static int32 duel_announce_attribute(lua_State *L);
 	static int32 duel_announce_level(lua_State *L);

@@ -13,57 +13,6 @@
 #include "group.h"
 #include "ocgapi.h"
 
-int32 scriptlib::duel_select_field(lua_State * L) {
-	check_action_permission(L);
-	check_param_count(L, 4);
-	int32 playerid = lua_tointeger(L, 1);
-	if(playerid != 0 && playerid != 1)
-		return 0;
-	uint32 flag1 = lua_tointeger(L, 2);
-	uint32 flag2 = lua_tointeger(L, 3);	
-	uint32 count = lua_tointeger(L, 4);
-	if(count == 0)
-		return 0;
-	uint32 flag = (flag1 & 0xffff) | (flag2 << 16);
-	duel* pduel = interpreter::get_duel_info(L);
-	if(pduel->game_field->core.duel_rule >= 4) {
-		flag = (flag | (0xffffffff-0x3f7f3f7f));
-		card* pcard_1 = pduel->game_field->get_field_card(1-playerid, LOCATION_MZONE, 6);
-		card* pcard_2 = pduel->game_field->get_field_card(1-playerid, LOCATION_MZONE, 5);
-		if (pcard_1 && pcard_2) {
-			flag = (flag | (0xffffffff-0xff7fff1f));
-		} else if (!pcard_1 && pcard_2) {
-			flag = (flag | (0xffffffff-0xff5fff3f));
-		} else if (pcard_1 && !pcard_2) {
-			flag = (flag | (0xffffffff-0xff3fff5f));
-		} else {
-			flag = (flag | (0xffffffff-0xff1fff7f));
-		}
-	} else {
-		flag = (flag | (0xffffffff-0xff1fff1f));
-	}
-	pduel->game_field->add_process(PROCESSOR_SELECT_DISFIELD, 0, 0, 0, playerid, flag, count);
-	return lua_yieldk(L, 0, (lua_KContext)pduel, [](lua_State *L, int32 status, lua_KContext ctx) {
-		duel* pduel = (duel*)ctx;
-		int32 playerid = lua_tointeger(L, 1);
-		uint32 count = lua_tointeger(L, 2);
-		int32 dfflag = 0;
-		uint8 pa = 0;
-		for(uint32 i = 0; i < count; ++i) {
-			uint8 p = pduel->game_field->returns.bvalue[pa];
-			uint8 l = pduel->game_field->returns.bvalue[pa + 1];
-			uint8 s = pduel->game_field->returns.bvalue[pa + 2];
-			dfflag |= 0x1u << (s + (p == playerid ? 0 : 16) + (l == LOCATION_MZONE ? 0 : 8));
-			pa += 3;
-		}
-		if(dfflag & (0x1 << 5))
-			dfflag |= 0x1 << (16 + 6);
-		if(dfflag & (0x1 << 6))
-			dfflag |= 0x1 << (16 + 5);
-		lua_pushinteger(L, dfflag);
-		return 1;
-	});
-}
 int32 scriptlib::duel_get_master_rule(lua_State * L) {
 	duel* pduel = interpreter::get_duel_info(L);
 	lua_pushinteger(L, pduel->game_field->core.duel_rule);
@@ -3868,6 +3817,56 @@ int32 scriptlib::duel_select_disable_field(lua_State * L) {
 		return 1;
 	});
 }
+int32 scriptlib::duel_select_field(lua_State* L) {
+	check_action_permission(L);
+	check_param_count(L, 5);
+	int32 playerid = (int32)lua_tointeger(L, 1);
+	if(playerid != 0 && playerid != 1)
+		return 0;
+	uint32 count = (uint32)lua_tointeger(L, 2);
+	uint32 location1 = (uint32)lua_tointeger(L, 3);
+	uint32 location2 = (uint32)lua_tointeger(L, 4);
+	uint32 filter = (uint32)lua_tointeger(L, 5);
+	duel* pduel = interpreter::get_duel_info(L);
+	uint32 flag = 0xffffffff;
+	if(location1 & LOCATION_MZONE) {
+		flag &= 0xffffffe0;
+	}
+	if(location1 & LOCATION_SZONE) {
+		flag &= pduel->game_field->core.duel_rule == 3 ? 0xffff00ff : 0xffffc0ff;
+	}
+	if(location2 & LOCATION_MZONE) {
+		flag &= 0xffe0ffff;
+	}
+	if(location2 & LOCATION_SZONE) {
+		flag &= pduel->game_field->core.duel_rule == 3 ? 0x00ffffff : 0xc0ffffff;
+	}
+	if((location1 & LOCATION_MZONE) && (location2 & LOCATION_MZONE) && pduel->game_field->core.duel_rule >= 4) {
+		flag &= 0xffffff9f;
+	}
+	flag |= filter | 0x00800080;
+	pduel->game_field->add_process(PROCESSOR_SELECT_DISFIELD, 0, 0, 0, playerid, flag, count);
+	return lua_yieldk(L, 0, (lua_KContext)pduel, [](lua_State* L, int32 status, lua_KContext ctx) {
+		duel* pduel = (duel*)ctx;
+		int32 playerid = (int32)lua_tointeger(L, 1);
+		uint32 count = (uint32)lua_tointeger(L, 2);
+		int32 dfflag = 0;
+		uint8 pa = 0;
+		for(uint32 i = 0; i < count; ++i) {
+			uint8 p = pduel->game_field->returns.bvalue[pa];
+			uint8 l = pduel->game_field->returns.bvalue[pa + 1];
+			uint8 s = pduel->game_field->returns.bvalue[pa + 2];
+			dfflag |= 0x1u << (s + (p == playerid ? 0 : 16) + (l == LOCATION_MZONE ? 0 : 8));
+			pa += 3;
+		}
+		if(dfflag & (0x1 << 5))
+			dfflag |= 0x1 << (16 + 6);
+		if(dfflag & (0x1 << 6))
+			dfflag |= 0x1 << (16 + 5);
+		lua_pushinteger(L, dfflag);
+		return 1;
+		});
+}
 int32 scriptlib::duel_announce_race(lua_State * L) {
 	check_action_permission(L);
 	check_param_count(L, 3);
@@ -4710,7 +4709,6 @@ int32 scriptlib::duel_majestic_copy(lua_State *L) {
 }
 
 static const struct luaL_Reg duellib[] = {
-	{ "SelectField", scriptlib::duel_select_field },
 	{ "GetMasterRule", scriptlib::duel_get_master_rule },
 	{ "ReadCard", scriptlib::duel_read_card },
 	{ "Exile", scriptlib::duel_exile },
@@ -4892,6 +4890,7 @@ static const struct luaL_Reg duellib[] = {
 	{ "SelectOption", scriptlib::duel_select_option },
 	{ "SelectSequence", scriptlib::duel_select_sequence },
 	{ "SelectPosition", scriptlib::duel_select_position },
+	{ "SelectField", scriptlib::duel_select_field },
 	{ "SelectDisableField", scriptlib::duel_select_disable_field },
 	{ "AnnounceRace", scriptlib::duel_announce_race },
 	{ "AnnounceAttribute", scriptlib::duel_announce_attribute },
