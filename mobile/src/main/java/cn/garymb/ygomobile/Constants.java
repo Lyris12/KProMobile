@@ -14,7 +14,7 @@ public interface Constants {
     String PREF_LAST_CATEGORY = "pref_last_category";
     String PREF_DEF_LAST_CATEGORY = "newcate";
     String PREF_GAME_PATH = "pref_key_game_res_path";
-    String PREF_DEF_GAME_DIR = "ygocore";
+    String PREF_DEF_GAME_DIR = "ygocore-koishi";
 
     String PREF_GAME_VERSION = "game_version";
 
