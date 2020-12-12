@@ -3,6 +3,7 @@ package cn.garymb.ygomobile;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Point;
+import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.WindowManager;
@@ -353,8 +354,6 @@ public class AppsSettings {
      * @return
      */
     public String getCardImagePath(int code) {
-        File png = new File(getCardImagePath(), code + ".png");
-        if (png.exists()) return png.getAbsolutePath();
         return new File(getCardImagePath(), code + ".jpg").getAbsolutePath();
     }
 
@@ -456,7 +455,8 @@ public class AppsSettings {
      * 游戏根目录
      */
     public String getResourcePath() {
-        String defPath = new File(String.valueOf(context.getExternalFilesDir(Constants.PREF_DEF_GAME_DIR))).getAbsolutePath();
+        String defPath;
+        defPath = new File(String.valueOf(context.getExternalFilesDir(Constants.PREF_DEF_GAME_DIR))).getAbsolutePath();
         return mSharedPreferences.getString(Constants.PREF_GAME_PATH, defPath);
     }
 

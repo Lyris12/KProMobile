@@ -353,9 +353,9 @@ public abstract class PreferenceFragmentPlus extends BasePreferenceFragment {
 
         @Override
         public String getString(String key, String defValue) {
-            //if (isMultiProess)
-                //return PreferencesProviderUtils.getString(context, spName, key, defValue);
-            //else
+            if (isMultiProess)
+                return PreferencesProviderUtils.getString(context, spName, key, defValue);
+            else
                 return mSharedPreferences.getString(key, defValue);
         }
 
