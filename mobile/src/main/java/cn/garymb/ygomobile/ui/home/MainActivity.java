@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +27,6 @@ import cn.garymb.ygomobile.YGOMobileActivity;
 import cn.garymb.ygomobile.YGOStarter;
 import cn.garymb.ygomobile.core.IrrlichtBridge;
 import cn.garymb.ygomobile.lite.R;
-import cn.garymb.ygomobile.ui.activities.PermissionsActivity;
 import cn.garymb.ygomobile.ui.activities.WebActivity;
 import cn.garymb.ygomobile.ui.plus.DialogPlus;
 import cn.garymb.ygomobile.ui.plus.VUiKit;
@@ -67,7 +67,7 @@ public class MainActivity extends HomeActivity {
         YGOStarter.onCreated(this);
         mImageUpdater = new ImageUpdater(this);
         //动态权限
-//        ActivityCompat.requestPermissions(this, PERMISSIONS, 0);
+        ActivityCompat.requestPermissions(this, PERMISSIONS, 0);
         //资源复制
         checkRes();
         //加载收藏夹
