@@ -2,7 +2,11 @@ package cn.garymb.ygomobile.ui.home;
 
 import android.content.ComponentName;
 import android.content.Intent;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.DashPathEffect;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -20,6 +24,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -28,7 +33,12 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.app.hubert.guide.NewbieGuide;
+import com.app.hubert.guide.core.Controller;
+import com.app.hubert.guide.listener.OnHighlightDrewListener;
+import com.app.hubert.guide.listener.OnLayoutInflatedListener;
 import com.app.hubert.guide.model.GuidePage;
+import com.app.hubert.guide.model.HighLight;
+import com.app.hubert.guide.model.HighlightOptions;
 import com.google.android.material.navigation.NavigationView;
 import com.nightonke.boommenu.BoomButtons.BoomButton;
 import com.nightonke.boommenu.BoomButtons.TextOutsideCircleButton;
@@ -107,18 +117,8 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
         setContentView(R.layout.activity_home);
         setExitAnimEnable(false);
         mCardManager = new CardManager(AppsSettings.get().getDataBaseFile().getAbsolutePath(), null);
-        mServerList = $(R.id.list_server);
-        mServerListAdapter = new ServerListAdapter(this);
         //server list
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
-        mServerList.setLayoutManager(linearLayoutManager);
-        DividerItemDecoration dividerItemDecoration =
-                new DividerItemDecoration(this, DividerItemDecoration.VERTICAL);
-        mServerList.addItemDecoration(dividerItemDecoration);
-        mServerList.setAdapter(mServerListAdapter);
-        mServerListManager = new ServerListManager(this, mServerListAdapter);
-        mServerListManager.bind(mServerList);
-        mServerListManager.syncLoadData();
+        initServerlist();
         //event
         EventBus.getDefault().register(this);
         initBoomMenuButton($(R.id.bmb));
@@ -131,9 +131,9 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
             public void onViewInitFinished(boolean arg0) {
                 //x5內核初始化完成的回调，为true表示x5内核加载成功，否则表示x5内核加载失败，会自动切换到系统内核。
                 if (arg0) {
-                    Toast.makeText(getActivity(), "加载X5内核成功", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getActivity(), "加载X5内核成功", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getActivity(), "加载系统内核成功", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getActivity(), "加载系统内核成功", Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -150,7 +150,7 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
         //萌卡
         StartMycard();
         checkNotch();
-        showNewbieGuide();
+        showNewbieGuide("homePage");
     }
 
     @Override
@@ -252,6 +252,7 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
             dialogPlus.show();
         } else if (event.join) {
             joinRoom(event.position);
+            showNewbieGuide("joinRoom");
         } else {
             mServerListManager.showEditDialog(event.position);
         }
@@ -391,14 +392,16 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
         builder.setContentView(R.layout.dialog_room_name);
         EditText editText = builder.bind(R.id.room_name);
         ListView listView = builder.bind(R.id.room_list);
+        TextView text_abt_roomlist = builder.bind(R.id.abt_room_list);
         SimpleListAdapter simpleListAdapter = new SimpleListAdapter(getContext());
         simpleListAdapter.set(AppsSettings.get().getLastRoomList());
+        if (AppsSettings.get().getLastRoomList().size() > 0)
+            text_abt_roomlist.setVisibility(View.VISIBLE);
+        else text_abt_roomlist.setVisibility(View.GONE);
         listView.setAdapter(simpleListAdapter);
         listView.setOnItemClickListener((a, v, pos, index) -> {
-//                builder.dismiss();
             String name = simpleListAdapter.getItemById(index);
             editText.setText(name);
-//                joinGame(serverInfo, name);
         });
         editText.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -670,15 +673,127 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
             Toast.makeText(this, tips, Toast.LENGTH_LONG).show();
         }
     }
+
+    public void initServerlist() {
+        mServerList = $(R.id.list_server);
+        mServerListAdapter = new ServerListAdapter(this);
+        //server list
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        mServerList.setLayoutManager(linearLayoutManager);
+        DividerItemDecoration dividerItemDecoration =
+                new DividerItemDecoration(this, DividerItemDecoration.VERTICAL);
+        mServerList.addItemDecoration(dividerItemDecoration);
+        mServerList.setAdapter(mServerListAdapter);
+        mServerListManager = new ServerListManager(this, mServerListAdapter);
+        mServerListManager.bind(mServerList);
+        mServerListManager.syncLoadData();
+    }
+
     //https://www.jianshu.com/p/99649af3b191
-    public void showNewbieGuide() {
-        NewbieGuide.with(this)//with方法可以传入Activity或者Fragment，获取引导页的依附者
-                .setLabel("homeguide")
-                .addGuidePage(GuidePage.newInstance()
-                        .setBackgroundColor(0x60000000)
-                        .addHighLight(findViewById(R.id.menu))
-                        .setLayoutRes(R.layout.activity_logo))
-                .alwaysShow(true)//总是显示，调试时可以打开
-                .show();
+    public void showNewbieGuide(String scene) {
+        HighlightOptions options = new HighlightOptions.Builder()//绘制一个高亮虚线圈
+                .setOnHighlightDrewListener(new OnHighlightDrewListener() {
+                    @Override
+                    public void onHighlightDrew(Canvas canvas, RectF rectF) {
+                        Paint paint = new Paint();
+                        paint.setColor(Color.WHITE);
+                        paint.setStyle(Paint.Style.STROKE);
+                        paint.setStrokeWidth(20);
+                        paint.setPathEffect(new DashPathEffect(new float[]{20, 20}, 0));
+                        canvas.drawCircle(rectF.centerX(), rectF.centerY(), rectF.width() / 2 + 10, paint);
+                    }
+                }).build();
+        HighlightOptions options2 = new HighlightOptions.Builder()//绘制一个高亮虚线矩形
+                .setOnHighlightDrewListener(new OnHighlightDrewListener() {
+                    @Override
+                    public void onHighlightDrew(Canvas canvas, RectF rectF) {
+                        Paint paint = new Paint();
+                        paint.setColor(Color.WHITE);
+                        paint.setStyle(Paint.Style.STROKE);
+                        paint.setStrokeWidth(20);
+                        paint.setPathEffect(new DashPathEffect(new float[]{20, 20}, 0));
+                        canvas.drawRect(rectF, paint);
+                    }
+                }).build();
+        if (scene == "homePage") {
+            NewbieGuide.with(this)//with方法可以传入Activity或者Fragment，获取引导页的依附者
+                    .setLabel("homepageGuide")
+                    .addGuidePage(
+                            GuidePage.newInstance().setEverywhereCancelable(true)
+                                    .setBackgroundColor(0xbc000000)
+                                    .addHighLightWithOptions(findViewById(R.id.menu), HighLight.Shape.CIRCLE, options)
+                                    .setLayoutRes(R.layout.view_guide_home)
+                                    .setOnLayoutInflatedListener(new OnLayoutInflatedListener() {
+
+                                        @Override
+                                        public void onLayoutInflated(View view, Controller controller) {
+                                            //可只创建一个引导layout并把相关内容都放在其中并GONE，获得ID并初始化相应为显示
+                                            view.findViewById(R.id.view_abt_menu).setVisibility(View.VISIBLE);
+                                        }
+                                    })
+
+                    )
+                    .addGuidePage(
+                            GuidePage.newInstance().setEverywhereCancelable(true)
+                                    .setBackgroundColor(0xbc000000)
+                                    .addHighLightWithOptions(findViewById(R.id.mycard), HighLight.Shape.CIRCLE, options)
+                                    .setLayoutRes(R.layout.view_guide_home)
+                                    .setOnLayoutInflatedListener(new OnLayoutInflatedListener() {
+
+                                        @Override
+                                        public void onLayoutInflated(View view, Controller controller) {
+                                            TextView tv = view.findViewById(R.id.text_about);
+                                            tv.setVisibility(View.VISIBLE);
+                                            tv.setText(R.string.guide_mycard);
+                                        }
+                                    })
+                    )
+                    .addGuidePage(
+                            GuidePage.newInstance().setEverywhereCancelable(true)
+                                    .setBackgroundColor(0xbc000000)
+                                    .addHighLightWithOptions(findViewById(R.id.list_server), HighLight.Shape.ROUND_RECTANGLE, options2)
+                                    .setLayoutRes(R.layout.view_guide_home)
+                                    .setOnLayoutInflatedListener(new OnLayoutInflatedListener() {
+
+                                        @Override
+                                        public void onLayoutInflated(View view, Controller controller) {
+                                            TextView tv = view.findViewById(R.id.text_about);
+                                            tv.setVisibility(View.VISIBLE);
+                                            tv.setText(R.string.guide_serverlist);
+                                        }
+                                    })
+                    )
+                    .addGuidePage(
+                            GuidePage.newInstance().setEverywhereCancelable(true)
+                                    .setBackgroundColor(0xbc000000)
+                                    .setLayoutRes(R.layout.view_guide_home)
+                                    .setOnLayoutInflatedListener(new OnLayoutInflatedListener() {
+
+                                        @Override
+                                        public void onLayoutInflated(View view, Controller controller) {
+                                            view.findViewById(R.id.view_abt_server_edit).setVisibility(View.VISIBLE);
+                                        }
+                                    })
+                    )
+                    //.alwaysShow(true)//总是显示，调试时可以打开
+                    .show();
+        } else if (scene == "joinRoom") {
+            NewbieGuide.with(this)
+                    .setLabel("joinRoomGuide")
+                    .addGuidePage(
+                            GuidePage.newInstance().setEverywhereCancelable(true)
+                                    .setBackgroundColor(0xbc000000)
+                                    .setLayoutRes(R.layout.view_guide_home)
+                                    .setOnLayoutInflatedListener(new OnLayoutInflatedListener() {
+
+                                        @Override
+                                        public void onLayoutInflated(View view, Controller controller) {
+                                            view.findViewById(R.id.view_abt_join_room).setVisibility(View.VISIBLE);
+                                        }
+                                    })
+
+                    )
+                    .show();
+        }
     }
 }
