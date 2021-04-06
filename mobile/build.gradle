@@ -16,8 +16,8 @@ android {
         applicationId "cn.garymb.ygomobile.lyris"
         minSdkVersion 21
         targetSdkVersion 29
-        versionCode 380000302
-        versionName "GenZakura"
+        versionCode 380100324
+        versionName "Shelter"
         flavorDimensions "versionCode"
         vectorDrawables.useSupportLibrary = true
         ndk {

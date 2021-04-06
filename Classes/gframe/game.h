@@ -106,6 +106,7 @@ struct BotInfo {
 	bool support_master_rule_3;
 	bool support_new_master_rule;
 	bool support_master_rule_2020;
+	bool select_deckfile;
 };
 
 struct FadingUnit {
@@ -394,6 +395,8 @@ public:
 	irr::gui::IGUIStaticText* stBotInfo;
 	irr::gui::IGUIButton* btnStartBot;//
 	irr::gui::IGUIButton* btnBotCancel;//
+	irr::gui::IGUIComboBox* cbBotDeckCategory;
+	irr::gui::IGUIComboBox* cbBotDeck;
 	irr::gui::IGUIComboBox* cbBotRule;
 	irr::gui::IGUICheckBox* chkBotHand;
 	irr::gui::IGUICheckBox* chkBotNoCheckDeck;
@@ -740,6 +743,7 @@ private:
 #define LISTBOX_BOT_LIST			153
 #define BUTTON_BOT_START			154
 #define COMBOBOX_BOT_RULE			155
+#define COMBOBOX_BOT_DECKCATEGORY	156
 #define EDITBOX_CHAT				199
 
 #define BUTTON_MSG_OK				200
