@@ -16,8 +16,8 @@ android {
         applicationId "cn.garymb.ygomobile.lyris"
         minSdkVersion 21
         targetSdkVersion 29
-        versionCode 380100324
-        versionName "Shelter"
+        versionCode 380200502
+        versionName "Trackmaker"
         flavorDimensions "versionCode"
         vectorDrawables.useSupportLibrary = true
         ndk {

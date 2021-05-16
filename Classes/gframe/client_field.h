@@ -47,6 +47,7 @@ public:
 	std::vector<ClientCard*> conti_cards;
 	std::vector<std::pair<int,int>> activatable_descs;
 	std::vector<int> select_options;
+	std::vector<int> select_options_index;
 	std::vector<ChainInfo> chains;
 	int extra_p_count[2];
 
@@ -86,6 +87,7 @@ public:
 	bool last_chain;
 	bool deck_reversed;
 	bool conti_selecting;
+	bool cant_check_grave;
 
 	ClientField();
 	void Clear();
@@ -146,6 +148,7 @@ public:
 	ClientCard* clicked_card;
 	ClientCard* command_card;
 	ClientCard* highlighting_card;
+	ClientCard* menu_card;
 	int list_command;
 
 	virtual bool OnEvent(const irr::SEvent& event);
@@ -166,5 +169,6 @@ public:
 //special cards
 #define CARD_MARINE_DOLPHIN	78734254
 #define CARD_TWINKLE_MOSS	13857930
+#define CARD_QUESTION		38723936
 
 #endif //CLIENT_FIELD_H

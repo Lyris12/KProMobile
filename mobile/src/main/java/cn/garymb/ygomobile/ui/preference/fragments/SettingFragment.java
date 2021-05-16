@@ -54,6 +54,7 @@ import static cn.garymb.ygomobile.Constants.PREF_CHANGE_LOG;
 import static cn.garymb.ygomobile.Constants.PREF_CHECK_UPDATE;
 import static cn.garymb.ygomobile.Constants.PREF_DECK_DELETE_DILAOG;
 import static cn.garymb.ygomobile.Constants.PREF_DECK_MANAGER_V2;
+import static cn.garymb.ygomobile.Constants.PREF_DEL_EX;
 import static cn.garymb.ygomobile.Constants.PREF_FONT_ANTIALIAS;
 import static cn.garymb.ygomobile.Constants.PREF_FONT_SIZE;
 import static cn.garymb.ygomobile.Constants.PREF_GAME_FONT;
@@ -131,6 +132,7 @@ public class SettingFragment extends PreferenceFragmentPlus {
         bind(PREF_IMAGE_QUALITY, mSettings.getCardQuality());
         bind(PREF_GAME_FONT, mSettings.getFontPath());
         bind(PREF_READ_EX, mSettings.isReadExpansions());
+        bind(PREF_DEL_EX, getString(R.string.about_delete_ex));
         bind(PREF_DECK_MANAGER_V2, mSettings.isUseDeckManagerV2());
         bind(PERF_TEST_REPLACE_KERNEL, "需root权限，请在开发者的指导下食用");
         Preference preference = findPreference(PREF_READ_EX);
@@ -208,7 +210,7 @@ public class SettingFragment extends PreferenceFragmentPlus {
     @Override
     public boolean onPreferenceClick(Preference preference) {
         String key = preference.getKey();
-        if (PREF_CHANGE_LOG.equals(preference.getKey())) {
+        if (PREF_CHANGE_LOG.equals(key)) {
             new DialogPlus(getActivity())
                     .setTitleText(getString(R.string.settings_about_change_log))
                     .loadUrl("file:///android_asset/changelog.html", Color.TRANSPARENT)
@@ -216,6 +218,20 @@ public class SettingFragment extends PreferenceFragmentPlus {
         }
         if (PREF_CHECK_UPDATE.equals(key)) {
             //Beta.checkUpgrade();
+        }
+        if (PREF_DEL_EX.equals(key)) {
+            final DialogPlus dialog = new DialogPlus(getContext());
+            dialog.setTitle(R.string.question);
+            dialog.setMessage(R.string.ask_delete_ex);
+            dialog.setLeftButtonListener((dlg, s) -> {
+                FileUtils.delFile(mSettings.getExpansionsPath().getAbsolutePath());
+                Toast.makeText(getContext(), R.string.done, Toast.LENGTH_LONG).show();
+                dialog.dismiss();
+            });
+            dialog.setRightButtonListener((dlg, s) -> {
+                dialog.dismiss();
+            });
+            dialog.show();
         }
         if (PREF_PENDULUM_SCALE.equals(key)) {
             CheckBoxPreference checkBoxPreference = (CheckBoxPreference) preference;
