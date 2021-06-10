@@ -2742,6 +2742,12 @@ int DuelClient::ClientAnalyze(char * msg, unsigned int len) {
 					pcard->SetCode(code);
 				pcard->counters.clear();
 				pcard->ClearTarget();
+				if(pcard->equipTarget) {
+					pcard->equipTarget->is_showequip = false;
+					pcard->equipTarget->equipped.erase(pcard);
+					pcard->equipTarget = 0;
+				}
+				pcard->is_showequip = false;
 				pcard->is_showtarget = false;
 				pcard->is_showchaintarget = false;
 				ClientCard* olcard = mainGame->dField.GetCard(cc, cl & 0x7f, cs);
@@ -4061,7 +4067,6 @@ int DuelClient::ClientAnalyze(char * msg, unsigned int len) {
 		}
 		mainGame->dField.RefreshAllCards();
 		val = BufferIO::ReadInt8(pbuf); //chains, always 0 in single mode
-		if(!mainGame->dInfo.isSingleMode) {
 			for(int i = 0; i < val; ++i) {
 				unsigned int code = (unsigned int)BufferIO::ReadInt32(pbuf);
 				int pcc = mainGame->LocalPlayer(BufferIO::ReadInt8(pbuf));
@@ -4081,7 +4086,6 @@ int DuelClient::ClientAnalyze(char * msg, unsigned int len) {
 				mainGame->dField.current_chain.sequence = cs;
 				mainGame->dField.GetChainLocation(cc, cl, cs, &mainGame->dField.current_chain.chain_pos);
 				mainGame->dField.current_chain.solved = false;
-				mainGame->dField.current_chain.need_distinguish = true;
 				int chc = 0;
 				for(auto chit = mainGame->dField.chains.begin(); chit != mainGame->dField.chains.end(); ++chit) {
 					if(cl == 0x10 || cl == 0x20) {
@@ -4102,7 +4106,6 @@ int DuelClient::ClientAnalyze(char * msg, unsigned int len) {
 				myswprintf(event_string, dataManager.GetSysString(1609), dataManager.GetName(mainGame->dField.current_chain.code));
 				mainGame->dField.last_chain = true;
 			}
-		}
 		mainGame->gMutex.unlock();
 		break;
 	}
@@ -4136,7 +4139,10 @@ void DuelClient::SendResponse() {
 		break;
 	}
 	case MSG_SELECT_CARD:
-	case MSG_SELECT_UNSELECT_CARD: {
+	case MSG_SELECT_UNSELECT_CARD:
+	case MSG_SELECT_TRIBUTE:
+	case MSG_SELECT_SUM:
+	case MSG_SELECT_COUNTER: {
 		mainGame->dField.ClearSelect();
 		for (auto cit = mainGame->dField.limbo_temp.begin(); cit != mainGame->dField.limbo_temp.end(); ++cit)
 			delete *cit;
@@ -4145,30 +4151,6 @@ void DuelClient::SendResponse() {
 	}
 	case MSG_SELECT_CHAIN: {
 		mainGame->dField.ClearChainSelect();
-		break;
-	}
-	case MSG_SELECT_TRIBUTE: {
-		mainGame->dField.ClearSelect();
-		break;
-	}
-	case MSG_SELECT_COUNTER: {
-		mainGame->dField.ClearSelect();
-		break;
-	}
-	case MSG_SELECT_SUM: {
-		for(int i = 0; i < mainGame->dField.must_select_count; ++i) {
-			mainGame->dField.selected_cards[i]->is_selected = false;
-		}
-		for(size_t i = 0; i < mainGame->dField.selectsum_all.size(); ++i) {
-			mainGame->dField.selectsum_all[i]->is_selectable = false;
-			mainGame->dField.selectsum_all[i]->is_selected = false;
-		}
-		break;
-	}
-	case MSG_CONFIRM_CARDS: {
-		for (auto cit = mainGame->dField.limbo_temp.begin(); cit != mainGame->dField.limbo_temp.end(); ++cit)
-			delete *cit;
-		mainGame->dField.limbo_temp.clear();
 		break;
 	}
 	}

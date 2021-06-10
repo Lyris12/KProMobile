@@ -1119,6 +1119,26 @@ uint32 card::get_link_attribute(uint8 playerid) {
 	}
 	return attribute;
 }
+uint32 card::get_grave_attribute(uint8 playerid) {
+	if(!(data.type & TYPE_MONSTER))
+		return 0;
+	if(current.is_location(LOCATION_GRAVE))
+		return get_attribute();
+	uint32 attribute = data.attribute;
+	effect_set eset;
+	pduel->game_field->filter_player_effect(playerid, EFFECT_CHANGE_GRAVE_ATTRIBUTE, &eset);
+	for(int32 i = 0; i < eset.size(); ++i) {
+		if(!eset[i]->target)
+			attribute = eset[i]->get_value(this);
+		else {
+			pduel->lua->add_param(eset[i], PARAM_TYPE_EFFECT);
+			pduel->lua->add_param(this, PARAM_TYPE_CARD);
+			if(pduel->lua->check_condition(eset[i]->target, 2))
+				attribute = eset[i]->get_value(this);
+		}
+	}
+	return attribute;
+}
 uint32 card::get_race() {
 	if(assume_type == ASSUME_RACE)
 		return assume_value;
@@ -1154,6 +1174,26 @@ uint32 card::get_link_race(uint8 playerid) {
 	for (int32 i = 0; i < effects.size(); ++i) {
 		pduel->lua->add_param(playerid, PARAM_TYPE_INT);
 		race |= effects[i]->get_value(this, 1);
+	}
+	return race;
+}
+uint32 card::get_grave_race(uint8 playerid) {
+	if(!(data.type & TYPE_MONSTER))
+		return 0;
+	if(current.is_location(LOCATION_GRAVE))
+		return get_race();
+	uint32 race = data.race;
+	effect_set eset;
+	pduel->game_field->filter_player_effect(playerid, EFFECT_CHANGE_GRAVE_RACE, &eset);
+	for(int32 i = 0; i < eset.size(); ++i) {
+		if(!eset[i]->target)
+			race = eset[i]->get_value(this);
+		else {
+			pduel->lua->add_param(eset[i], PARAM_TYPE_EFFECT);
+			pduel->lua->add_param(this, PARAM_TYPE_CARD);
+			if(pduel->lua->check_condition(eset[i]->target, 2))
+				race = eset[i]->get_value(this);
+		}
 	}
 	return race;
 }
@@ -3021,28 +3061,48 @@ int32 card::check_cost_condition(int32 ecode, int32 playerid) {
 	effect_set eset;
 	pduel->game_field->filter_player_effect(playerid, ecode, &eset, FALSE);
 	filter_effect(ecode, &eset);
+	int32 res = TRUE;
+	effect* oreason = pduel->game_field->core.reason_effect;
+	uint8 op = pduel->game_field->core.reason_player;
 	for(int32 i = 0; i < eset.size(); ++i) {
-		pduel->lua->add_param(eset[i], PARAM_TYPE_EFFECT);
+		effect* peffect = eset[i];
+		pduel->game_field->core.reason_effect = peffect;
+		pduel->game_field->core.reason_player = playerid;
+		pduel->lua->add_param(peffect, PARAM_TYPE_EFFECT);
 		pduel->lua->add_param(this, PARAM_TYPE_CARD);
 		pduel->lua->add_param(playerid, PARAM_TYPE_INT);
-		if(!pduel->lua->check_condition(eset[i]->cost, 3))
-			return FALSE;
+		if(!pduel->lua->check_condition(peffect->cost, 3)) {
+			res = FALSE;
+			break;
+		}
 	}
-	return TRUE;
+	pduel->game_field->core.reason_effect = oreason;
+	pduel->game_field->core.reason_player = op;
+	return res;
 }
 int32 card::check_cost_condition(int32 ecode, int32 playerid, int32 sumtype) {
 	effect_set eset;
 	pduel->game_field->filter_player_effect(playerid, ecode, &eset, FALSE);
 	filter_effect(ecode, &eset);
+	int32 res = TRUE;
+	effect* oreason = pduel->game_field->core.reason_effect;
+	uint8 op = pduel->game_field->core.reason_player;
 	for(int32 i = 0; i < eset.size(); ++i) {
-		pduel->lua->add_param(eset[i], PARAM_TYPE_EFFECT);
+		effect* peffect = eset[i];
+		pduel->game_field->core.reason_effect = peffect;
+		pduel->game_field->core.reason_player = playerid;
+		pduel->lua->add_param(peffect, PARAM_TYPE_EFFECT);
 		pduel->lua->add_param(this, PARAM_TYPE_CARD);
 		pduel->lua->add_param(playerid, PARAM_TYPE_INT);
 		pduel->lua->add_param(sumtype, PARAM_TYPE_INT);
-		if(!pduel->lua->check_condition(eset[i]->cost, 4))
-			return FALSE;
+		if(!pduel->lua->check_condition(peffect->cost, 4)) {
+			res = FALSE;
+			break;
+		}
 	}
-	return TRUE;
+	pduel->game_field->core.reason_effect = oreason;
+	pduel->game_field->core.reason_player = op;
+	return res;
 }
 int32 card::is_summonable_card() {
 	if(!(data.type & TYPE_MONSTER))
@@ -3314,7 +3374,7 @@ int32 card::is_can_be_special_summoned(effect* reason_effect, uint32 sumtype, ui
 	if((data.type & TYPE_PENDULUM) && current.location == LOCATION_EXTRA && (current.position & POS_FACEUP)
 		&& (sumtype == SUMMON_TYPE_FUSION || sumtype == SUMMON_TYPE_SYNCHRO || sumtype == SUMMON_TYPE_XYZ))
 		return FALSE;
-	if((sumpos & POS_FACEDOWN) && pduel->game_field->is_player_affected_by_effect(sumplayer, EFFECT_DEVINE_LIGHT))
+	if((sumpos & POS_FACEDOWN) && pduel->game_field->is_player_affected_by_effect(sumplayer, EFFECT_DIVINE_LIGHT))
 		sumpos = (sumpos & POS_FACEUP) | ((sumpos & POS_FACEDOWN) >> 1);
 	if(!(sumpos & POS_FACEDOWN) && pduel->game_field->check_unique_onfield(this, toplayer, LOCATION_MZONE))
 		return FALSE;
