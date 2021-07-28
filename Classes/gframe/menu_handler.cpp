@@ -63,7 +63,7 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			case BUTTON_MODE_EXIT: {
 				mainGame->soundManager->StopBGM();
 				mainGame->SaveConfig();
-				mainGame->device->closeDevice();
+				mainGame->OnGameClose();
 				break;
 			}
 			case BUTTON_LAN_MODE: {
@@ -121,7 +121,7 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				mainGame->HideElement(mainGame->wLanWindow);
 				mainGame->ShowElement(mainGame->wMainMenu);
 				if(exit_on_return)
-					mainGame->device->closeDevice();
+					mainGame->OnGameClose();
 				break;
 			}
 			case BUTTON_LAN_REFRESH: {
@@ -214,7 +214,7 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				mainGame->wChat->setVisible(false);
 				mainGame->SaveConfig();
 				if(exit_on_return)
-					mainGame->device->closeDevice();
+					mainGame->OnGameClose();
 				break;
 			}
 			case BUTTON_REPLAY_MODE: {
@@ -273,6 +273,24 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				prev_sel = sel;
 				break;
 			}
+				case BUTTON_SHARE_REPLAY: {
+					int sel = mainGame->lstReplayList->getSelected();
+					if(sel == -1)
+						break;
+					mainGame->gMutex.lock();
+                    wchar_t textBuffer[256];
+                    char name[1024];
+                    char* fname= name;
+					myswprintf(textBuffer, L"%ls", mainGame->lstReplayList->getListItem(sel));
+                    BufferIO::EncodeUTF8(textBuffer,fname);
+                    __android_log_print(ANDROID_LOG_DEBUG, "ygo", "1share replay file=%s", fname);
+					android::OnShareFile(mainGame->appMain, fname, "yrp");
+                    __android_log_print(ANDROID_LOG_DEBUG, "ygo", "2after share replay file:index=%s", fname);
+					mainGame->gMutex.unlock();
+					prev_operation = id;
+					prev_sel = sel;
+					break;
+				}
 			case BUTTON_RENAME_REPLAY: {
 				int sel = mainGame->lstReplayList->getSelected();
 				if(sel == -1)

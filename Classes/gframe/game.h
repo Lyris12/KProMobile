@@ -125,7 +125,7 @@ class Game :IProcessEventReceiver{
 
 public:
 #ifdef _IRR_ANDROID_PLATFORM_
-	bool Initialize(ANDROID_APP app);
+	bool Initialize(ANDROID_APP app, android::InitOptions *options);
 #else
 	bool Initialize();
 #endif
@@ -172,11 +172,12 @@ public:
 	void AddDebugMsg(const char* msgbuf);
 	void ErrorLog(const char* msgbuf);
 	void addMessageBox(const wchar_t* caption, const wchar_t* text);
-	void initUtils();
+	void initUtils(){}
 	void ClearTextures();
 	void CloseGameButtons();
 	void CloseGameWindow();
 	void CloseDuelWindow();
+	void OnGameClose();
 	void ChangeToIGUIImageWindow(irr::gui::IGUIWindow* window, irr::gui::IGUIImage* bgwindow, irr::video::ITexture* image);
 	void ChangeToIGUIImageButton(irr::gui::IGUIButton* button, irr::video::ITexture* image, irr::video::ITexture* pressedImage, irr::gui::CGUITTFont* font=0);
 
@@ -388,6 +389,7 @@ public:
 	irr::gui::IGUIButton* btnRenameReplay;//
 	irr::gui::IGUIButton* btnReplayCancel;//
 	irr::gui::IGUIButton* btnExportDeck;//
+	irr::gui::IGUIButton* btnShareReplay;//
 	irr::gui::IGUIEditBox* ebRepStartTurn;
 	//single play
 	irr::gui::IGUIWindow* wSinglePlay;
@@ -736,6 +738,7 @@ private:
 #define BUTTON_DELETE_REPLAY		133
 #define BUTTON_RENAME_REPLAY		134
 #define BUTTON_EXPORT_DECK			135
+#define BUTTON_SHARE_REPLAY			136
 #define BUTTON_REPLAY_START			140
 #define BUTTON_REPLAY_PAUSE			141
 #define BUTTON_REPLAY_STEP			142

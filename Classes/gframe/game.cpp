@@ -39,14 +39,14 @@ void Game::process(irr::SEvent &event) {
 }
 
 #ifdef _IRR_ANDROID_PLATFORM_
-bool Game::Initialize(ANDROID_APP app) {
+bool Game::Initialize(ANDROID_APP app, android::InitOptions *options) {
 	this->appMain = app;
 #endif
 	srand(time(0));
 	irr::SIrrlichtCreationParameters params = irr::SIrrlichtCreationParameters();
 
 #ifdef _IRR_ANDROID_PLATFORM_
-	android::InitOptions *options = android::getInitOptions(app);
+	
 	glversion = options->getOpenglVersion();
 	if (glversion == 0) {
 		params.DriverType = irr::video::EDT_OGLES1;
@@ -1007,11 +1007,13 @@ bool Game::Initialize(ANDROID_APP app) {
         ChangeToIGUIImageButton(btnReplayCancel, imageManager.tButton_S, imageManager.tButton_S_pressed);
 	env->addStaticText(dataManager.GetSysString(1349), rect<s32>(320 * xScale, 30 * yScale, 550 * xScale, 50 * yScale), false, true, wReplay);
 	stReplayInfo = env->addStaticText(L"", rect<s32>(320 * xScale, 60 * yScale, 570 * xScale, 315 * yScale), false, true, wReplay);
-	env->addStaticText(dataManager.GetSysString(1353), rect<s32>(320 * xScale, 240 * yScale, 550 * xScale, 260 * yScale), false, true, wReplay);
-	ebRepStartTurn = CAndroidGUIEditBox::addAndroidEditBox(L"", true, env, rect<s32>(320 * xScale, 260 * yScale, 430 * xScale, 300 * yScale), wReplay, -1);
+	env->addStaticText(dataManager.GetSysString(1353), rect<s32>(320 * xScale, 180 * yScale, 550 * xScale, 200 * yScale), false, true, wReplay);
+	ebRepStartTurn = CAndroidGUIEditBox::addAndroidEditBox(L"", true, env, rect<s32>(320 * xScale, 210 * yScale, 430 * xScale, 250 * yScale), wReplay, -1);
 	ebRepStartTurn->setTextAlignment(irr::gui::EGUIA_CENTER, irr::gui::EGUIA_CENTER);
 	btnExportDeck = env->addButton(rect<s32>(440 * xScale, 260 * yScale, 550 * xScale, 300 * yScale), wReplay, BUTTON_EXPORT_DECK, dataManager.GetSysString(1282));
         ChangeToIGUIImageButton(btnExportDeck, imageManager.tButton_S, imageManager.tButton_S_pressed);
+	btnShareReplay = env->addButton(rect<s32>(320 * xScale, 260 * yScale, 430 * xScale, 300 * yScale), wReplay, BUTTON_SHARE_REPLAY, dataManager.GetSysString(1368));
+		ChangeToIGUIImageButton(btnShareReplay, imageManager.tButton_S, imageManager.tButton_S_pressed);
 	//single play window
 	wSinglePlay = env->addWindow(rect<s32>(220 * xScale, 100 * yScale, 800 * xScale, 520 * yScale), false, dataManager.GetSysString(1201));
 	wSinglePlay->getCloseButton()->setVisible(false);
@@ -1191,7 +1193,7 @@ IGUIStaticText *text = env->addStaticText(L"",
 #endif
 	hideChat = false;
 	hideChatTimer = 0;
-	delete options;
+	
 	return true;
 }//bool Game::Initialize
 void Game::MainLoop() {
@@ -2036,4 +2038,8 @@ void Game::ChangeToIGUIImageButton(irr::gui::IGUIButton* button, irr::video::ITe
     button->setOverrideFont(font);
 }
 
+void Game::OnGameClose() {
+	android::onGameExit(appMain);
+    this->device->closeDevice();
+}
 }

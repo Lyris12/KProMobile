@@ -1259,7 +1259,8 @@ uint32 card::get_link_marker() {
 	effect_set effects;
 	effect_set effects2;
 	uint32 link_marker = data.link_marker;
-	if(!(data.type & TYPE_LINK)) {
+	if(!(data.type & TYPE_LINK) || current.location == LOCATION_SZONE) {
+		link_marker = 0;
 		effect_set effects3;
 		filter_effect(EFFECT_LINK_SPELL_KOISHI, &effects3);
 		if(!effects3.size())
@@ -1269,8 +1270,7 @@ uint32 card::get_link_marker() {
 			if (!(effects3[i]->type & EFFECT_TYPE_FIELD) || !(ocard && ocard->get_status(STATUS_TO_LEAVE_FROMEX)))
 				link_marker = effects3[i]->get_value(this);
 		}
-	} else if(current.location == LOCATION_SZONE)
-		return 0;
+	}
 	filter_effect(EFFECT_ADD_LINK_MARKER_KOISHI, &effects, FALSE);
 	filter_effect(EFFECT_REMOVE_LINK_MARKER_KOISHI, &effects);
 	filter_effect(EFFECT_CHANGE_LINK_MARKER_KOISHI, &effects2);

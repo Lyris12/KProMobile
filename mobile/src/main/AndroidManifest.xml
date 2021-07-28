@@ -39,6 +39,7 @@
             android:excludeFromRecents="false"
             android:exported="true"
             android:screenOrientation="portrait"
+            android:launchMode="singleTop"
             android:stateNotNeeded="true"
             android:theme="@style/AppTheme"
             android:windowSoftInputMode="stateAlwaysHidden|adjustResize">
@@ -96,6 +97,15 @@
                 <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\.yrp" />
                 <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\..*\.yrp" />
                 <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\..*\..*\.yrp" />
+                <data android:pathPattern=".*\.lua" />
+                <data android:pathPattern=".*\..*\.lua" />
+                <data android:pathPattern=".*\..*\..*\.lua" />
+                <data android:pathPattern=".*\..*\..*\..*\.lua" />
+                <data android:pathPattern=".*\..*\..*\..*\..*\.lua" />
+                <data android:pathPattern=".*\..*\..*\..*\..*\..*\.lua" />
+                <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\.lua" />
+                <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\..*\.lua" />
+                <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\..*\..*\.lua" />
             </intent-filter>
 
             <intent-filter>
