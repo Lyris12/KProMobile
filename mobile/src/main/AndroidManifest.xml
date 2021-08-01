@@ -13,8 +13,8 @@
         android:supportsRtl="false"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
+        android:extractNativeLibs="true"
         android:requestLegacyExternalStorage="true"
-
         tools:replace="android:allowBackup,android:supportsRtl"
         tools:targetApi="m">
         <activity
@@ -97,19 +97,22 @@
                 <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\.yrp" />
                 <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\..*\.yrp" />
                 <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\..*\..*\.yrp" />
-                <data android:pathPattern=".*\.lua" />
-                <data android:pathPattern=".*\..*\.lua" />
-                <data android:pathPattern=".*\..*\..*\.lua" />
-                <data android:pathPattern=".*\..*\..*\..*\.lua" />
-                <data android:pathPattern=".*\..*\..*\..*\..*\.lua" />
-                <data android:pathPattern=".*\..*\..*\..*\..*\..*\.lua" />
-                <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\.lua" />
-                <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\..*\.lua" />
-                <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\..*\..*\.lua" />
             </intent-filter>
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="cn.garymb.ygomobile.ui.activities.ShareFileActivity"
+            android:configChanges="orientation|keyboardHidden|navigation|screenSize"
+            android:launchMode="singleTop"
+            android:excludeFromRecents="true"
+            android:theme="@style/TranslucentTheme"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustResize">
+            <intent-filter>
+                <action android:name="cn.garymb.ygomobile.game.shared.file" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
         <activity
@@ -181,7 +184,7 @@
             android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity android:name="cn.garymb.ygomobile.ui.mycard.mcchat.SplashActivity" />
         <activity android:name="cn.garymb.ygomobile.ui.activities.FileLogActivity" />
-        <activity 
+        <activity
             android:name="cn.garymb.ygomobile.ui.activities.PermissionsActivity"
             android:theme="@style/TranslucentTheme"/>
         <activity
@@ -206,12 +209,16 @@
             android:name="cn.garymb.ygomobile.ui.preference.YGOPreferencesProvider"
             android:authorities="cn.garymb.ygomobile.ui.preference.YGOPreferencesProvider"
             android:exported="false"
+            android:grantUriPermissions="true" />
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.gamefiles"
+            android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/provider_paths" />
+                android:resource="@xml/file_paths" />
         </provider>
-
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />
