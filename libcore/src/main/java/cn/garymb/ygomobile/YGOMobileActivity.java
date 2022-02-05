@@ -6,25 +6,18 @@
  */
 package cn.garymb.ygomobile;
 
-import android.app.NativeActivity;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.content.res.Resources;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Handler;
 import android.os.PowerManager;
 import android.os.Process;
 import android.util.Log;
+import android.util.Size;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
+import android.view.MotionEvent;
 import android.view.View;
-import android.widget.FrameLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,6 +27,7 @@ import java.util.Arrays;
 
 import cn.garymb.ygodata.YGOGameOptions;
 import cn.garymb.ygomobile.controller.NetworkController;
+import cn.garymb.ygomobile.core.GameActivity;
 import cn.garymb.ygomobile.core.IrrlichtBridge;
 import cn.garymb.ygomobile.lib.R;
 import cn.garymb.ygomobile.utils.FullScreenUtils;
@@ -44,32 +38,27 @@ import cn.garymb.ygomobile.widget.overlay.OverlayOvalView;
 import cn.garymb.ygomobile.widget.overlay.OverlayView;
 
 import static cn.garymb.ygomobile.core.IrrlichtBridge.ACTION_SHARE_FILE;
-import static cn.garymb.ygomobile.core.IrrlichtBridge.ACTION_START;
-import static cn.garymb.ygomobile.core.IrrlichtBridge.ACTION_STOP;
 
 /**
  * @author mabin
  */
-public class YGOMobileActivity extends NativeActivity implements
+public class YGOMobileActivity extends GameActivity implements
         IrrlichtBridge.IrrlichtHost,
         View.OnClickListener,
         PopupWindow.OnDismissListener,
         TextView.OnEditorActionListener,
         OverlayOvalView.OnDuelOptionsSelectListener {
     private static final String TAG = YGOMobileActivity.class.getSimpleName();
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     private static final int CHAIN_CONTROL_PANEL_X_POSITION_LEFT_EDGE = 205;
     private static final int CHAIN_CONTROL_PANEL_Y_REVERT_POSITION = 100;
     private static final int MAX_REFRESH = 30 * 1000;
     protected final int windowsFlags =
-            Build.VERSION.SDK_INT >= 19 ? (
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY) :
-                    View.SYSTEM_UI_FLAG_LOW_PROFILE;
-
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
     protected View mContentView;
     protected ComboBoxCompat mGlobalComboBox;
     protected EditWindowCompat mGlobalEditText;
@@ -79,19 +68,15 @@ public class YGOMobileActivity extends NativeActivity implements
     private NetworkController mNetController;
     private volatile boolean mOverlayShowRequest = false;
     private volatile int mCompatGUIMode;
-    private static int sChainControlXPostion = -1;
-    private static int sChainControlYPostion = -1;
+    //    private static int sChainControlXPostion = -1;
+//    private static int sChainControlYPostion = -1;
     private GameApplication mApp;
-    private Handler handler = new Handler();
     private FullScreenUtils mFullScreenUtils;
     private volatile int mPositionX, mPositionY;
-    private FrameLayout mLayout;
-    private SurfaceView mSurfaceView;
-    private boolean replaced = false;
-    private static boolean USE_SURFACE = true;
     private String[] mArgV;
+    private boolean onGameExiting;
+    private static final boolean blockKey = false;
 
-//    public static int notchHeight;
 
     private GameApplication app() {
         if (mApp == null) {
@@ -108,23 +93,24 @@ public class YGOMobileActivity extends NativeActivity implements
         return mApp;
     }
 
-    @SuppressWarnings("WrongConstant")
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        if (USE_SURFACE) {
-            mSurfaceView = new SurfaceView(this);
-        }
+    protected void initBeforeOnCreate() {
+        mPositionX = 0;
+        mPositionY = 0;
         mFullScreenUtils = new FullScreenUtils(this, app().isImmerSiveMode());
         mFullScreenUtils.fullscreen();
         mFullScreenUtils.onCreate();
         //argv
         mArgV = IrrlichtBridge.getArgs(getIntent());
         //
-        super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    protected void initAfterOnCreate() {
         Log.e("YGOStarter", "跳转完成" + System.currentTimeMillis());
-        if (sChainControlXPostion < 0) {
-            initPostion();
-        }
+//        if (sChainControlXPostion < 0) {
+//            initPostion();
+//        }
         if (app().isLockSreenOrientation()) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         }
@@ -132,9 +118,6 @@ public class YGOMobileActivity extends NativeActivity implements
         mPM = (PowerManager) getSystemService(Context.POWER_SERVICE);
         mNetController = new NetworkController(getApplicationContext());
         handleExternalCommand(getIntent());
-        sendBroadcast(new Intent(ACTION_START)
-                .putExtra(IrrlichtBridge.EXTRA_PID, android.os.Process.myPid())
-                .setPackage(getPackageName()));
     }
 
     //电池管理
@@ -173,34 +156,10 @@ public class YGOMobileActivity extends NativeActivity implements
         }
     }
 
-    private void initPostion() {
-        final Resources res = getResources();
-        sChainControlXPostion = (int) (CHAIN_CONTROL_PANEL_X_POSITION_LEFT_EDGE * app()
-                .getXScale());
-        sChainControlYPostion = (int) (app().getSmallerSize()
-                - CHAIN_CONTROL_PANEL_Y_REVERT_POSITION
-                * app().getYScale() - (res
-                .getDimensionPixelSize(R.dimen.chain_control_button_height) * 2 + res
-                .getDimensionPixelSize(R.dimen.chain_control_margin)));
-    }
-
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         handleExternalCommand(intent);
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-    }
-
-    @Override
-    public void finish() {
-        super.finish();
-        sendBroadcast(new Intent(ACTION_STOP)
-                .putExtra(IrrlichtBridge.EXTRA_PID, android.os.Process.myPid())
-                .setPackage(getPackageName()));
     }
 
     private void handleExternalCommand(Intent intent) {
@@ -224,7 +183,6 @@ public class YGOMobileActivity extends NativeActivity implements
     }
 
     private void fullscreen() {
-
         //如果是沉浸模式
         if (app().isImmerSiveMode()) {
             mFullScreenUtils.fullscreen();
@@ -235,14 +193,20 @@ public class YGOMobileActivity extends NativeActivity implements
         }
     }
 
-    private int[] getGameSize() {
+    @Override
+    protected Size getGameWindowSize() {
         //调整padding
         float xScale = app().getXScale();
         float yScale = app().getYScale();
+        float sw = app().getScreenWidth();
+        float sh = app().getScreenHeight();
         int w = (int) (app().getGameWidth() * xScale);
         int h = (int) (app().getGameHeight() * yScale);
-        Log.i("kk", "w1=" + app().getGameWidth() + ",h1=" + app().getGameHeight() + ",w2=" + w + ",h2=" + h + ",xScale=" + xScale + ",yScale=" + yScale);
-        return new int[]{w, h};
+        Log.i(IrrlichtBridge.TAG, "game size=" + app().getGameWidth() + "x" + app().getGameHeight()
+                + ", surface=" + w + "x" + h
+                + ", screen=" + sw + "x" + sh
+                + ", xScale=" + xScale + ",yScale=" + yScale);
+        return new Size(w, h);
     }
 
     @Override
@@ -261,38 +225,35 @@ public class YGOMobileActivity extends NativeActivity implements
 
     @Override
     public void setContentView(View view) {
-        int[] size = getGameSize();
-        int w = size[0];
-        int h = size[1];
-        mLayout = new FrameLayout(this);
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(w, h);
-        lp.gravity = Gravity.CENTER;
-        if (USE_SURFACE) {
-            mLayout.addView(mSurfaceView, lp);
-            mLayout.addView(view, lp);
-            super.setContentView(mLayout);
-            app().attachGame(this);
-            changeGameSize();
-            getWindow().takeSurface(null);
-            replaced = true;
-            mSurfaceView.getHolder().addCallback(this);
-            mSurfaceView.requestFocus();
-            getWindow().setGravity(Gravity.CENTER);
-        } else {
-            mLayout.addView(view, lp);
-            getWindow().setGravity(Gravity.CENTER);
-            super.setContentView(mLayout);
-        }
+        super.setContentView(view);
+        app().attachGame(this);
+        changeGameSize();
+        //可以通过mLayout.addView添加view，增加功能
+        //test code
+//        int size = (int) (getResources().getDisplayMetrics().density * 100);
+//        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(size, size);
+//        lp.gravity = Gravity.RIGHT|Gravity.BOTTOM;
+//        ImageView imageView = new ImageView(this);
+//        imageView.setImageResource(android.R.drawable.sym_def_app_icon);
+//        imageView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                refreshTextures();
+//            }
+//        });
+//        mLayout.addView(imageView, lp);
     }
 
     private void changeGameSize() {
+        if (USE_MY_INPUT) {
+            return;
+        }
         //游戏大小
-        int[] size = getGameSize();
+        Size size = getGameWindowSize();
         int w = (int) app().getScreenHeight();
         int h = (int) app().getScreenWidth();
-        int spX = (int) ((w - size[0]) / 2.0f);
-        int spY = (int) ((h - size[1]) / 2.0f);
-//        Log.i("ygo", "Android command 1:posX=" + spX + ",posY=" + spY);
+        int spX = (int) ((w - size.getWidth()) / 2.0f);
+        int spY = (int) ((h - size.getHeight()) / 2.0f);
         boolean update = false;
         synchronized (this) {
             if (spX != mPositionX || spY != mPositionY) {
@@ -302,7 +263,6 @@ public class YGOMobileActivity extends NativeActivity implements
             }
         }
         if (update) {
-//            Log.i("ygo", "Android command setInputFix2:posX=" + spX + ",posY=" + spY);
             IrrlichtBridge.setInputFix(mPositionX, mPositionY);
         }
     }
@@ -398,7 +358,7 @@ public class YGOMobileActivity extends NativeActivity implements
     @Override
     public void toggleOverlayView(final boolean isShow) {
         if (mOverlayShowRequest != isShow) {
-            handler.post(new Runnable() {
+            runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     mOverlayShowRequest = isShow;
@@ -425,7 +385,7 @@ public class YGOMobileActivity extends NativeActivity implements
 
     @Override
     public void toggleIME(final String hint, final boolean isShow) {
-        handler.post(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 if (isShow) {
@@ -445,7 +405,7 @@ public class YGOMobileActivity extends NativeActivity implements
 
     @Override
     public void showComboBoxCompat(final String[] items, final boolean isShow, final int mode) {
-        handler.post(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 mCompatGUIMode = mode;
@@ -462,7 +422,7 @@ public class YGOMobileActivity extends NativeActivity implements
 
     @Override
     public void performHapticFeedback() {
-        handler.post(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 mContentView.performHapticFeedback(
@@ -488,55 +448,15 @@ public class YGOMobileActivity extends NativeActivity implements
     }
 
     @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-        if (USE_SURFACE) {
-            if (!replaced) {
-                return;
-            }
-        }
-        super.surfaceCreated(holder);
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        if (USE_SURFACE) {
-            if (!replaced) {
-                return;
-            }
-        }
-        super.surfaceChanged(holder, format, width, height);
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-        if (USE_SURFACE) {
-            if (!replaced) {
-                return;
-            }
-        }
-        super.surfaceDestroyed(holder);
-    }
-
-    @Override
-    public void surfaceRedrawNeeded(SurfaceHolder holder) {
-        if (USE_SURFACE) {
-            if (!replaced) {
-                return;
-            }
-        }
-        super.surfaceRedrawNeeded(holder);
-    }
-
-    @Override
-    public void shareFile(final String title, final String ext) {
+    public void shareFile(final String type, final String name) {
         //TODO 分享文件
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 Intent intent = new Intent(ACTION_SHARE_FILE);
                 intent.addCategory(Intent.CATEGORY_DEFAULT);
-                intent.putExtra(IrrlichtBridge.EXTRA_SHARE_TYPE, title);
-                intent.putExtra(IrrlichtBridge.EXTRA_SHARE_FILE, ext);
+                intent.putExtra(IrrlichtBridge.EXTRA_SHARE_TYPE, type);
+                intent.putExtra(IrrlichtBridge.EXTRA_SHARE_FILE, name);
                 intent.setPackage(getPackageName());
                 try {
                     startActivity(intent);
@@ -548,9 +468,92 @@ public class YGOMobileActivity extends NativeActivity implements
         });
     }
 
+    private long lasttime;
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (blockKey && USE_MY_INPUT) {
+            if (keyCode != KeyEvent.KEYCODE_VOLUME_DOWN
+                    && keyCode != KeyEvent.KEYCODE_VOLUME_UP) {
+                sendInputEvent(event, false);
+                return true;
+            }
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (blockKey && USE_MY_INPUT) {
+            if (keyCode != KeyEvent.KEYCODE_VOLUME_DOWN
+                    && keyCode != KeyEvent.KEYCODE_VOLUME_UP) {
+                sendInputEvent(event, false);
+                return true;
+            }
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (mGlobalComboBox != null && mGlobalComboBox.isShowing()) {
+            mGlobalComboBox.dismiss();
+            return;
+        }
+        if (mGlobalEditText != null && mGlobalEditText.isShowing()) {
+            mGlobalEditText.dismiss();
+            return;
+        }
+        if (lasttime == 0 || (System.currentTimeMillis() - lasttime) > 1000) {
+            lasttime = System.currentTimeMillis();
+            return;
+        }
+//        super.onWindowFocusChanged(false);
+//        onGameExit();
+    }
+
+    @Override
+    protected void onSurfaceTouch(View v, MotionEvent event) {
+        if (event.getPointerCount() > 1) {
+            //多指操作不处理
+            return;
+        }
+        super.onSurfaceTouch(v, event);
+    }
+
     @Override
     public void onGameExit() {
-        Log.e("ygomobile", "game exit");
-        Process.killProcess(Process.myPid());
+        if (onGameExiting) {
+            return;
+        }
+        onGameExiting = true;
+        Log.e(IrrlichtBridge.TAG, "game exit");
+        final Intent intent = new Intent(IrrlichtBridge.ACTION_OPEN_GAME_HOME);
+        intent.addCategory(Intent.CATEGORY_DEFAULT);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+//        intent.putExtra(IrrlichtBridge.EXTRA_PID, Process.myPid());
+//        intent.putExtra(IrrlichtBridge.EXTRA_TASK_ID, getTaskId());
+//        intent.putExtra(IrrlichtBridge.EXTRA_GAME_EXIT_TIME, System.currentTimeMillis());
+        intent.setPackage(getPackageName());
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    startActivity(intent);
+                    Log.d(IrrlichtBridge.TAG, "open home ok");
+                } catch (Throwable e) {
+                    Log.w(IrrlichtBridge.TAG, "open home", e);
+                }
+                boolean isRoot = isTaskRoot();
+                Log.d(IrrlichtBridge.TAG, "isRoot=" + isRoot + ",kill:" + Process.myPid());
+                if (isRoot) {
+                    finishAndRemoveTask();
+                } else {
+                    finish();
+                }
+                Process.killProcess(Process.myPid());
+            }
+        });
     }
 }

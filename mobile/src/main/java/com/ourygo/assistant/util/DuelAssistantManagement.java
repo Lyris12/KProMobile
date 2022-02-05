@@ -2,6 +2,7 @@ package com.ourygo.assistant.util;
 
 
 import android.content.Context;
+import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -75,7 +76,6 @@ public class DuelAssistantManagement implements OnClipChangedListener {
                     return true;
                 }
             }
-            return true;
         }
 
         //如果是卡组url
@@ -83,13 +83,45 @@ public class DuelAssistantManagement implements OnClipChangedListener {
         if (deckStart != -1) {
             onSaveDeck(message.substring(deckStart + Record.DECK_URL_PREFIX.length()), true, id);
             return true;
+        } else if (message.contains("?" + Record.ARG_YGO_TYPE + "=" + Record.ARG_DECK) || message.contains("&" + Record.ARG_YGO_TYPE + "=" + Record.ARG_DECK)) {
+            String m1 = "?" + Record.ARG_YGO_TYPE + "=" + Record.ARG_DECK;
+            String m2 = "&" + Record.ARG_YGO_TYPE + "=" + Record.ARG_DECK;
+            int s1 = message.indexOf(m1);
+            if (s1 == -1)
+                s1 = message.indexOf(m2);
+            int start = message.lastIndexOf(Record.DECK_URL_PREFIX, s1);
+            if (start == -1)
+                start = message.lastIndexOf(Record.HTTP_URL_PREFIX, s1);
+            if (start == -1)
+                start = message.lastIndexOf(Record.HTTPS_URL_PREFIX, s1);
+            if (start != -1)
+                onSaveDeck(message.substring(start + Record.DECK_URL_PREFIX.length()), true, id);
+            return true;
         }
         return false;
     }
 
     public boolean roomCheck(String message, int id) {
+
+
+        if (message.contains("?" + Record.ARG_YGO_TYPE + "=" + Record.ARG_ROOM) || message.contains("&" + Record.ARG_YGO_TYPE + "=" + Record.ARG_ROOM)) {
+            String m1 = "?" + Record.ARG_YGO_TYPE + "=" + Record.ARG_ROOM;
+            String m2 = "&" + Record.ARG_YGO_TYPE + "=" + Record.ARG_ROOM;
+            int s1 = message.indexOf(m1);
+            if (s1 == -1)
+                s1 = message.indexOf(m2);
+            int start = message.lastIndexOf(Record.ROOM_URL_PREFIX, s1);
+            if (start == -1)
+                start = message.lastIndexOf(Record.HTTP_URL_PREFIX, s1);
+            if (start == -1)
+                start = message.lastIndexOf(Record.HTTPS_URL_PREFIX, s1);
+            onJoinRoom(message.substring(start + Record.DECK_URL_PREFIX.length()), id);
+            return true;
+        }
+
         int start = -1;
         int end = -1;
+
         String passwordPrefixKey = null;
         for (String s : Record.PASSWORD_PREFIX) {
             start = message.indexOf(s);
@@ -110,8 +142,8 @@ public class DuelAssistantManagement implements OnClipChangedListener {
                 if (end - start == passwordPrefixKey.length())
                     return false;
             }
-                onJoinRoom(message.substring(start, end), id);
-                return true;
+            onJoinRoom(null, 0, message.substring(start, end), id);
+            return true;
         }
         return false;
     }
@@ -126,7 +158,7 @@ public class DuelAssistantManagement implements OnClipChangedListener {
                 if (TextUtils.isEmpty(cardSearchMessage)) {
                     return false;
                 }
-                //如果卡查内容包含“=”并且复制的内容包含“.”不卡查
+                //如果卡查内容包含“=”并且复制的内容包含“.”不卡查（链接判断）
                 if (cardSearchMessage.contains("=") || message.contains(".")) {
                     return false;
                 }
@@ -139,12 +171,20 @@ public class DuelAssistantManagement implements OnClipChangedListener {
         return false;
     }
 
-    private void onJoinRoom(String password, int id) {
+    private void onJoinRoom(String roomUrl, int id) {
+        YGODAUtil.deRoomListener(Uri.parse(roomUrl), (host, port, password, exception) -> {
+            if (TextUtils.isEmpty(exception)) {
+                onJoinRoom(host, port, password, id);
+            }
+        });
+    }
+
+    private void onJoinRoom(String host, int port, String password, int id) {
         int i = 0;
         while (i < onDuelAssistantListenerList.size()) {
             OnDuelAssistantListener onDuelAssistantListener = onDuelAssistantListenerList.get(i);
             if (onDuelAssistantListener.isListenerEffective()) {
-                onDuelAssistantListener.onJoinRoom(password, id);
+                onDuelAssistantListener.onJoinRoom(host, port, password, id);
                 i++;
             } else {
                 onDuelAssistantListenerList.remove(i);
@@ -187,8 +227,13 @@ public class DuelAssistantManagement implements OnClipChangedListener {
             lastMessage = clipMessage;
         } else if (roomCheck(clipMessage, id)) {
             lastMessage = clipMessage;
-        } else if (cardSearchCheck(clipMessage, id))
-            lastMessage = clipMessage;
+        }
+//        else if (cardSearchCheck(clipMessage, id))
+//            lastMessage = clipMessage;
+    }
+
+    public void setLastMessage(String lastMessage) {
+        this.lastMessage = lastMessage;
     }
 
     public void checkClip(int id) {

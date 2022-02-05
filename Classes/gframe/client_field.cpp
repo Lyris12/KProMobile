@@ -12,18 +12,9 @@ namespace ygo {
 
 ClientField::ClientField() {
 	panel = 0;
-	//drag cardtext and lists
 	is_dragging_cardtext = false;
-	is_dragging_lstLog = false;
-	is_dragging_lstReplayList = false;
-	is_dragging_lstSinglePlayList = false;
-	is_dragging_lstBotList = false;
-	is_dragging_lstDecks = false;
-	is_dragging_lstANCard = false;
-	is_selectable = true;
-	dragging_tab_start_pos = 0;
-	dragging_tab_start_y = 0;
-
+	dragging_cardtext_start_pos = 0;
+	dragging_cardtext_start_y = 0;
 	hovered_card = 0;
 	clicked_card = 0;
 	highlighting_card = 0;
@@ -47,6 +38,7 @@ ClientField::ClientField() {
 		mzone[p].resize(7, 0);
 		szone[p].resize(8, 0);
 	}
+	rnd.reset(std::random_device()());
 }
 void ClientField::Clear() {
 	for(int i = 0; i < 2; ++i) {
@@ -112,6 +104,7 @@ void ClientField::Clear() {
 	conti_act = false;
 	deck_reversed = false;
 	cant_check_grave = false;
+	RefreshCardCountDisplay();
 }
 void ClientField::Initial(int player, int deckc, int extrac) {
 	ClientCard* pcard;
@@ -429,7 +422,7 @@ void ClientField::ShowSelectCard(bool buttonok, bool chain) {
 			}
 		}
 		if(has_card_in_grave) {
-			std::random_shuffle(selectable_cards.begin(), selectable_cards.end());
+			rnd.shuffle_vector(selectable_cards);
 		}
 	}
 	int startpos;
@@ -449,8 +442,8 @@ void ClientField::ShowSelectCard(bool buttonok, bool chain) {
 		else if(conti_selecting)
 			mainGame->imageLoading.insert(std::make_pair(mainGame->btnCardSelect[i], selectable_cards[i]->chain_code));
 		else
-			mainGame->btnCardSelect[i]->setImage(imageManager.tCover[selectable_cards[i]->controler]);
-		mainGame->btnCardSelect[i]->setRelativePosition(rect<s32>((startpos + i * 125) * mainGame->xScale, 65 * mainGame->yScale, (startpos + 120 + i * 125) * mainGame->xScale, 235 * mainGame->yScale));
+			mainGame->btnCardSelect[i]->setImage(imageManager.tCover[selectable_cards[i]->controler + 2]);
+		mainGame->btnCardSelect[i]->setRelativePosition(rect<s32>(startpos + i * 125, 55, startpos + 120 + i * 125, 225));
 		mainGame->btnCardSelect[i]->setPressed(false);
 		mainGame->btnCardSelect[i]->setVisible(true);
 		if(mainGame->dInfo.curMsg != MSG_SORT_CARD) {
@@ -472,29 +465,29 @@ void ClientField::ShowSelectCard(bool buttonok, bool chain) {
 			mainGame->stCardPos[i]->setText(formatBuffer);
 			// color
 			if (selectable_cards[i]->is_selected)
-				mainGame->stCardPos[i]->setBackgroundColor(0xffa2d8f4);
+				mainGame->stCardPos[i]->setBackgroundColor(0xffffff00);
 			else {
 				if(conti_selecting)
-					mainGame->stCardPos[i]->setBackgroundColor(0xff56649f);
+					mainGame->stCardPos[i]->setBackgroundColor(0xffffffff);
 				else if(selectable_cards[i]->location == LOCATION_OVERLAY) {
 					if(selectable_cards[i]->owner != selectable_cards[i]->overlayTarget->controler)
 						mainGame->stCardPos[i]->setOverrideColor(0xff0000ff);
 					if(selectable_cards[i]->overlayTarget->controler)
-						mainGame->stCardPos[i]->setBackgroundColor(0xff5a5a5a);
+						mainGame->stCardPos[i]->setBackgroundColor(0xffd0d0d0);
 					else
-					mainGame->stCardPos[i]->setBackgroundColor(0xff56649f);
+						mainGame->stCardPos[i]->setBackgroundColor(0xffffffff);
 				} else if(selectable_cards[i]->location == LOCATION_DECK || selectable_cards[i]->location == LOCATION_EXTRA || selectable_cards[i]->location == LOCATION_REMOVED) {
 					if(selectable_cards[i]->position & POS_FACEDOWN)
 						mainGame->stCardPos[i]->setOverrideColor(0xff0000ff);
 					if(selectable_cards[i]->controler)
-						mainGame->stCardPos[i]->setBackgroundColor(0xff5a5a5a);
+						mainGame->stCardPos[i]->setBackgroundColor(0xffd0d0d0);
 					else
-						mainGame->stCardPos[i]->setBackgroundColor(0xff56649f);
+						mainGame->stCardPos[i]->setBackgroundColor(0xffffffff);
 				} else {
 					if(selectable_cards[i]->controler)
-						mainGame->stCardPos[i]->setBackgroundColor(0xff5a5a5a);
+						mainGame->stCardPos[i]->setBackgroundColor(0xffd0d0d0);
 					else
-						mainGame->stCardPos[i]->setBackgroundColor(0xff56649f);
+						mainGame->stCardPos[i]->setBackgroundColor(0xffffffff);
 				}
 			}
 		} else {
@@ -504,10 +497,10 @@ void ClientField::ShowSelectCard(bool buttonok, bool chain) {
 				mainGame->stCardPos[i]->setText(formatBuffer);
 			} else
 				mainGame->stCardPos[i]->setText(L"");
-			mainGame->stCardPos[i]->setBackgroundColor(0xff56649f);
+			mainGame->stCardPos[i]->setBackgroundColor(0xffffffff);
 		}
 		mainGame->stCardPos[i]->setVisible(true);
-		mainGame->stCardPos[i]->setRelativePosition(rect<s32>((startpos + i * 125) * mainGame->xScale, 40 * mainGame->yScale, (startpos + 120 + i * 125) * mainGame->xScale, 60 * mainGame->yScale));
+		mainGame->stCardPos[i]->setRelativePosition(rect<s32>(startpos + i * 125, 30, startpos + 120 + i * 125, 50));
 	}
 	if(selectable_cards.size() <= 5) {
 		for(int i = selectable_cards.size(); i < 5; ++i) {
@@ -539,8 +532,8 @@ void ClientField::ShowChainCard() {
 		if(selectable_cards[i]->code)
 			mainGame->imageLoading.insert(std::make_pair(mainGame->btnCardSelect[i], selectable_cards[i]->code));
 		else
-			mainGame->btnCardSelect[i]->setImage(imageManager.tCover[selectable_cards[i]->controler]);
-		mainGame->btnCardSelect[i]->setRelativePosition(rect<s32>((startpos + i * 125) * mainGame->xScale, 65 * mainGame->yScale, (startpos + 120 + i * 125) * mainGame->xScale, 235 * mainGame->yScale));
+			mainGame->btnCardSelect[i]->setImage(imageManager.tCover[selectable_cards[i]->controler + 2]);
+		mainGame->btnCardSelect[i]->setRelativePosition(rect<s32>(startpos + i * 125, 55, startpos + 120 + i * 125, 225));
 		mainGame->btnCardSelect[i]->setPressed(false);
 		mainGame->btnCardSelect[i]->setVisible(true);
 		wchar_t formatBuffer[2048];
@@ -551,17 +544,15 @@ void ClientField::ShowChainCard() {
 			if(selectable_cards[i]->owner != selectable_cards[i]->overlayTarget->controler)
 				mainGame->stCardPos[i]->setOverrideColor(0xff0000ff);
 			if(selectable_cards[i]->overlayTarget->controler)
-				mainGame->stCardPos[i]->setBackgroundColor(0xff5a5a5a);
-			else
-				mainGame->stCardPos[i]->setBackgroundColor(0xff56649f);
+				mainGame->stCardPos[i]->setBackgroundColor(0xffd0d0d0);
+			else mainGame->stCardPos[i]->setBackgroundColor(0xffffffff);
 		} else {
 			if(selectable_cards[i]->controler)
-				mainGame->stCardPos[i]->setBackgroundColor(0xff5a5a5a);
-			else
-				mainGame->stCardPos[i]->setBackgroundColor(0xff56649f);
+				mainGame->stCardPos[i]->setBackgroundColor(0xffd0d0d0);
+			else mainGame->stCardPos[i]->setBackgroundColor(0xffffffff);
 		}
 		mainGame->stCardPos[i]->setVisible(true);
-		mainGame->stCardPos[i]->setRelativePosition(rect<s32>((startpos + i * 125) * mainGame->xScale, 40 * mainGame->yScale, (startpos + 120 + i * 125) * mainGame->xScale, 60 * mainGame->yScale));
+		mainGame->stCardPos[i]->setRelativePosition(rect<s32>(startpos + i * 125, 30, startpos + 120 + i * 125, 50));
 	} 
 	if(selectable_cards.size() <= 5) {
 		for(int i = selectable_cards.size(); i < 5; ++i) {
@@ -596,8 +587,8 @@ void ClientField::ShowLocationCard() {
 		if(display_cards[i]->code)
 			mainGame->imageLoading.insert(std::make_pair(mainGame->btnCardDisplay[i], display_cards[i]->code));
 		else
-			mainGame->btnCardDisplay[i]->setImage(imageManager.tCover[display_cards[i]->controler]);
-		mainGame->btnCardDisplay[i]->setRelativePosition(rect<s32>((startpos + i * 125) * mainGame->xScale, 65 * mainGame->yScale, (startpos + 120 + i * 125) * mainGame->xScale, 235 * mainGame->yScale));
+			mainGame->btnCardDisplay[i]->setImage(imageManager.tCover[display_cards[i]->controler + 2]);
+		mainGame->btnCardDisplay[i]->setRelativePosition(rect<s32>(startpos + i * 125, 55, startpos + 120 + i * 125, 225));
 		mainGame->btnCardDisplay[i]->setPressed(false);
 		mainGame->btnCardDisplay[i]->setVisible(true);
 		wchar_t formatBuffer[2048];
@@ -613,24 +604,24 @@ void ClientField::ShowLocationCard() {
 			if(display_cards[i]->owner != display_cards[i]->overlayTarget->controler)
 				mainGame->stDisplayPos[i]->setOverrideColor(0xff0000ff);
 			if(display_cards[i]->overlayTarget->controler)
-				mainGame->stDisplayPos[i]->setBackgroundColor(0xff5a5a5a);
+				mainGame->stDisplayPos[i]->setBackgroundColor(0xffd0d0d0);
 			else 
-				mainGame->stDisplayPos[i]->setBackgroundColor(0xff56649f);
+				mainGame->stDisplayPos[i]->setBackgroundColor(0xffffffff);
 		} else if(display_cards[i]->location == LOCATION_EXTRA || display_cards[i]->location == LOCATION_REMOVED) {
 			if(display_cards[i]->position & POS_FACEDOWN)
 				mainGame->stCardPos[i]->setOverrideColor(0xff0000ff);
 			if(display_cards[i]->controler)
-				mainGame->stCardPos[i]->setBackgroundColor(0xff5a5a5a);
+				mainGame->stCardPos[i]->setBackgroundColor(0xffd0d0d0);
 			else 
-				mainGame->stCardPos[i]->setBackgroundColor(0xff56649f);
+				mainGame->stCardPos[i]->setBackgroundColor(0xffffffff);
 		} else {
 			if(display_cards[i]->controler)
-				mainGame->stDisplayPos[i]->setBackgroundColor(0xff5a5a5a);
+				mainGame->stDisplayPos[i]->setBackgroundColor(0xffd0d0d0);
 			else 
-				mainGame->stDisplayPos[i]->setBackgroundColor(0xff56649f);
+				mainGame->stDisplayPos[i]->setBackgroundColor(0xffffffff);
 		}
 		mainGame->stDisplayPos[i]->setVisible(true);
-		mainGame->stDisplayPos[i]->setRelativePosition(rect<s32>((startpos + i * 125) * mainGame->xScale, 40 * mainGame->yScale, (startpos + 120 + i * 125) * mainGame->xScale, 60 * mainGame->yScale));
+		mainGame->stDisplayPos[i]->setRelativePosition(rect<s32>(startpos + i * 125, 30, startpos + 120 + i * 125, 50));
 	}
 	if(display_cards.size() <= 5) {
 		for(int i = display_cards.size(); i < 5; ++i) {
@@ -655,7 +646,7 @@ void ClientField::ShowSelectOption(int select_hint) {
 	bool quickmode = true;
 	mainGame->gMutex.lock();
 	for(auto option : select_options) {
-		if(mainGame->guiFont->getDimension(dataManager.GetDesc(option)).Width > 370 * mainGame->xScale) {
+		if(mainGame->guiFont->getDimension(dataManager.GetDesc(option)).Width > 310) {
 			quickmode = false;
 			break;
 		}
@@ -676,15 +667,14 @@ void ClientField::ShowSelectOption(int select_hint) {
 		for(int i = 0; i < 5; i++)
 			mainGame->btnOption[i]->setVisible(i < count);
 		recti pos = mainGame->wOptions->getRelativePosition();
-		int newheight = 50 + 60 * (scrollbar ? 5 : count) * mainGame->yScale;
+		int newheight = 30 + 40 * (scrollbar ? 5 : count);
 		int oldheight = pos.LowerRightCorner.Y - pos.UpperLeftCorner.Y;
 		pos.UpperLeftCorner.Y = pos.UpperLeftCorner.Y + (oldheight - newheight) / 2;
-		pos.LowerRightCorner.X = pos.UpperLeftCorner.X + (scrollbar ? 405 : 390) * mainGame->xScale;
+		pos.LowerRightCorner.X = pos.UpperLeftCorner.X + (scrollbar ? 375 : 350);
 		pos.LowerRightCorner.Y = pos.UpperLeftCorner.Y + newheight;
 		mainGame->wOptions->setRelativePosition(pos);
-        mainGame->bgOptions->setRelativePosition(rect<s32>(0, 0, (scrollbar ? 405 : 390) * mainGame->xScale, pos.LowerRightCorner.Y - pos.UpperLeftCorner.Y));
 	} else {
-		mainGame->SetStaticText(mainGame->stOptions, 350  * mainGame->xScale, mainGame->guiFont,
+		mainGame->SetStaticText(mainGame->stOptions, 310, mainGame->guiFont,
 			(wchar_t*)dataManager.GetDesc(select_options[0]));
 		mainGame->stOptions->setVisible(true);
 		mainGame->btnOptionp->setVisible(false);
@@ -693,14 +683,14 @@ void ClientField::ShowSelectOption(int select_hint) {
 		for(int i = 0; i < 5; i++)
 			mainGame->btnOption[i]->setVisible(false);
 		recti pos = mainGame->wOptions->getRelativePosition();
-		pos.LowerRightCorner.Y = pos.UpperLeftCorner.Y + 180 * mainGame->yScale;
+		pos.LowerRightCorner.Y = pos.UpperLeftCorner.Y + 140;
 		mainGame->wOptions->setRelativePosition(pos);
 	}
 	if(select_hint)
 		myswprintf(textBuffer, L"%ls", dataManager.GetDesc(select_hint));
 	else
 		myswprintf(textBuffer, dataManager.GetSysString(555));
-	mainGame->stOptions->setText(textBuffer);
+	mainGame->wOptions->setText(textBuffer);
 	mainGame->PopupElement(mainGame->wOptions);
 	mainGame->gMutex.unlock();
 }
@@ -1589,11 +1579,11 @@ void ClientField::UpdateDeclarableList() {
 			return;
 	}
 	for(auto cit = dataManager._strings.begin(); cit != dataManager._strings.end(); ++cit) {
-		if(cit->second.name.find(pname) != std::wstring::npos) {
+		if(cit->second.name.find(pname) != std::wstring::npos || mainGame->CheckRegEx(cit->second.name, pname)) {
 			auto cp = dataManager.GetCodePointer(cit->first);	//verified by _strings
 			//datas.alias can be double card names or alias
 			if(is_declarable(cp->second, declare_opcodes)) {
-				if(pname == cit->second.name) { //exact match
+				if(pname == cit->second.name || mainGame->CheckRegEx(cit->second.name, pname, true)) { //exact match
 					mainGame->lstANCard->insertItem(0, cit->second.name.c_str(), -1);
 					ancard.insert(ancard.begin(), cit->first);
 				} else {
@@ -1612,6 +1602,9 @@ void ClientField::RefreshCardCountDisplay() {
 		for(auto it = mzone[p].begin(); it != mzone[p].end(); ++it) {
 			pcard = *it;
 			if(pcard) {
+				//if(pcard->type & TYPE_LINK && pcard->link)
+				//	mainGame->dInfo.card_count[p] += pcard->link;
+				//else
 				mainGame->dInfo.card_count[p]++;
 				if(pcard->position == POS_FACEUP_ATTACK && pcard->attack > 0 && (p == 1 || mainGame->dInfo.curMsg != MSG_SELECT_BATTLECMD || pcard->cmdFlag & COMMAND_ATTACK))
 					mainGame->dInfo.total_attack[p] += pcard->attack;
@@ -1627,20 +1620,20 @@ void ClientField::RefreshCardCountDisplay() {
 	}
 	if(mainGame->dInfo.card_count[0] > mainGame->dInfo.card_count[1]) {
 		mainGame->dInfo.card_count_color[0] = 0xffffff00;
-		mainGame->dInfo.card_count_color[1] = 0xffff2a00;
+		mainGame->dInfo.card_count_color[1] = 0xffff0000;
 	} else if(mainGame->dInfo.card_count[1] > mainGame->dInfo.card_count[0]) {
 		mainGame->dInfo.card_count_color[1] = 0xffffff00;
-		mainGame->dInfo.card_count_color[0] = 0xffff2a00;
+		mainGame->dInfo.card_count_color[0] = 0xffff0000;
 	} else {
 		mainGame->dInfo.card_count_color[0] = 0xffffffff;
 		mainGame->dInfo.card_count_color[1] = 0xffffffff;
 	}
 	if(mainGame->dInfo.total_attack[0] > mainGame->dInfo.total_attack[1]) {
 		mainGame->dInfo.total_attack_color[0] = 0xffffff00;
-		mainGame->dInfo.total_attack_color[1] = 0xffff2a00;
+		mainGame->dInfo.total_attack_color[1] = 0xffff0000;
 	} else if(mainGame->dInfo.total_attack[1] > mainGame->dInfo.total_attack[0]) {
 		mainGame->dInfo.total_attack_color[1] = 0xffffff00;
-		mainGame->dInfo.total_attack_color[0] = 0xffff2a00;
+		mainGame->dInfo.total_attack_color[0] = 0xffff0000;
 	} else {
 		mainGame->dInfo.total_attack_color[0] = 0xffffffff;
 		mainGame->dInfo.total_attack_color[1] = 0xffffffff;

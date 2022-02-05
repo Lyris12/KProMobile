@@ -26,6 +26,7 @@ import java.util.zip.ZipInputStream;
 
 import cn.garymb.ygomobile.App;
 import cn.garymb.ygomobile.AppsSettings;
+import cn.garymb.ygomobile.core.IrrlichtBridge;
 import cn.garymb.ygomobile.utils.IOUtils;
 import ocgcore.data.Card;
 
@@ -34,8 +35,14 @@ public class CardManager {
     private static int cdbNum = 0;
     private final SparseArray<Card> cardDataHashMap = new SparseArray<>();
     private String dbDir, exDbPath;
+    private static final String TAG = IrrlichtBridge.TAG;
 
-    public CardManager(String dbDir, String exPath) {
+    /**
+     * @see DataManager#getCardManager()
+     * @param dbDir
+     * @param exPath
+     */
+    CardManager(String dbDir, String exPath) {
         this.dbDir = dbDir;
         this.exDbPath = exPath;
     }
@@ -110,7 +117,13 @@ public class CardManager {
     }
 
     public Card getCard(int code) {
-        return cardDataHashMap.get(Integer.valueOf(code));
+        Card card = cardDataHashMap.get(code);
+        if(card == null){
+            card = new Card(code);
+            cardDataHashMap.put(code, new Card(code));
+            return card;
+        }
+        return card;
     }
 
     public int getCount() {
@@ -125,36 +138,57 @@ public class CardManager {
     public void loadCards() {
         cardDataHashMap.clear();
         int count = readAllCards(AppsSettings.get().getDataBaseFile(), cardDataHashMap);
-        Log.i("Irrlicht", "load defualt cdb:" + count);
-        if (TextUtils.isEmpty(exDbPath))
-            return;
-        if (AppsSettings.get().isReadExpansions()) {
-            File dir = new File(exDbPath);
-            if (dir.exists()) {
-                File[] files = dir.listFiles(new FilenameFilter() {
-                    @Override
-                    public boolean accept(File dir, String name) {
-                        File file = new File(dir, name);
-                        return file.isFile() && ((name.endsWith(".cdb") || (name.endsWith(".zip") || name.endsWith(".ypk"))));
-                    }
-                });
-                //读取全部卡片
-                if (files != null) {
-                    for (File file : files) {
-                        if (file.getName().endsWith(".cdb")) {
-                            count = readAllCards(file, cardDataHashMap);
-                        } else if (file.getName().endsWith(".zip") || file.getName().endsWith(".ypk")) {
-                            Log.e("CardManager", "读取压缩包");
-                            try {
-                                for (File file1 : readZipCdb(file.getAbsolutePath())) {
-                                    count = readAllCards(file1, cardDataHashMap);
-                                }
-                            } catch (IOException e) {
-                                Log.e("CardManager", "读取压缩包错误" + e);
-                            }
+        Log.i(TAG, "load defualt cdb:" + count);
+        if (!TextUtils.isEmpty(exDbPath)) {
+            if (AppsSettings.get().isReadExpansions()) {
+                File dir = new File(exDbPath);
+                if (dir.exists()) {
+                    File[] files = dir.listFiles(new FilenameFilter() {
+                        @Override
+                        public boolean accept(File dir, String name) {
+                            File file = new File(dir, name);
+                            return file.isFile() && ((name.endsWith(".cdb") || (name.endsWith(".zip") || name.endsWith(".ypk"))));
                         }
-                        Log.i("Irrlicht", "load " + count + " cdb:" + file);
+                    });
+                    //读取全部卡片
+                    if (files != null) {
+                        for (File file : files) {
+                            if (file.getName().endsWith(".cdb")) {
+                                count = readAllCards(file, cardDataHashMap);
+                            } else if (file.getName().endsWith(".zip") || file.getName().endsWith(".ypk")) {
+                                Log.e("CardManager", "读取压缩包");
+                                try {
+                                    for (File file1 : readZipCdb(file.getAbsolutePath())) {
+                                        count = readAllCards(file1, cardDataHashMap);
+                                    }
+                                } catch (IOException e) {
+                                    Log.e("CardManager", "读取压缩包错误" + e);
+                                }
+                            }
+                            Log.i(TAG, "load " + count + " cdb:" + file);
+                        }
                     }
+                }
+            }
+        }
+        buildAliasCards();
+    }
+
+    private void buildAliasCards() {
+        int N = getCount();
+        for (int i = 0; i < N; i++) {
+            Card c = cardDataHashMap.valueAt(i);
+            if(c.Alias == 0){
+                continue;
+            }
+            //规则同名，或者多图同名
+            Card alias = getCard(c.Alias);
+            if (alias != null) {
+                if (c.isSame(alias)) {
+                    //多图同名，它们属性必定是一致
+                    c.setRealCode(alias.Code);
+                } else if(Math.abs(c.Alias - c.Code) <= 10){
+                    Log.w(TAG, c.Name + ":" + c.Code + " is same card "+c.Alias);
                 }
             }
         }
@@ -182,12 +216,12 @@ public class CardManager {
                     cardData.Code = reader.getInt(0);
                     cardData.Ot = reader.getInt(1);
                     cardData.Alias = reader.getInt(2);
-                    cardData.Setcode = reader.getLong(3);
+                    cardData.SetCode = reader.getLong(3);
                     cardData.Type = reader.getLong(4);
                     int levelInfo = reader.getInt(5);
                     cardData.Level = levelInfo & 0xff;
-                    cardData.LScale = (levelInfo >> 24) & 0xff;
-                    cardData.RScale = (levelInfo >> 16) & 0xff;
+                    cardData.LeftScale = (levelInfo >> 24) & 0xff;
+                    cardData.RightScale = (levelInfo >> 16) & 0xff;
                     cardData.Race = reader.getLong(6);
                     cardData.Attribute = reader.getInt(7);
                     cardData.Attack = reader.getInt(8);
@@ -202,7 +236,7 @@ public class CardManager {
             }
         } catch (Throwable e) {
             e.printStackTrace();
-            Log.e("Irrlicht", "read cards " + file, e);
+            Log.e(TAG, "read cards " + file, e);
         } finally {
             IOUtils.close(reader);
             IOUtils.close(db);

@@ -179,7 +179,7 @@ void ClientCard::UpdateInfo(char* buf) {
 		if (link != (unsigned int)pdata) {
 			link = pdata;
 		}
-		myswprintf(linkstring, L"L\x2013%d", link);
+		myswprintf(linkstring, L"L\x2012%d", link);
 		pdata = BufferIO::ReadInt32(buf);
 		if (link_marker != (unsigned int)pdata) {
 			link_marker = pdata;
@@ -213,10 +213,10 @@ bool ClientCard::client_card_sort(ClientCard* c1, ClientCard* c2) {
 		else return c1->sequence < c2->sequence;
 	else {
 		if(c1->location & (LOCATION_DECK | LOCATION_GRAVE | LOCATION_REMOVED | LOCATION_EXTRA)) {
-			auto it1 = std::find_if(mainGame->dField.chains.rbegin(), mainGame->dField.chains.rend(), [c1](const ChainInfo& ch) {
+			auto it1 = std::find_if(mainGame->dField.chains.rbegin(), mainGame->dField.chains.rend(), [c1](const auto& ch) {
 				return c1 == ch.chain_card || ch.target.find(c1) != ch.target.end();
 				});
-			auto it2 = std::find_if(mainGame->dField.chains.rbegin(), mainGame->dField.chains.rend(), [c2](const ChainInfo& ch) {
+			auto it2 = std::find_if(mainGame->dField.chains.rbegin(), mainGame->dField.chains.rend(), [c2](const auto& ch) {
 				return c2 == ch.chain_card || ch.target.find(c2) != ch.target.end();
 				});
 			if(it1 != mainGame->dField.chains.rend() || it2 != mainGame->dField.chains.rend()) {

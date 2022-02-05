@@ -2,14 +2,14 @@
 #include "data_manager.h"
 #include "network.h"
 #include "game.h"
-#include "myfilesystem.h"
+#include "base64.h"
 
 namespace ygo {
 
 DeckManager deckManager;
 
-void DeckManager::LoadLFList(const char* path, bool load_none) {
-	LFList* cur = NULL;
+void DeckManager::LoadLFListSingle(const char* path) {
+	LFList* cur = nullptr;
 	FILE* fp = fopen(path, "r");
 	char linebuf[256];
 	wchar_t strBuffer[256];
@@ -17,62 +17,75 @@ void DeckManager::LoadLFList(const char* path, bool load_none) {
 		while(fgets(linebuf, 256, fp)) {
 			if(linebuf[0] == '#')
 				continue;
-			int p = 0, sa = 0, code, count;
 			if(linebuf[0] == '!') {
-				sa = BufferIO::DecodeUTF8((const char*)(&linebuf[1]), strBuffer);
+				int sa = BufferIO::DecodeUTF8(&linebuf[1], strBuffer);
 				while(strBuffer[sa - 1] == L'\r' || strBuffer[sa - 1] == L'\n' ) sa--;
+				strBuffer[sa] = 0;
 				LFList newlist;
 				_lfList.push_back(newlist);
 				cur = &_lfList[_lfList.size() - 1];
-				memcpy(cur->listName, (const void*)strBuffer, 20 * sizeof(wchar_t));
-				cur->listName[sa] = 0;
-				cur->content = new std::unordered_map<int, int>;
+				cur->listName = strBuffer;
 				cur->hash = 0x7dfcee6a;
 				continue;
 			}
+			int p = 0;
 			while(linebuf[p] != ' ' && linebuf[p] != '\t' && linebuf[p] != 0) p++;
 			if(linebuf[p] == 0)
 				continue;
 			linebuf[p++] = 0;
-			sa = p;
-			code = atoi(linebuf);
+			int sa = p;
+			int code = atoi(linebuf);
 			if(code == 0)
 				continue;
 			while(linebuf[p] == ' ' || linebuf[p] == '\t') p++;
 			while(linebuf[p] != ' ' && linebuf[p] != '\t' && linebuf[p] != 0) p++;
 			linebuf[p] = 0;
-			count = atoi(&linebuf[sa]);
-			if(cur == NULL) continue;
-			(*cur->content)[code] = count;
+			int count = atoi(&linebuf[sa]);
+			if(!cur) continue;
+			cur->content[code] = count;
 			cur->hash = cur->hash ^ ((code << 18) | (code >> 14)) ^ ((code << (27 + count)) | (code >> (5 - count)));
 		}
 		fclose(fp);
 	}
-	if(!load_none)
-		return;
+}
+void DeckManager::LoadLFList() {
+	LoadLFListSingle("expansions/lflist.conf");
+	LoadLFListSingle("lflist.conf");
 	LFList nolimit;
-	myswprintf(nolimit.listName, L"N/A");
+	nolimit.listName = L"N/A";
 	nolimit.hash = 0;
-	nolimit.content = new std::unordered_map<int, int>;
 	_lfList.push_back(nolimit);
 }
-wchar_t* DeckManager::GetLFListName(int lfhash) {
-	for(size_t i = 0; i < _lfList.size(); ++i) {
-		if(_lfList[i].hash == (unsigned int)lfhash) {
-			return _lfList[i].listName;
-		}
-	}
-	return (wchar_t*)dataManager.unknown_string;
+const wchar_t* DeckManager::GetLFListName(int lfhash) {
+	auto lit = std::find_if(_lfList.begin(), _lfList.end(), [lfhash](const ygo::LFList& list) {
+		return list.hash == lfhash;
+	});
+	if(lit != _lfList.end())
+		return lit->listName.c_str();
+	return dataManager.unknown_string;
 }
-int DeckManager::CheckDeck(Deck& deck, int lfhash, bool allow_ocg, bool allow_tcg) {
+const std::unordered_map<int, int>* DeckManager::GetLFListContent(int lfhash) {
+	auto lit = std::find_if(_lfList.begin(), _lfList.end(), [lfhash](const ygo::LFList& list) {
+		return list.hash == lfhash;
+	});
+	if(lit != _lfList.end())
+		return &lit->content;
+	return nullptr;
+}
+static int checkAvail(int ot, int avail) {
+	if(!!(ot & 0x4))
+		return 0;
+	if((ot & avail) == avail)
+		return 0;
+	if((ot & AVAIL_OCG) && !(avail == AVAIL_OCG))
+		return DECKERROR_OCGONLY;
+	if((ot & AVAIL_TCG) && !(avail == AVAIL_TCG))
+		return DECKERROR_TCGONLY;
+	return DECKERROR_NOTAVAIL;
+}
+int DeckManager::CheckDeck(Deck& deck, int lfhash, int rule) {
 	std::unordered_map<int, int> ccount;
-	std::unordered_map<int, int>* list = 0;
-	for(size_t i = 0; i < _lfList.size(); ++i) {
-		if(_lfList[i].hash == (unsigned int)lfhash) {
-			list = _lfList[i].content;
-			break;
-		}
-	}
+	auto list = GetLFListContent(lfhash);
 	if(!list)
 		return 0;
 	int dc = 0;
@@ -82,13 +95,13 @@ int DeckManager::CheckDeck(Deck& deck, int lfhash, bool allow_ocg, bool allow_tc
 		return (DECKERROR_EXTRACOUNT << 28) + deck.extra.size();
 	if(deck.side.size() > 15)
 		return (DECKERROR_SIDECOUNT << 28) + deck.side.size();
-
+	const int rule_map[6] = { AVAIL_OCG, AVAIL_TCG, AVAIL_SC, AVAIL_CUSTOM, AVAIL_OCGTCG, 0 };
+	int avail = rule_map[rule];
 	for(size_t i = 0; i < deck.main.size(); ++i) {
 		code_pointer cit = deck.main[i];
-		if(!allow_ocg && (cit->second.ot == 0x1))
-			return (DECKERROR_OCGONLY << 28) + cit->first;
-		if(!allow_tcg && (cit->second.ot == 0x2))
-			return (DECKERROR_TCGONLY << 28) + cit->first;
+		int gameruleDeckError = checkAvail(cit->second.ot, avail);
+		if(gameruleDeckError)
+			return (gameruleDeckError << 28) + cit->first;
 		if(cit->second.type & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_TOKEN | TYPE_LINK))
 			return (DECKERROR_EXTRACOUNT << 28);
 		int code = cit->second.alias ? cit->second.alias : cit->first;
@@ -102,10 +115,9 @@ int DeckManager::CheckDeck(Deck& deck, int lfhash, bool allow_ocg, bool allow_tc
 	}
 	for(size_t i = 0; i < deck.extra.size(); ++i) {
 		code_pointer cit = deck.extra[i];
-		if(!allow_ocg && (cit->second.ot == 0x1))
-			return (DECKERROR_OCGONLY << 28) + cit->first;
-		if(!allow_tcg && (cit->second.ot == 0x2))
-			return (DECKERROR_TCGONLY << 28) + cit->first;
+		int gameruleDeckError = checkAvail(cit->second.ot, avail);
+		if(gameruleDeckError)
+			return (gameruleDeckError << 28) + cit->first;
 		int code = cit->second.alias ? cit->second.alias : cit->first;
 		ccount[code]++;
 		dc = ccount[code];
@@ -117,10 +129,9 @@ int DeckManager::CheckDeck(Deck& deck, int lfhash, bool allow_ocg, bool allow_tc
 	}
 	for(size_t i = 0; i < deck.side.size(); ++i) {
 		code_pointer cit = deck.side[i];
-		if(!allow_ocg && (cit->second.ot == 0x1))
-			return (DECKERROR_OCGONLY << 28) + cit->first;
-		if(!allow_tcg && (cit->second.ot == 0x2))
-			return (DECKERROR_TCGONLY << 28) + cit->first;
+		int gameruleDeckError = checkAvail(cit->second.ot, avail);
+		if(gameruleDeckError)
+			return (gameruleDeckError << 28) + cit->first;
 		int code = cit->second.alias ? cit->second.alias : cit->first;
 		ccount[code]++;
 		dc = ccount[code];
@@ -198,7 +209,7 @@ void DeckManager::GetCategoryPath(wchar_t* ret, int index, const wchar_t* text) 
 		myswprintf(catepath, L"./pack");
 		break;
 	case 1:
-		myswprintf(catepath, L"./windbot/Decks");
+		myswprintf(catepath, mainGame->gameConf.bot_deck_path);
 		break;
 	case -1:
 	case 2:
@@ -276,7 +287,7 @@ bool DeckManager::SaveDeck(Deck& deck, const wchar_t* file) {
 	FILE* fp = OpenDeckFile(file, "w");
 	if(!fp)
 		return false;
-	fprintf(fp, "#created by ygomobile\n#main\n");
+	fprintf(fp, "#created by ...\n#main\n");
 	for(size_t i = 0; i < deck.main.size(); ++i)
 		fprintf(fp, "%d\n", deck.main[i]->first);
 	fprintf(fp, "#extra\n");
@@ -298,6 +309,40 @@ bool DeckManager::DeleteDeck(const wchar_t* file) {
 	int result = unlink(filefn);
 	return result == 0;
 #endif
+}
+int DeckManager::TypeCount(std::vector<code_pointer> list, unsigned int ctype) {
+	int res = 0;
+	for(size_t i = 0; i < list.size(); ++i) {
+		code_pointer cur = list[i];
+		if(cur->second.type & ctype)
+			res++;
+	}
+	return res;
+}
+bool DeckManager::LoadDeckFromCode(Deck& deck, const char *code, int len) {
+	char data[1024], *pdeck = data, *data_ = data;
+	int decoded_len = Base64::DecodedLength(code, len);
+	if(decoded_len > 1024 || decoded_len < 8 || !Base64::Decode(code, len, data_, decoded_len))
+		return false;
+	int mainc = BufferIO::ReadInt32(pdeck);
+	int sidec = BufferIO::ReadInt32(pdeck);
+	int errorcode = LoadDeck(deck, (int*)pdeck, mainc, sidec);
+	return (errorcode == 0);
+}
+int DeckManager::SaveDeckToCode(Deck& deck, char* code) {
+	char deckbuf[1024], *pdeck = deckbuf;
+	BufferIO::WriteInt32(pdeck, deck.main.size() + deck.extra.size());
+	BufferIO::WriteInt32(pdeck, deck.side.size());
+	for(size_t i = 0; i < deck.main.size(); ++i)
+		BufferIO::WriteInt32(pdeck, deck.main[i]->first);
+	for(size_t i = 0; i < deck.extra.size(); ++i)
+		BufferIO::WriteInt32(pdeck, deck.extra[i]->first);
+	for(size_t i = 0; i < deck.side.size(); ++i)
+		BufferIO::WriteInt32(pdeck, deck.side[i]->first);
+	int len = pdeck - deckbuf;
+	int encoded_len = Base64::EncodedLength(len);
+	Base64::Encode(deckbuf, len, code, encoded_len+1);
+	return encoded_len;
 }
 bool DeckManager::CreateCategory(const wchar_t* name) {
 	if(!FileSystem::IsDirExists(L"./deck") && !FileSystem::MakeDir(L"./deck"))
@@ -326,15 +371,4 @@ bool DeckManager::DeleteCategory(const wchar_t* name) {
 		return false;
 	return FileSystem::DeleteDir(localname);
 }
-
-int DeckManager::TypeCount(std::vector<code_pointer> list, unsigned int ctype) {
-	int res = 0;
-	for(size_t i = 0; i < list.size(); ++i) {
-		code_pointer cur = list[i];
-		if(cur->second.type & ctype)
-			res++;
-	}
-	return res;
-}
-
 }

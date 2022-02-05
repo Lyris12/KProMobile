@@ -17,11 +17,10 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_state = luaL_newstate();
 	current_state = lua_state;
 	pduel = pd;
+	memcpy(lua_getextraspace(lua_state), &pd, LUA_EXTRASPACE); //set_duel_info
 	no_action = 0;
 	call_depth = 0;
 	disable_action_check = 0;
-
-	set_duel_info(lua_state, pd);
 	//Initial
 	luaL_openlibs(lua_state);
 #ifdef YGOPRO_LUA_SAFE
@@ -29,11 +28,19 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_setglobal(lua_state, "io");
 	lua_pushnil(lua_state);
 	lua_setglobal(lua_state, "os");
+	lua_pushnil(lua_state);
+	lua_setglobal(lua_state, "package");
+	lua_pushnil(lua_state);
+	lua_setglobal(lua_state, "debug");
 	luaL_getsubtable(lua_state, LUA_REGISTRYINDEX, "_LOADED");
 	lua_pushnil(lua_state);
 	lua_setfield(lua_state, -2, "io");
 	lua_pushnil(lua_state);
 	lua_setfield(lua_state, -2, "os");
+	lua_pushnil(lua_state);
+	lua_setfield(lua_state, -2, "package");
+	lua_pushnil(lua_state);
+	lua_setfield(lua_state, -2, "debug");
 	lua_pop(lua_state, 1);
 #endif
 	//add bit lib back
@@ -241,9 +248,18 @@ int32 interpreter::load_card_script(uint32 code) {
 		lua_pushstring(current_state, "__index");
 		lua_pushvalue(current_state, -2);
 		lua_rawset(current_state, -3);
+		lua_getglobal(current_state, class_name);
+		lua_setglobal(current_state, "self_table");
+		lua_pushinteger(current_state, code);
+		lua_setglobal(current_state, "self_code");
 		char script_name[64];
 		sprintf(script_name, "./script/c%d.lua", code);
-		if(!load_script(script_name)) {
+		int32 res = load_script(script_name);
+		lua_pushnil(current_state);
+		lua_setglobal(current_state, "self_table");
+		lua_pushnil(current_state);
+		lua_setglobal(current_state, "self_code");
+		if(!res) {
 			return OPERATION_FAIL;
 		}
 	}
@@ -255,11 +271,11 @@ void interpreter::add_param(void *param, int32 type, bool front) {
 	else
 		params.emplace_back(param, type);
 }
-void interpreter::add_param(ptr param, int32 type, bool front) {
+void interpreter::add_param(int32 param, int32 type, bool front) {
 	if(front)
-		params.emplace_front((void*)param, type);
+		params.emplace_front((void*)(intptr_t)param, type);
 	else
-		params.emplace_back((void*)param, type);
+		params.emplace_back((void*)(intptr_t)param, type);
 }
 void interpreter::push_param(lua_State* L, bool is_coroutine) {
 	int32 pushed = 0;
@@ -268,13 +284,13 @@ void interpreter::push_param(lua_State* L, bool is_coroutine) {
 		uint32 type = it.second;
 		switch(type) {
 		case PARAM_TYPE_INT:
-			lua_pushinteger(L, (ptr) it.first);
+			lua_pushinteger(L, (lua_Integer)it.first);
 			break;
 		case PARAM_TYPE_STRING:
-			lua_pushstring(L, (const char *) it.first);
+			lua_pushstring(L, (const char *)it.first);
 			break;
 		case PARAM_TYPE_BOOLEAN:
-			lua_pushboolean(L, (int32)(ptr)it.first);
+			lua_pushboolean(L, (int32)(intptr_t)it.first);
 			break;
 		case PARAM_TYPE_CARD: {
 			if (it.first)
@@ -298,11 +314,11 @@ void interpreter::push_param(lua_State* L, bool is_coroutine) {
 			break;
 		}
 		case PARAM_TYPE_FUNCTION: {
-			function2value(L, (int32)(ptr)it.first);
+			function2value(L, (int32)(intptr_t)it.first);
 			break;
 		}
 		case PARAM_TYPE_INDEX: {
-			int32 index = (int32)(ptr)it.first;
+			int32 index = (int32)(intptr_t)it.first;
 			if(index > 0)
 				lua_pushvalue(L, index);
 			else if(is_coroutine) {
@@ -651,12 +667,25 @@ int32 interpreter::call_coroutine(int32 f, uint32 param_count, uint32 * yield_va
 		}
 	}
 	push_param(rthread, true);
+	lua_State* prev_state = current_state;
 	current_state = rthread;
+#if (LUA_VERSION_NUM >= 504)
+	int32 nresults;
+	int32 result = lua_resume(rthread, prev_state, param_count, &nresults);
+#else
 	int32 result = lua_resume(rthread, 0, param_count);
+	int32 nresults = lua_gettop(rthread);
+#endif
 	if (result == 0) {
 		coroutines.erase(f);
-		if(yield_value)
-			*yield_value = lua_isboolean(rthread, -1) ? lua_toboolean(rthread, -1) : (uint32)lua_tointeger(rthread, -1);
+		if(yield_value) {
+			if(nresults == 0)
+				*yield_value = 0;
+			else if(lua_isboolean(rthread, -1))
+				*yield_value = lua_toboolean(rthread, -1);
+			else
+				*yield_value = (uint32)lua_tointeger(rthread, -1);
+		}
 		current_state = lua_state;
 		call_depth--;
 		if(call_depth == 0) {
@@ -730,14 +759,8 @@ int32 interpreter::get_function_handle(lua_State* L, int32 index) {
 	int32 ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	return ref;
 }
-void interpreter::set_duel_info(lua_State* L, duel* pduel) {
-	lua_pushlightuserdata(L, pduel);
-	luaL_ref(L, LUA_REGISTRYINDEX);
-}
 duel* interpreter::get_duel_info(lua_State * L) {
-	luaL_checkstack(L, 1, NULL);
-	lua_rawgeti(L, LUA_REGISTRYINDEX, 3);
-	duel* pduel = (duel*)lua_topointer(L, -1);
-	lua_pop(L, 1);
+	duel* pduel;
+	memcpy(&pduel, lua_getextraspace(L), LUA_EXTRASPACE);
 	return pduel;
 }

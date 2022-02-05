@@ -4,7 +4,11 @@ import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -16,30 +20,35 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.signature.StringSignature;
+import com.bumptech.glide.signature.MediaStoreSignature;
 
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import cn.garymb.ygomobile.App;
 import cn.garymb.ygomobile.AppsSettings;
 import cn.garymb.ygomobile.Constants;
 import cn.garymb.ygomobile.lite.R;
+import cn.garymb.ygomobile.ui.adapters.SimpleListAdapter;
 import cn.garymb.ygomobile.ui.home.MainActivity;
 import cn.garymb.ygomobile.ui.plus.DialogPlus;
 import com.ourygo.assistant.service.DuelAssistantService;
 import cn.garymb.ygomobile.ui.plus.VUiKit;
 import cn.garymb.ygomobile.ui.preference.PreferenceFragmentPlus;
 import cn.garymb.ygomobile.utils.FileUtils;
+import cn.garymb.ygomobile.utils.glide.GlideCompat;
 import cn.garymb.ygomobile.utils.IOUtils;
 import cn.garymb.ygomobile.utils.SystemUtils;
 import ocgcore.ConfigManager;
@@ -53,7 +62,6 @@ import static cn.garymb.ygomobile.Constants.PERF_TEST_REPLACE_KERNEL;
 import static cn.garymb.ygomobile.Constants.PREF_CHANGE_LOG;
 import static cn.garymb.ygomobile.Constants.PREF_CHECK_UPDATE;
 import static cn.garymb.ygomobile.Constants.PREF_DECK_DELETE_DILAOG;
-import static cn.garymb.ygomobile.Constants.PREF_DECK_MANAGER_V2;
 import static cn.garymb.ygomobile.Constants.PREF_DEL_EX;
 import static cn.garymb.ygomobile.Constants.PREF_FONT_ANTIALIAS;
 import static cn.garymb.ygomobile.Constants.PREF_FONT_SIZE;
@@ -70,6 +78,7 @@ import static cn.garymb.ygomobile.Constants.PREF_READ_EX;
 import static cn.garymb.ygomobile.Constants.PREF_SENSOR_REFRESH;
 import static cn.garymb.ygomobile.Constants.PREF_START_SERVICEDUELASSISTANT;
 import static cn.garymb.ygomobile.Constants.PREF_USE_EXTRA_CARD_CARDS;
+import static cn.garymb.ygomobile.Constants.PREF_WINDOW_TOP_BOTTOM;
 import static cn.garymb.ygomobile.Constants.SETTINGS_AVATAR;
 import static cn.garymb.ygomobile.Constants.SETTINGS_CARD_BG;
 import static cn.garymb.ygomobile.Constants.SETTINGS_COVER;
@@ -133,8 +142,8 @@ public class SettingFragment extends PreferenceFragmentPlus {
         bind(PREF_GAME_FONT, mSettings.getFontPath());
         bind(PREF_READ_EX, mSettings.isReadExpansions());
         bind(PREF_DEL_EX, getString(R.string.about_delete_ex));
-        bind(PREF_DECK_MANAGER_V2, mSettings.isUseDeckManagerV2());
         bind(PERF_TEST_REPLACE_KERNEL, "需root权限，请在开发者的指导下食用");
+        bind(PREF_WINDOW_TOP_BOTTOM, ""+mSettings.getScreenPadding());
         Preference preference = findPreference(PREF_READ_EX);
         if (preference != null) {
             preference.setSummary(mSettings.getExpansionsPath().getAbsolutePath());
@@ -187,12 +196,12 @@ public class SettingFragment extends PreferenceFragmentPlus {
                 }
                 //开关决斗助手
                 if (preference.getKey().equals(PREF_START_SERVICEDUELASSISTANT)) {
-                    if (checkBoxPreference.isChecked()) {
-                        getActivity().startService(new Intent(getActivity(), DuelAssistantService.class));
-                    } else {
-                        getActivity().stopService(new Intent(getActivity(), DuelAssistantService.class));
+//                    if (checkBoxPreference.isChecked()) {
+//                        getActivity().startService(new Intent(getActivity(), DuelAssistantService.class));
+//                    } else {
+//                        getActivity().stopService(new Intent(getActivity(), DuelAssistantService.class));
+//                    }
                     }
-                }
                 return true;
             }
             boolean rs = super.onPreferenceChange(preference, value);
@@ -220,17 +229,43 @@ public class SettingFragment extends PreferenceFragmentPlus {
             //Beta.checkUpgrade();
         }
         if (PREF_DEL_EX.equals(key)) {
+            File[] ypks = new File(AppsSettings.get().getExpansionsPath().getAbsolutePath()).listFiles();
+            List<String> list = new ArrayList<>();
+            for (int i = 0; i < ypks.length; i++) {
+                list.add(ypks[i].getName());
+            }
+            SimpleListAdapter simpleListAdapter = new SimpleListAdapter(getContext());
+            simpleListAdapter.set(list);
             final DialogPlus dialog = new DialogPlus(getContext());
-            dialog.setTitle(R.string.question);
+            dialog.setTitle(R.string.ypk_delete);
+            dialog.setContentView(R.layout.dialog_room_name);
+            EditText editText = dialog.bind(R.id.room_name);
+            editText.setVisibility(View.GONE);//不显示输入框
+            ListView listView = dialog.bind(R.id.room_list);
+            listView.setAdapter(simpleListAdapter);
+            listView.setOnItemLongClickListener((a, v, i, index) -> {
+                String name = simpleListAdapter.getItemById(index);
+                int pos = simpleListAdapter.findItem(name);
+                if (pos >= 0) {
+                    simpleListAdapter.remove(pos);
+                    simpleListAdapter.notifyDataSetChanged();
+                    FileUtils.delFile(mSettings.getExpansionsPath().getAbsolutePath() + "/" + name);
+                    DataManager.get().load(true);
+                    Toast.makeText(getContext(), R.string.done, Toast.LENGTH_LONG).show();
+                }
+                return true;
+            });
+            /*
             dialog.setMessage(R.string.ask_delete_ex);
             dialog.setLeftButtonListener((dlg, s) -> {
                 FileUtils.delFile(mSettings.getExpansionsPath().getAbsolutePath());
+                DataManager.get().load(true);
                 Toast.makeText(getContext(), R.string.done, Toast.LENGTH_LONG).show();
                 dialog.dismiss();
             });
             dialog.setRightButtonListener((dlg, s) -> {
                 dialog.dismiss();
-            });
+            });*/
             dialog.show();
         }
         if (PREF_PENDULUM_SCALE.equals(key)) {
@@ -253,17 +288,13 @@ public class SettingFragment extends PreferenceFragmentPlus {
             avatar1.setOnClickListener((v) -> {
                 //打开系统文件相册
                 String outFile = new File(mSettings.getCoreSkinPath(), Constants.CORE_SKIN_AVATAR_ME).getAbsolutePath();
-                showImageDialog(preference, getString(R.string.settings_game_avatar),
-                        outFile,
-                        true, CORE_SKIN_AVATAR_SIZE[0], CORE_SKIN_AVATAR_SIZE[1]);
+                showImageDialog(preference, getString(R.string.settings_game_avatar), outFile, true, CORE_SKIN_AVATAR_SIZE[0], CORE_SKIN_AVATAR_SIZE[1]);
                 dialog.dismiss();
             });
             avatar2.setOnClickListener((v) -> {
                 //打开系统文件相册
                 String outFile = new File(mSettings.getCoreSkinPath(), Constants.CORE_SKIN_AVATAR_OPPONENT).getAbsolutePath();
-                showImageDialog(preference, getString(R.string.settings_game_avatar),
-                        outFile,
-                        true, CORE_SKIN_AVATAR_SIZE[0], CORE_SKIN_AVATAR_SIZE[1]);
+                showImageDialog(preference, getString(R.string.settings_game_avatar), outFile, true, CORE_SKIN_AVATAR_SIZE[0], CORE_SKIN_AVATAR_SIZE[1]);
                 dialog.dismiss();
             });
         } else if (SETTINGS_COVER.equals(key)) {
@@ -406,7 +437,7 @@ public class SettingFragment extends PreferenceFragmentPlus {
                         process.waitFor();
 
                         IOUtils.delete(soFile);
-                        FileUtils.copyFile(file, soFile.getAbsolutePath(), true);
+                        FileUtils.copyFile(file, soFile.getAbsolutePath());
                         me.what = COPY_SO_OK;
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -436,39 +467,26 @@ public class SettingFragment extends PreferenceFragmentPlus {
 
     private void showImageDialog(Preference preference, String title, String outFile, boolean isJpeg, int outWidth, int outHeight) {
         int width = getResources().getDisplayMetrics().widthPixels;
-        //DialogPlus builder = new DialogPlus(getActivity());
         final ImageView imageView = new ImageView(getActivity());
         FrameLayout frameLayout = new FrameLayout(getActivity());
         imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        //builder.setTitle(title);
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         layoutParams.gravity = Gravity.CENTER_HORIZONTAL;
         frameLayout.addView(imageView, layoutParams);
-        // builder.setContentView(frameLayout);
-        //builder.setLeftButtonText(R.string.settings);
-        //builder.setLeftButtonListener((dlg, s) -> {
-        showImageCropChooser(preference, getString(R.string.dialog_select_image), outFile,
-                isJpeg, outWidth, outHeight);
-        //dlg.dismiss();
-        // });
-//        builder.setOnCancelListener((dlg) -> {
-//            BitmapUtil.destroy(imageView.getDrawable());
-//        });
-        //builder.show();
+        showImageCropChooser(preference, getString(R.string.dialog_select_image), outFile, isJpeg, outWidth, outHeight);
         File img = new File(outFile);
         if (img.exists()) {
-            Glide.with(this).load(img).signature(new StringSignature(img.getName() + img.lastModified()))
+            GlideCompat.with(this).load(img).signature(new MediaStoreSignature("image/*", img.lastModified(), 0))
                     .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .override(outWidth, outHeight)
                     .into(imageView);
         }
     }
-
     public void setImage(String outFile, int outWidth, int outHeight, ImageView imageView) {
         File img = new File(outFile);
         if (img.exists()) {
-            Glide.with(this).load(img).signature(new StringSignature(img.getName() + img.lastModified()))
+            GlideCompat.with(this).load(img).signature(new MediaStoreSignature("image/*", img.lastModified(), 0))
                     .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .override(outWidth, outHeight)
                     .into(imageView);
@@ -515,22 +533,22 @@ public class SettingFragment extends PreferenceFragmentPlus {
     private void setPendlumScale(boolean ok) {
         if (Constants.DEBUG)
             Log.i("kk", "setPendlumScale " + ok);
-        File file = new File(mSettings.getResourcePath(), Constants.CORE_SKIN_PENDULUM_PATH);
+        File dir = new File(mSettings.getResourcePath(), Constants.CORE_SKIN_PENDULUM_PATH);
         if (ok) {
             //rename
             Dialog dlg = DialogPlus.show(getActivity(), null, getString(R.string.coping_pendulum_image));
             VUiKit.defer().when(() -> {
                 try {
-                    IOUtils.createFolder(file);
+                    IOUtils.createFolder(dir);
                     IOUtils.copyFilesFromAssets(getActivity(), getDatapath(Constants.CORE_SKIN_PENDULUM_PATH),
-                            file.getAbsolutePath(), false);
+                            dir.getAbsolutePath(), false);
                 } catch (IOException e) {
                 }
             }).done((re) -> {
                 dlg.dismiss();
             });
         } else {
-            IOUtils.delete(file);
+            IOUtils.delete(dir);
         }
     }
 

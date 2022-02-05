@@ -8,6 +8,7 @@
 #include <android_native_app_glue.h>
 #include <signal.h>
 #include <android/log.h>
+#include <Android/CIrrDeviceAndroid.h>
 
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "ygomobile-native", __VA_ARGS__))
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "ygomobile-native", __VA_ARGS__))
@@ -98,7 +99,7 @@ extern float getScreenWidth(ANDROID_APP app);
 
 extern float getScreenHeight(ANDROID_APP app);
 
-extern void OnShareFile(ANDROID_APP app, const char* title, const char* ext);
+extern void OnShareFile(ANDROID_APP app, const char* _type, const char* name);
 
 // Get SDCard path.
 extern irr::io::path getExternalStorageDir(ANDROID_APP app);

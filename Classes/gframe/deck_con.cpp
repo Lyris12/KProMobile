@@ -1,10 +1,9 @@
-
 #include "config.h"
 #include "deck_con.h"
 #include "data_manager.h"
 #include "deck_manager.h"
 #include "image_manager.h"
-#include "myfilesystem.h"
+#include "sound_manager.h"
 #include "game.h"
 #include "duelclient.h"
 
@@ -74,15 +73,13 @@ void DeckBuilder::Initialize() {
 	mainGame->wSort->setVisible(true);
 	mainGame->btnLeaveGame->setVisible(true);
 	mainGame->btnLeaveGame->setText(dataManager.GetSysString(1306));
-	mainGame->wPallet->setVisible(true);
-	mainGame->imgChat->setVisible(false);
 	mainGame->btnSideOK->setVisible(false);
 	mainGame->btnSideShuffle->setVisible(false);
 	mainGame->btnSideSort->setVisible(false);
 	mainGame->btnSideReload->setVisible(false);
-	filterList = deckManager._lfList[0].content;
-	mainGame->cbLFList->setSelected(0);
+	filterList = &deckManager._lfList[mainGame->gameConf.use_lflist ? mainGame->gameConf.default_lflist : deckManager._lfList.size() - 1].content;
 	ClearSearch();
+	rnd.reset((unsigned int)time(nullptr));
 	mouse_pos.set(0, 0);
 	hovered_code = 0;
 	hovered_pos = 0;
@@ -108,39 +105,27 @@ void DeckBuilder::Terminate() {
 	mainGame->wCardImg->setVisible(false);
 	mainGame->wInfos->setVisible(false);
 	mainGame->btnLeaveGame->setVisible(false);
-    mainGame->wPallet->setVisible(false);
-    mainGame->imgChat->setVisible(true);
-    mainGame->wSettings->setVisible(false);
-    mainGame->wLogs->setVisible(false);
+	mainGame->wBigCard->setVisible(false);
+	mainGame->btnBigCardOriginalSize->setVisible(false);
+	mainGame->btnBigCardZoomIn->setVisible(false);
+	mainGame->btnBigCardZoomOut->setVisible(false);
+	mainGame->btnBigCardClose->setVisible(false);
 	mainGame->PopupElement(mainGame->wMainMenu);
 	mainGame->device->setEventReceiver(&mainGame->menuHandler);
 	mainGame->wACMessage->setVisible(false);
 	mainGame->ClearTextures();
+	mainGame->showingcode = 0;
 	mainGame->scrFilter->setVisible(false);
 	int catesel = mainGame->cbDBCategory->getSelected();
-	char linebuf[256];
 	if(catesel >= 0)
-	    BufferIO::CopyWStr(mainGame->cbDBCategory->getItem(catesel), mainGame->gameConf.lastcategory, 64);
-	    BufferIO::EncodeUTF8(mainGame->gameConf.lastcategory, linebuf);
-		android::setLastCategory(mainGame->appMain, linebuf);
-		//irr:os::Printer::log("setLastCategory", linebuf);
+		BufferIO::CopyWStr(mainGame->cbDBCategory->getItem(catesel), mainGame->gameConf.lastcategory, 64);
 	int decksel = mainGame->cbDBDecks->getSelected();
 	if(decksel >= 0)
-	    BufferIO::CopyWStr(mainGame->cbDBDecks->getItem(decksel), mainGame->gameConf.lastdeck, 64);
-		BufferIO::EncodeUTF8(mainGame->gameConf.lastdeck, linebuf);
-		android::setLastDeck(mainGame->appMain, linebuf);
-		//os::Printer::log("setLastDeck", linebuf);
-	mainGame->SaveConfig();
+		BufferIO::CopyWStr(mainGame->cbDBDecks->getItem(decksel), mainGame->gameConf.lastdeck, 64);
 	if(exit_on_return)
-		mainGame->OnGameClose();
+		mainGame->device->closeDevice();
 }
 bool DeckBuilder::OnEvent(const irr::SEvent& event) {
-#ifdef _IRR_ANDROID_PLATFORM_
-	irr::SEvent transferEvent;
-	if (irr::android::TouchEventTransferAndroid::OnTransferDeckEdit(event)) {
-		return true;
-	}
-#endif
 	if(mainGame->dField.OnCommonEvent(event))
 		return false;
 	switch(event.EventType) {
@@ -158,19 +143,19 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			break;
 		}
 		switch(event.GUIEvent.EventType) {
-/*		case irr::gui::EGET_ELEMENT_CLOSED: {
-*			if(id == WINDOW_DECK_MANAGE) {
-*				mainGame->HideElement(mainGame->wDeckManage);
-*				return true;
-*				break;
-*			}
-*		}*/
+		case irr::gui::EGET_ELEMENT_CLOSED: {
+			if(id == WINDOW_DECK_MANAGE) {
+				mainGame->HideElement(mainGame->wDeckManage);
+				return true;
+				break;
+			}
+		}
 		case irr::gui::EGET_BUTTON_CLICKED: {
-			mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::BUTTON);
+			soundManager.PlaySoundEffect(SOUND_BUTTON);
 			switch(id) {
 			case BUTTON_CLEAR_DECK: {
 				mainGame->gMutex.lock();
-				mainGame->SetStaticText(mainGame->stQMessage, 370, mainGame->textFont, dataManager.GetSysString(1339));
+				mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->guiFont, dataManager.GetSysString(1339));
 				mainGame->PopupElement(mainGame->wQuery);
 				mainGame->gMutex.unlock();
 				prev_operation = id;
@@ -183,7 +168,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				break;
 			}
 			case BUTTON_SHUFFLE_DECK: {
-				std::random_shuffle(deckManager.current_deck.main.begin(), deckManager.current_deck.main.end());
+				rnd.shuffle_vector(deckManager.current_deck.main);
 				break;
 			}
 			case BUTTON_SAVE_DECK: {
@@ -233,8 +218,49 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 						mainGame->btnManageDeck->setEnabled(true);
 						mainGame->cbDBCategory->setEnabled(true);
 						mainGame->cbDBDecks->setEnabled(true);
+					}
 				}
+				break;
+			}
+			case BUTTON_DECK_CODE: {
+				int sel = mainGame->cbDBDecks->getSelected();
+				if(sel == -1)
+					break;
+				mainGame->gMutex.lock();
+				mainGame->wDeckCode->setText(dataManager.GetSysString(1387));
+				if(deckManager.current_deck.main.size() > 0 || deckManager.current_deck.extra.size() > 0 || deckManager.current_deck.side.size() > 0) {
+					wchar_t deck_code[2048];
+					char deck_code_utf8[1024];
+					deckManager.SaveDeckToCode(deckManager.current_deck, deck_code_utf8);
+					BufferIO::DecodeUTF8(deck_code_utf8, deck_code);
+					mainGame->ebDeckCode->setText(deck_code);
+				} else
+					mainGame->ebDeckCode->setText(L"");
+				mainGame->PopupElement(mainGame->wDeckCode);
+				mainGame->gMutex.unlock();
+				prev_operation = id;
+				prev_sel = sel;
+				break;
+			}
+			case BUTTON_DECK_CODE_SAVE: {
+				mainGame->HideElement(mainGame->wDeckCode);
+				if(prev_operation == BUTTON_DECK_CODE) {
+					Deck new_deck;
+					char deck_code[1024];
+					BufferIO::EncodeUTF8(mainGame->ebDeckCode->getText(), deck_code);
+					if(deckManager.LoadDeckFromCode(new_deck, deck_code, strlen(deck_code)))
+						deckManager.current_deck = new_deck;
+					else
+						mainGame->env->addMessageBox(L"", dataManager.GetSysString(1389));
 				}
+				prev_operation = 0;
+				prev_sel = -1;
+				break;
+			}
+			case BUTTON_DECK_CODE_CANCEL: {
+				mainGame->HideElement(mainGame->wDeckCode);
+				prev_operation = 0;
+				prev_sel = -1;
 				break;
 			}
 			case BUTTON_DELETE_DECK: {
@@ -244,7 +270,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				mainGame->gMutex.lock();
 				wchar_t textBuffer[256];
 				myswprintf(textBuffer, L"%ls\n%ls", mainGame->cbDBDecks->getItem(sel), dataManager.GetSysString(1337));
-				mainGame->SetStaticText(mainGame->stQMessage, 370 * mainGame->xScale, mainGame->textFont, textBuffer);
+				mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->guiFont, textBuffer);
 				mainGame->PopupElement(mainGame->wQuery);
 				mainGame->gMutex.unlock();
 				prev_operation = id;
@@ -254,7 +280,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			case BUTTON_LEAVE_GAME: {
 				if(is_modified && !readonly && !mainGame->chkIgnoreDeckChanges->isChecked()) {
 					mainGame->gMutex.lock();
-					mainGame->SetStaticText(mainGame->stQMessage, 370 * mainGame->xScale, mainGame->guiFont, dataManager.GetSysString(1356));
+					mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->guiFont, dataManager.GetSysString(1356));
 					mainGame->PopupElement(mainGame->wQuery);
 					mainGame->gMutex.unlock();
 					prev_operation = id;
@@ -262,53 +288,6 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				}
 				Terminate();
 				break;
-			}
-			case BUTTON_SETTINGS: {
-                mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::BUTTON);
-                if (mainGame->imgSettings->isPressed()) {
-			        mainGame->ShowElement(mainGame->wSettings);
-                    mainGame->imgSettings->setPressed(true);
-                } else {
-                    mainGame->HideElement(mainGame->wSettings);
-                    mainGame->imgSettings->setPressed(false);
-                }
-			    break;
-			}
-			case BUTTON_CLOSE_SETTINGS: {
-			    mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::BUTTON);
-			    mainGame->HideElement(mainGame->wSettings);
-                mainGame->imgSettings->setPressed(false);
-			    break;
-			}
-			case BUTTON_SHOW_LOG: {
-                mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::BUTTON);
-                if (mainGame->imgLog->isPressed()) {
-			        mainGame->ShowElement(mainGame->wLogs);
-			        mainGame->imgLog->setPressed(true);
-                } else {
-                    mainGame->HideElement(mainGame->wLogs);
-                    mainGame->imgLog->setPressed(false);
-                }
-			    break;
-			}
-			case BUTTON_CLOSE_LOG: {
-			    mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::BUTTON);
-			    mainGame->HideElement(mainGame->wLogs);
-                mainGame->imgLog->setPressed(false);
-			    break;
-			}
-			case BUTTON_BGM: {
-			    mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::BUTTON);
-			    if (mainGame->gameConf.enable_music) {
-			        mainGame->gameConf.enable_music = false;
-			        mainGame->imgVol->setImage(imageManager.tMute);
-			    } else {
-			        mainGame->gameConf.enable_music = true;
-			        mainGame->imgVol->setImage(imageManager.tPlay);
-			    }
-			    mainGame->chkEnableMusic->setChecked(mainGame->gameConf.enable_music);
-			    mainGame->soundManager->EnableMusic(mainGame->chkEnableMusic->isChecked());
-			    break;
 			}
 			case BUTTON_EFFECT_FILTER: {
 				mainGame->PopupElement(mainGame->wCategories);
@@ -338,7 +317,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			case BUTTON_MANAGE_DECK: {
 				if(is_modified && !readonly && !mainGame->chkIgnoreDeckChanges->isChecked()) {
 					mainGame->gMutex.lock();
-					mainGame->SetStaticText(mainGame->stQMessage, 370 * mainGame->xScale, mainGame->guiFont, dataManager.GetSysString(1356));
+					mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->guiFont, dataManager.GetSysString(1356));
 					mainGame->PopupElement(mainGame->wQuery);
 					mainGame->gMutex.unlock();
 					prev_operation = id;
@@ -417,7 +396,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				int catesel = mainGame->lstCategories->getSelected();
 				if(catesel != 2)
 					mainGame->cbDMCategory->addItem(dataManager.GetSysString(1452));
-				for(int i = 4;i < mainGame->lstCategories->getItemCount();i++) {
+				for(int i = 4; i < (int)mainGame->lstCategories->getItemCount(); i++) {
 					if(i != catesel)
 						mainGame->cbDMCategory->addItem(mainGame->lstCategories->getListItem(i));
 				}
@@ -434,7 +413,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				int catesel = mainGame->lstCategories->getSelected();
 				if(catesel != 2)
 					mainGame->cbDMCategory->addItem(dataManager.GetSysString(1452));
-				for(int i = 4;i < mainGame->lstCategories->getItemCount();i++) {
+				for(int i = 4; i < (int)mainGame->lstCategories->getItemCount(); i++) {
 					if(i != catesel)
 						mainGame->cbDMCategory->addItem(mainGame->lstCategories->getListItem(i));
 				}
@@ -453,8 +432,8 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 						mainGame->lstCategories->addItem(catename);
 						catesel = mainGame->lstCategories->getItemCount() - 1;
 					} else {
-						for(int i = 3;i < mainGame->lstCategories->getItemCount();i++) {
-							if(!wcsncasecmp(mainGame->lstCategories->getListItem(i), catename, 256)) {
+						for(int i = 3; i < (int)mainGame->lstCategories->getItemCount(); i++) {
+							if(!mywcsncasecmp(mainGame->lstCategories->getListItem(i), catename, 256)) {
 								catesel = i;
 								mainGame->stACMessage->setText(dataManager.GetSysString(1474));
 								mainGame->PopupElement(mainGame->wACMessage, 20);
@@ -483,8 +462,8 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 						catesel = mainGame->lstCategories->getItemCount() - 1;
 					} else {
 						catesel = 0;
-						for(int i = 3;i < mainGame->lstCategories->getItemCount();i++) {
-							if(!wcsncasecmp(mainGame->lstCategories->getListItem(i), newcatename, 256)) {
+						for(int i = 3; i < (int)mainGame->lstCategories->getItemCount(); i++) {
+							if(!mywcsncasecmp(mainGame->lstCategories->getListItem(i), newcatename, 256)) {
 								catesel = i;
 								mainGame->stACMessage->setText(dataManager.GetSysString(1474));
 								mainGame->PopupElement(mainGame->wACMessage, 20);
@@ -514,8 +493,8 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 						mainGame->cbDBCategory->setSelected(catesel);
 						ChangeCategory(catesel);
 					} else {
-							mainGame->stACMessage->setText(dataManager.GetSysString(1476));
-							mainGame->PopupElement(mainGame->wACMessage, 20);
+						mainGame->stACMessage->setText(dataManager.GetSysString(1476));
+						mainGame->PopupElement(mainGame->wACMessage, 20);
 					}
 					break;
 				}
@@ -534,8 +513,8 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 						RefreshDeckList();
 						ChangeCategory(mainGame->lstCategories->getSelected());
 					}
-					for(int i = 0;i < mainGame->lstDecks->getItemCount();i++) {
-						if(!wcsncasecmp(mainGame->lstDecks->getListItem(i), deckname, 256)) {
+					for(int i = 0; i < (int)mainGame->lstDecks->getItemCount(); i++) {
+						if(!mywcsncasecmp(mainGame->lstDecks->getListItem(i), deckname, 256)) {
 							deckManager.LoadDeck(filepath);
 							prev_deck = i;
 							mainGame->cbDBDecks->setSelected(prev_deck);
@@ -568,8 +547,8 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 					}
 					RefreshDeckList();
 					ChangeCategory(catesel);
-					for(int i = 0;i < mainGame->lstDecks->getItemCount();i++) {
-						if(!wcsncasecmp(mainGame->lstDecks->getListItem(i), newdeckname, 256)) {
+					for(int i = 0; i < (int)mainGame->lstDecks->getItemCount(); i++) {
+						if(!mywcsncasecmp(mainGame->lstDecks->getListItem(i), newdeckname, 256)) {
 							deckManager.LoadDeck(newfilepath);
 							prev_deck = i;
 							mainGame->cbDBDecks->setSelected(prev_deck);
@@ -632,8 +611,8 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 					RefreshDeckList();
 					mainGame->cbDBCategory->setSelected(catesel);
 					ChangeCategory(catesel);
-					for(int i = 0;i < mainGame->lstDecks->getItemCount();i++) {
-						if(!wcsncasecmp(mainGame->lstDecks->getListItem(i), deckname, 256)) {
+					for(int i = 0; i < (int)mainGame->lstDecks->getItemCount(); i++) {
+						if(!mywcsncasecmp(mainGame->lstDecks->getListItem(i), deckname, 256)) {
 							deckManager.LoadDeck(newfilepath);
 							prev_deck = i;
 							mainGame->cbDBDecks->setSelected(prev_deck);
@@ -670,8 +649,8 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 					RefreshDeckList();
 					mainGame->cbDBCategory->setSelected(catesel);
 					ChangeCategory(catesel);
-					for(int i = 0;i < mainGame->lstDecks->getItemCount();i++) {
-						if(!wcsncasecmp(mainGame->lstDecks->getListItem(i), deckname, 256)) {
+					for(int i = 0; i < (int)mainGame->lstDecks->getItemCount(); i++) {
+						if(!mywcsncasecmp(mainGame->lstDecks->getListItem(i), deckname, 256)) {
 							deckManager.LoadDeck(newfilepath);
 							prev_deck = i;
 							mainGame->cbDBDecks->setSelected(prev_deck);
@@ -702,20 +681,15 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				mainGame->cbDMCategory->setVisible(false);
 				break;
 			}
-			case BUTTON_CLOSE_DECKMANAGER: {
-            		mainGame->HideElement(mainGame->wDeckManage);
-            		break;
-			}
 			case BUTTON_SIDE_OK: {
 				if(deckManager.current_deck.main.size() != pre_mainc
 					|| deckManager.current_deck.extra.size() != pre_extrac
-				        || deckManager.current_deck.side.size() != pre_sidec) {
-					mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::INFO);
+					|| deckManager.current_deck.side.size() != pre_sidec) {
+					soundManager.PlaySoundEffect(SOUND_INFO);
 					mainGame->env->addMessageBox(L"", dataManager.GetSysString(1410));
 					break;
 				}
 				mainGame->ClearCardInfo();
-                mainGame->imgChat->setVisible(true);
 				char deckbuf[1024];
 				char* pdeck = deckbuf;
 				BufferIO::WriteInt32(pdeck, deckManager.current_deck.main.size() + deckManager.current_deck.extra.size());
@@ -731,6 +705,24 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			}
 			case BUTTON_SIDE_RELOAD: {
 				deckManager.LoadDeck(mainGame->cbCategorySelect, mainGame->cbDeckSelect);
+				break;
+			}
+			case BUTTON_BIG_CARD_ORIG_SIZE: {
+				ShowBigCard(bigcard_code, 1);
+				break;
+			}
+			case BUTTON_BIG_CARD_ZOOM_IN: {
+				bigcard_zoom += 0.2f;
+				ZoomBigCard();
+				break;
+			}
+			case BUTTON_BIG_CARD_ZOOM_OUT: {
+				bigcard_zoom -= 0.2f;
+				ZoomBigCard();
+				break;
+			}
+			case BUTTON_BIG_CARD_CLOSE: {
+				CloseBigCard();
 				break;
 			}
 			case BUTTON_MSG_OK: {
@@ -832,6 +824,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 		}
 		case irr::gui::EGET_EDITBOX_ENTER: {
 			switch(id) {
+			case EDITBOX_INPUTS:
 			case EDITBOX_KEYWORD: {
 				StartFilter();
 				break;
@@ -850,10 +843,6 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 		}
 		case irr::gui::EGET_COMBO_BOX_CHANGED: {
 			switch(id) {
-			case COMBOBOX_LFLIST: {
-				filterList = deckManager._lfList[mainGame->cbLFList->getSelected()].content;
-				break;
-			}
 			case COMBOBOX_DBCATEGORY: {
 				if(havePopupWindow()) {
 					mainGame->cbDBCategory->setSelected(prev_category);
@@ -868,7 +857,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				}
 				if(is_modified && !readonly && !mainGame->chkIgnoreDeckChanges->isChecked()) {
 					mainGame->gMutex.lock();
-					mainGame->SetStaticText(mainGame->stQMessage, 370 * mainGame->xScale, mainGame->guiFont, dataManager.GetSysString(1356));
+					mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->guiFont, dataManager.GetSysString(1356));
 					mainGame->PopupElement(mainGame->wQuery);
 					mainGame->gMutex.unlock();
 					prev_operation = id;
@@ -884,7 +873,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				}
 				if(is_modified && !readonly && !mainGame->chkIgnoreDeckChanges->isChecked()) {
 					mainGame->gMutex.lock();
-					mainGame->SetStaticText(mainGame->stQMessage, 370 * mainGame-> xScale, mainGame->textFont, dataManager.GetSysString(1356));
+					mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->guiFont, dataManager.GetSysString(1356));
 					mainGame->PopupElement(mainGame->wQuery);
 					mainGame->gMutex.unlock();
 					prev_operation = id;
@@ -988,6 +977,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 					break;
 				}
 				}
+				mainGame->env->setFocus(0);
 				InstantSearch();
 				break;
 			}
@@ -1005,12 +995,14 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 						mainGame->ebDefense->setEnabled(true);
 					}
 				}
+				mainGame->env->setFocus(0);
 				InstantSearch();
 				break;
 			}
 			case COMBOBOX_ATTRIBUTE:
 			case COMBOBOX_RACE:
 			case COMBOBOX_LIMIT:
+				mainGame->env->setFocus(0);
 				InstantSearch();
 				break;
 			}
@@ -1083,21 +1075,15 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			break;
 		}
 		case irr::EMIE_LMOUSE_LEFT_UP: {
-		    s32 x = event.MouseInput.X;
-        	s32 y = event.MouseInput.Y;
-        	irr::core::position2di pos(x, y);
-        	if (x < (200 * mainGame->xScale) && y < (270 * mainGame->yScale)) {
-                mainGame->gMutex.lock();
-        		mainGame->textFont->setTransparency(true);
-        		mainGame->ClearChatMsg();
-                mainGame->gMutex.unlock();
-        		break;
-        	}//touch the pic of detail to refresh textfonts
 			is_starting_dragging = false;
 			irr::gui::IGUIElement* root = mainGame->env->getRootGUIElement();
+			if(!is_draging && !mainGame->is_siding && root->getElementFromPoint(mouse_pos) == mainGame->imgCard) {
+				ShowBigCard(mainGame->showingcode, 1);
+				break;
+			}
 			if(!is_draging)
 				break;
-			mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::CARD_DROP);
+			soundManager.PlaySoundEffect(SOUND_CARD_DROP);
 			bool pushed = false;
 			if(hovered_pos == 1)
 				pushed = push_main(draging_pointer, hovered_seq);
@@ -1121,6 +1107,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 		case irr::EMIE_LMOUSE_DOUBLE_CLICK: {
 			irr::gui::IGUIElement* root = mainGame->env->getRootGUIElement();
 			if(!is_draging && !mainGame->is_siding && root->getElementFromPoint(mouse_pos) == root && hovered_code) {
+				ShowBigCard(hovered_code, 1);
 				break;
 			}
 			break;
@@ -1134,7 +1121,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				auto pointer = dataManager.GetCodePointer(hovered_code);
 				if(pointer == dataManager._datas.end())
 					break;
-				mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::CARD_DROP);
+				soundManager.PlaySoundEffect(SOUND_CARD_DROP);
 				if(hovered_pos == 1) {
 					if(push_side(pointer))
 						pop_main(hovered_seq);
@@ -1147,12 +1134,16 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				}
 				break;
 			}
+			if(mainGame->wBigCard->isVisible()) {
+				CloseBigCard();
+				break;
+			}
 			if(havePopupWindow())
 				break;
 			if(!is_draging) {
 				if(hovered_pos == 0 || hovered_seq == -1)
 					break;
-				mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::CARD_DROP);
+				soundManager.PlaySoundEffect(SOUND_CARD_DROP);
 				if(hovered_pos == 1) {
 					pop_main(hovered_seq);
 				} else if(hovered_pos == 2) {
@@ -1169,7 +1160,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 						push_side(pointer);
 				}
 			} else {
-				mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::CARD_PICK);
+				soundManager.PlaySoundEffect(SOUND_CARD_PICK);
 				if(click_pos == 1) {
 					push_side(draging_pointer);
 				} else if(click_pos == 2) {
@@ -1196,7 +1187,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			auto pointer = dataManager.GetCodePointer(hovered_code);
 			if(!check_limit(pointer))
 				break;
-			mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::CARD_PICK);
+			soundManager.PlaySoundEffect(SOUND_CARD_PICK);
 			if (hovered_pos == 1) {
 				if(!push_main(pointer))
 					push_side(pointer);
@@ -1215,7 +1206,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 		case irr::EMIE_MOUSE_MOVED: {
 			if(is_starting_dragging) {
 				is_draging = true;
-				mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::CARD_PICK);
+				soundManager.PlaySoundEffect(SOUND_CARD_PICK);
 				if(hovered_pos == 1)
 					pop_main(hovered_seq);
 				else if(hovered_pos == 2)
@@ -1230,6 +1221,11 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 		}
 		case irr::EMIE_MOUSE_WHEEL: {
 			irr::gui::IGUIElement* root = mainGame->env->getRootGUIElement();
+			if(root->getElementFromPoint(mouse_pos) == mainGame->imgBigCard) {
+				bigcard_zoom += 0.1f * event.MouseInput.Wheel;
+				ZoomBigCard(mouse_pos.X, mouse_pos.Y);
+				break;
+			}
 			if(!mainGame->scrFilter->isVisible())
 				break;
 			if(mainGame->env->hasFocus(mainGame->scrFilter))
@@ -1264,19 +1260,20 @@ void DeckBuilder::GetHoveredCard() {
 	irr::gui::IGUIElement* root = mainGame->env->getRootGUIElement();
 	if(root->getElementFromPoint(mouse_pos) != root)
 		return;
-	int x = mouse_pos.X;
-	int y = mouse_pos.Y;
+	position2di pos = mainGame->ResizeReverse(mouse_pos.X, mouse_pos.Y);
+	int x = pos.X;
+	int y = pos.Y;
 	is_lastcard = 0;
-	if(x >= 314 * mainGame->xScale && x <= 794 * mainGame->xScale) {
-		if(y >= 164 * mainGame->yScale && y <= 435 * mainGame->yScale) {
-			int lx = 10, px, py = (y - 164 * mainGame->yScale) / (68 * mainGame->yScale);
+	if(x >= 314 && x <= 794) {
+		if(y >= 164 && y <= 435) {
+			int lx = 10, px, py = (y - 164) / 68;
 			hovered_pos = 1;
 			if(deckManager.current_deck.main.size() > 40)
 				lx = (deckManager.current_deck.main.size() - 41) / 4 + 11;
-			if(x >= 750 * mainGame->xScale)
+			if(x >= 750)
 				px = lx - 1;
 			else
-				px = (x - 314 * mainGame->xScale) * (lx - 1) / (436 * mainGame->xScale);
+				px = (x - 314) * (lx - 1) / 436;
 			hovered_seq = py * lx + px;
 			if(hovered_seq >= (int)deckManager.current_deck.main.size()) {
 				hovered_seq = -1;
@@ -1284,44 +1281,44 @@ void DeckBuilder::GetHoveredCard() {
 			} else {
 				hovered_code = deckManager.current_deck.main[hovered_seq]->first;
 			}
-		} else if(y >= 466 * mainGame->yScale && y <= 530 * mainGame->yScale) {
+		} else if(y >= 466 && y <= 530) {
 			int lx = deckManager.current_deck.extra.size();
 			hovered_pos = 2;
 			if(lx < 10)
 				lx = 10;
-			if(x >= 750 * mainGame->xScale)
+			if(x >= 750)
 				hovered_seq = lx - 1;
 			else
-				hovered_seq = (x - 314 * mainGame->xScale) * (lx - 1) / (436 * mainGame->xScale);
+				hovered_seq = (x - 314) * (lx - 1) / 436;
 			if(hovered_seq >= (int)deckManager.current_deck.extra.size()) {
 				hovered_seq = -1;
 				hovered_code = 0;
 			} else {
 				hovered_code = deckManager.current_deck.extra[hovered_seq]->first;
-				if(x >= 772 * mainGame->xScale)
+				if(x >= 772)
 					is_lastcard = 1;
 			}
-		} else if (y >= 564 * mainGame->yScale && y <= 628 * mainGame->yScale) {
+		} else if (y >= 564 && y <= 628) {
 			int lx = deckManager.current_deck.side.size();
 			hovered_pos = 3;
 			if(lx < 10)
 				lx = 10;
-			if(x >= 750 * mainGame->xScale)
+			if(x >= 750)
 				hovered_seq = lx - 1;
 			else
-				hovered_seq = (x - 314 * mainGame->xScale) * (lx - 1) / (436 * mainGame->xScale);
+				hovered_seq = (x - 314) * (lx - 1) / 436;
 			if(hovered_seq >= (int)deckManager.current_deck.side.size()) {
 				hovered_seq = -1;
 				hovered_code = 0;
 			} else {
 				hovered_code = deckManager.current_deck.side[hovered_seq]->first;
-				if(x >= 772 * mainGame->xScale)
+				if(x >= 772)
 					is_lastcard = 1;
 			}
 		}
-	} else if(x >= 805 * mainGame->xScale && x <= 995 * mainGame->xScale && y >= 165 * mainGame->yScale && y <= 626 * mainGame->yScale) {
+	} else if(x >= 810 && x <= 995 && y >= 165 && y <= 626) {
 		hovered_pos = 4;
-		hovered_seq = (y - 165 * mainGame->yScale) / (66 * mainGame->yScale);
+		hovered_seq = (y - 165) / 66;
 		int pos = mainGame->scrFilter->getPos() + hovered_seq;
 		if(pos >= (int)results.size()) {
 			hovered_seq = -1;
@@ -1331,8 +1328,8 @@ void DeckBuilder::GetHoveredCard() {
 		}
 	}
 	if(is_draging) {
-		dragx = x;
-		dragy = y;
+		dragx = mouse_pos.X;
+		dragy = mouse_pos.Y;
 	}
 	if(!is_draging && pre_code != hovered_code) {
 		if(hovered_code)
@@ -1488,18 +1485,20 @@ void DeckBuilder::FilterCards() {
 		}
 		if(filter_effect && !(data.category & filter_effect))
 			continue;
-		if(filter_marks && (data.link_marker & filter_marks)!= filter_marks)
+		if(filter_marks && (data.link_marker & filter_marks) != filter_marks)
 			continue;
 		if(filter_lm) {
 			if(filter_lm <= 3 && (!filterList->count(ptr->first) || (*filterList).at(ptr->first) != filter_lm - 1))
 				continue;
-			if(filter_lm == 4 && data.ot != 1)
+			if(filter_lm == 4 && !(data.ot & AVAIL_OCG))
 				continue;
-			if(filter_lm == 5 && data.ot != 2)
+			if(filter_lm == 5 && !(data.ot & AVAIL_TCG))
 				continue;
-			if(filter_lm == 6 && data.ot != 3)
+			if(filter_lm == 6 && !(data.ot & AVAIL_SC))
 				continue;
-			if(filter_lm == 7 && data.ot != 4)
+			if(filter_lm == 7 && !(data.ot & AVAIL_CUSTOM))
+				continue;
+			if(filter_lm == 8 && ((data.ot & AVAIL_OCGTCG) != AVAIL_OCGTCG))
 				continue;
 		}
 		bool is_target = true;
@@ -1515,6 +1514,7 @@ void DeckBuilder::FilterCards() {
 				if(!tryresult) {
 					match = CardNameContains(text.name.c_str(), elements_iterator->keyword.c_str())
 						|| text.text.find(elements_iterator->keyword) != std::wstring::npos
+						|| mainGame->CheckRegEx(text.text, elements_iterator->keyword)
 						|| (elements_iterator->setcode && check_set_code(data, elements_iterator->setcode));
 				} else {
 					match = data.code == trycode || data.alias == trycode;
@@ -1544,7 +1544,7 @@ void DeckBuilder::FilterCards() {
 	SortList();
 }
 void DeckBuilder::InstantSearch() {
-	if(mainGame->gameConf.auto_search_limit >= 0 && (wcslen(mainGame->ebCardName->getText()) >= mainGame->gameConf.auto_search_limit))
+	if(mainGame->gameConf.auto_search_limit >= 0 && ((int)wcslen(mainGame->ebCardName->getText()) >= mainGame->gameConf.auto_search_limit))
 		StartFilter();
 }
 void DeckBuilder::ClearSearch() {
@@ -1585,7 +1585,7 @@ void DeckBuilder::SortList() {
 	auto left = results.begin();
 	const wchar_t* pstr = mainGame->ebCardName->getText();
 	for(auto it = results.begin(); it != results.end(); ++it) {
-		if(wcscmp(pstr, dataManager.GetName((*it)->first)) == 0) {
+		if(wcscmp(pstr, dataManager.GetName((*it)->first)) == 0 || mainGame->CheckRegEx(dataManager.GetName((*it)->first), pstr, true)) {
 			std::iter_swap(left, it);
 			++left;
 		}
@@ -1613,7 +1613,7 @@ void DeckBuilder::RefreshDeckList() {
 	deckManager.GetCategoryPath(catepath, lstCategories->getSelected(), lstCategories->getListItem(lstCategories->getSelected()));
 	lstDecks->clear();
 	FileSystem::TraversalDir(catepath, [lstDecks](const wchar_t* name, bool isdir) {
-		if(!isdir && wcsrchr(name, '.') && !wcsncasecmp(wcsrchr(name, '.'), L".ydk", 4)) {
+		if(!isdir && wcsrchr(name, '.') && !mywcsncasecmp(wcsrchr(name, '.'), L".ydk", 4)) {
 			size_t len = wcslen(name);
 			wchar_t deckname[256];
 			wcsncpy(deckname, name, len - 4);
@@ -1667,6 +1667,54 @@ void DeckBuilder::ShowDeckManage() {
 	mainGame->lstDecks->setSelected(prev_deck);
 	mainGame->PopupElement(mainGame->wDeckManage);
 }
+
+void DeckBuilder::ShowBigCard(int code, float zoom) {
+	bigcard_code = code;
+	bigcard_zoom = zoom;
+	ITexture* img = imageManager.GetBigPicture(code, zoom);
+	mainGame->imgBigCard->setImage(img);
+	auto size = img->getSize();
+	s32 left = mainGame->window_size.Width / 2 - size.Width / 2;
+	s32 top = mainGame->window_size.Height / 2 - size.Height / 2;
+	mainGame->imgBigCard->setRelativePosition(recti(0, 0, size.Width, size.Height));
+	mainGame->wBigCard->setRelativePosition(recti(left, top, left + size.Width, top + size.Height));
+	mainGame->gMutex.lock();
+	mainGame->btnBigCardOriginalSize->setVisible(true);
+	mainGame->btnBigCardZoomIn->setVisible(true);
+	mainGame->btnBigCardZoomOut->setVisible(true);
+	mainGame->btnBigCardClose->setVisible(true);
+	mainGame->ShowElement(mainGame->wBigCard);
+	mainGame->env->getRootGUIElement()->bringToFront(mainGame->wBigCard);
+	mainGame->gMutex.unlock();
+}
+void DeckBuilder::ZoomBigCard(s32 centerx, s32 centery) {
+	if(bigcard_zoom >= 4)
+		bigcard_zoom = 4;
+	if(bigcard_zoom <= 0.2f)
+		bigcard_zoom = 0.2f;
+	ITexture* img = imageManager.GetBigPicture(bigcard_code, bigcard_zoom);
+	mainGame->imgBigCard->setImage(img);
+	auto size = img->getSize();
+	auto pos = mainGame->wBigCard->getRelativePosition();
+	if(centerx == -1) {
+		centerx = pos.UpperLeftCorner.X + pos.getWidth() / 2;
+		centery = pos.UpperLeftCorner.Y + pos.getHeight() * 0.444f;
+	}
+	float posx = (float)(centerx - pos.UpperLeftCorner.X) / pos.getWidth();
+	float posy = (float)(centery - pos.UpperLeftCorner.Y) / pos.getHeight();
+	s32 left = centerx - size.Width * posx;
+	s32 top = centery - size.Height * posy;
+	mainGame->imgBigCard->setRelativePosition(recti(0, 0, size.Width, size.Height));
+	mainGame->wBigCard->setRelativePosition(recti(left, top, left + size.Width, top + size.Height));
+}
+void DeckBuilder::CloseBigCard() {
+	mainGame->HideElement(mainGame->wBigCard);
+	mainGame->btnBigCardOriginalSize->setVisible(false);
+	mainGame->btnBigCardZoomIn->setVisible(false);
+	mainGame->btnBigCardZoomOut->setVisible(false);
+	mainGame->btnBigCardClose->setVisible(false);
+}
+
 static inline wchar_t NormalizeChar(wchar_t c) {
 	/*
 	// Convert all symbols and punctuations to space.
@@ -1688,20 +1736,22 @@ static inline wchar_t NormalizeChar(wchar_t c) {
 	return c;
 }
 bool DeckBuilder::CardNameContains(const wchar_t* haystack, const wchar_t* needle) {
-	if (!needle[0]) {
+	if(!needle[0]) {
 		return true;
 	}
-	if (!haystack) {
+	if(!haystack) {
 		return false;
 	}
+	if(mainGame->CheckRegEx(haystack, needle))
+		return true;
 	int i = 0;
 	int j = 0;
-	while (haystack[i]) {
+	while(haystack[i]) {
 		wchar_t ca = NormalizeChar(haystack[i]);
 		wchar_t cb = NormalizeChar(needle[j]);
-		if (ca == cb) {
+		if(ca == cb) {
 			j++;
-			if (!needle[j]) {
+			if(!needle[j]) {
 				return true;
 			}
 		} else {

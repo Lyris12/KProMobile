@@ -30,7 +30,7 @@ public interface Constants {
     String PREF_PENDULUM_SCALE = "pref_key_game_lab_pendulum_scale";
     boolean PREF_DEF_PENDULUM_SCALE = true;
     String PREF_START_SERVICEDUELASSISTANT = "pref_key_start_serviceduelassistant";
-    boolean PREF_DEF_START_SERVICEDUELASSISTANT = false;
+    boolean PREF_DEF_START_SERVICEDUELASSISTANT = true;
     String PREF_LOCK_SCREEN = "pref_key_game_screen_orientation";
     boolean PREF_DEF_LOCK_SCREEN = false;
     String PREF_IMMERSIVE_MODE = "pref_key_immersive_mode";
@@ -92,6 +92,12 @@ public interface Constants {
     String UNKNOWN_IMAGE = "unknown.jpg";
     String YDK_FILE_EX = ".ydk";
     int[] CORE_SKIN_BG_SIZE = new int[]{1280, 720};
+
+    int[] CORE_SKIN_CARD_MINI_SIZE = new int[]{44, 64};
+    int[] CORE_SKIN_CARD_SMALL_SIZE = new int[]{177, 254};
+    //原图
+    int[] CORE_SKIN_CARD_MIDDLE_SIZE = new int[]{397, 578};
+
     int[] CORE_SKIN_CARD_COVER_SIZE = new int[]{177, 254};
     int[] CORE_SKIN_AVATAR_SIZE = new int[]{128, 128};
     boolean SUPPORT_BPG = true;
@@ -114,29 +120,23 @@ public interface Constants {
     String PREF_READ_EX = "pref_settings_read_ex";
     boolean DEF_PREF_READ_EX = false;
 
-    String PREF_DECK_MANAGER_V2 = "pref_settings_deck_manager_v2";
-    boolean DEF_PREF_DECK_MANAGER_V2 = false;
-
     String PREF_KEEP_SCALE = "pref_settings_keep_scale";
     boolean DEF_PREF_KEEP_SCALE = false;
+
+    //dp单位，游戏高度减少，留空白
+    String PREF_WINDOW_TOP_BOTTOM = "pref_settings_window_top_bottom";
+    int DEF_PREF_WINDOW_TOP_BOTTOM = 0;
 
     int REQUEST_CUT_IMG = 0x1000 + 0x10;
     int REQUEST_CHOOSE_FILE = 0x1000 + 0x20;
     int REQUEST_CHOOSE_IMG = 0x1000 + 0x21;
     int REQUEST_CHOOSE_FOLDER = 0x1000 + 0x22;
     int REQUEST_SETTINGS_CODE = 0x1000 + 0x23;
-    int STRING_TYPE_START = 1050;
-
-    int STRING_ATTRIBUTE_START = 1010;
-    int STRING_RACE_START = 1020;
-    int STRING_OT_START = 1239;
 
     int UNSORT_TIMES = 0x80;
 
     int CARD_RESULT_GRAVITY = Gravity.LEFT;
     int CARD_SEARCH_GRAVITY = Gravity.RIGHT;
-    int STRING_LIMIT_START = 1315;
-    int STRING_CATEGORY_START = 1100;
     int DEFAULT_CARD_COUNT = 500;
     int DECK_WIDTH_MAX_COUNT = 15;
     int DECK_WIDTH_COUNT = 10;
@@ -145,11 +145,12 @@ public interface Constants {
     int DECK_SIDE_MAX = 15;
     int DECK_EXTRA_COUNT = (DECK_SIDE_MAX / DECK_WIDTH_COUNT * DECK_WIDTH_COUNT < DECK_SIDE_MAX) ? DECK_WIDTH_COUNT * 2 : DECK_WIDTH_COUNT;
     int DECK_SIDE_COUNT = DECK_EXTRA_COUNT;
-    String URL_DONATE_CN= "https://afdian.net/@ygomobile";
-    String URL_DONATE= "https://www.paypal.me/ygomobile1";
     String URL_HELP = "http://note.youdao.com/noteshare?id=8ae2dc824b7dc04a95a4665a938e2251";
-    String URL_MASTERRULE_CN = "https://ocg-rule.readthedocs.io/zh_CN/master/";
-    String WIKI_SEARCH_URL = "https://www.ourocg.cn/S.aspx?key=";
+    String URL_MASTER_RULE_CN = "https://ocg-rule.readthedocs.io/";
+    String WIKI_SEARCH_URL = "https://ygocdb.com/card/";
+    String URL_YGO233_ADVANCE = "https://ygo233.com/pre";
+    String URL_YGO233_DATAVER = "https://ygo233.com/pre/dataver";
+    String URL_YGO233_FILE = "https://ygo233.com/pre/download-ygomobile";
 
     String SERVER_FILE = "server_list.xml";
     String SHARE_FILE = ".share_deck.png";
@@ -169,7 +170,7 @@ public interface Constants {
     /***
      * 长按删除
      */
-    long LONG_PRESS_DRAG = 600;
+    long LONG_PRESS_DRAG = 800;
     /***
      * adb shell am start -n cn.garymb.ygomobile/cn.garymb.ygomobile.ui.home.MainActivity -a ygomobile.intent.action.DECK --es android.intent.extra.TEXT 青眼白龙.ydk
      * <p>
@@ -202,14 +203,24 @@ public interface Constants {
      */
     String PATH_DECK = "/deck";
     String SCHEME_HTTP = "http";
-    String SCHEME_APP = "ygo";
-    String URI_HOST = "deck";
+    String SCHEME_HTTPS = "https";
+    String SCHEME_APP = "http";
+    String URI_HOST = "deck.ourygo.top";
+    String URI_DECK = "deck";
+    String URI_ROOM = "room";
 
     String QUERY_YDK = "ydk";
     String QUERY_NAME = "name";
-    String QUERY_MAIN = "main";
-    String QUERY_EXTRA = "extra";
-    String QUERY_SIDE = "side";
+    String QUERY_MAIN = "m";
+    String QUERY_DECK = "d";
+    String QUERY_EXTRA = "e";
+    String QUERY_SIDE = "s";
+    String QUERY_VERSION="v";
+    String QUERY_MAIN_ALL = "main";
+    String QUERY_EXTRA_ALL = "extra";
+    String QUERY_SIDE_ALL = "side";
+    String QUERY_YGO_TYPE="ygotype";
+    String ARG_DECK="deck";
     String PATH_ROOM = "/room";
     String QUERY_HOST = "host";
     String QUERY_PORT = "port";
@@ -222,4 +233,52 @@ public interface Constants {
 
     //打开ydk，是否复制到文件夹
     boolean COPY_YDK_FILE = false;
+
+    String TAG = "ygo-java";
+
+    String DEF_ENCODING = "utf-8";
+
+    String[] NUM_40_LIST={
+            "0"
+            ,"1"
+            ,"2"
+            ,"3"
+            ,"4"
+            ,"5"
+            ,"6"
+            ,"7"
+            ,"8"
+            ,"9"
+            ,"a"
+            ,"b"
+            ,"c"
+            ,"d"
+            ,"e"
+            ,"f"
+            ,"g"
+            ,"h"
+            ,"i"
+            ,"j"
+            ,"k"
+            ,"l"
+            ,"m"
+            ,"n"
+            ,"o"
+            ,"p"
+            ,"q"
+            ,"r"
+            ,"s"
+            ,"t"
+            ,"u"
+            ,"v"
+            ,"w"
+            ,"x"
+            ,"y"
+            ,"z"
+            ,"A"
+            ,"B"
+            ,"C"
+            ,"D"
+    };
+
 }

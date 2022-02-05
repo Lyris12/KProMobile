@@ -41,9 +41,6 @@ public:
 	void SetNoWait(bool nowait) {
 		_nowait = nowait;
 	}
-	bool GetNoWait() {
-		return _nowait;
-	}
 private:
 	std::mutex _mutex;
 	std::condition_variable _cond;

@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-#include "../../sqlite3/sqlite3.h"
+#include "sqlite3.h"
 
 #define SPMEMVFS_NAME "spmemvfs"
 

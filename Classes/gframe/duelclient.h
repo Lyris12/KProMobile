@@ -36,9 +36,8 @@ private:
 	static char last_successful_msg[0x2000];
 	static unsigned int last_successful_msg_length;
 	static wchar_t event_string[256];
-	static mtrandom rnd;
+	static mt19937 rnd;
 public:
-	//modded
 	static unsigned int temp_ip;
 	static unsigned short temp_port;
 	static unsigned short temp_ver;
@@ -60,6 +59,9 @@ public:
 		char* p = duel_client_write;
 		BufferIO::WriteInt16(p, 1);
 		BufferIO::WriteInt8(p, proto);
+#ifdef YGOPRO_MESSAGE_DEBUG
+		printf("CTOS: %d\n", proto);
+#endif
 		bufferevent_write(client_bev, duel_client_write, 3);
 	}
 	template<typename ST>
@@ -68,6 +70,9 @@ public:
 		BufferIO::WriteInt16(p, 1 + sizeof(ST));
 		BufferIO::WriteInt8(p, proto);
 		memcpy(p, &st, sizeof(ST));
+#ifdef YGOPRO_MESSAGE_DEBUG
+		printf("CTOS: %d Length: %ld\n", proto, sizeof(ST));
+#endif
 		bufferevent_write(client_bev, duel_client_write, sizeof(ST) + 3);
 	}
 	static void SendBufferToServer(unsigned char proto, void* buffer, size_t len) {
@@ -75,6 +80,9 @@ public:
 		BufferIO::WriteInt16(p, 1 + len);
 		BufferIO::WriteInt8(p, proto);
 		memcpy(p, buffer, len);
+#ifdef YGOPRO_MESSAGE_DEBUG
+		printf("CTOS: %d Length: %ld\n", proto, len);
+#endif
 		bufferevent_write(client_bev, duel_client_write, len + 3);
 	}
 	

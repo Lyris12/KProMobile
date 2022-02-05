@@ -42,8 +42,8 @@
                     android:layout_width="140dp"
                     android:layout_height="50dp"
                     android:layout_marginTop="20dp"
-                    android:background="@drawable/button_n"
-                    android:text="@string/screenshoot"
+                    android:background="@drawable/button_bg"
+                    android:text="@string/ydk_share"
                     android:textSize="15sp" />
             </LinearLayout>
 
@@ -52,7 +52,7 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical">
 
-                <androidx.appcompat.widget.AppCompatEditText
+                <androidx.appcompat.widget.AppCompatTextView
                     android:id="@+id/et_code"
                     android:layout_width="match_parent"
                     android:layout_height="280dp"
@@ -73,7 +73,7 @@
                     android:layout_height="50dp"
                     android:layout_gravity="center"
                     android:layout_marginTop="20dp"
-                    android:background="@drawable/button_n"
+                    android:background="@drawable/button_bg"
                     android:text="@string/code_share"
                     android:textSize="15sp" />
             </LinearLayout>

@@ -2,12 +2,10 @@
 #define CLIENT_FIELD_H
 
 #include "config.h"
+#include "../ocgcore/mtrandom.h"
 #include <vector>
 #include <set>
 #include <map>
-#ifdef _IRR_ANDROID_PLATFORM_
-#include <android/TouchEventTransferAndroid.h>
-#endif
 
 namespace ygo {
 
@@ -22,7 +20,6 @@ struct ChainInfo {
 	int location;
 	int sequence;
 	bool solved;
-	bool need_distinguish;
 	std::set<ClientCard*> target;
 };
 
@@ -68,7 +65,8 @@ public:
 	int announce_count;
 	int select_counter_count;
 	int select_counter_type;
-	std::vector<ClientCard*> selectable_cards;
+	int current_mset_param;
+	std::vector<ClientCard *> selectable_cards;
 	std::vector<ClientCard*> selected_cards;
 	std::set<ClientCard*> selectsum_cards;
 	std::vector<ClientCard*> selectsum_all;
@@ -88,6 +86,7 @@ public:
 	bool deck_reversed;
 	bool conti_selecting;
 	bool cant_check_grave;
+	mt19937 rnd;
 
 	ClientField();
 	void Clear();
@@ -123,20 +122,14 @@ public:
 	bool check_sum_trib(std::set<ClientCard*>::const_iterator index, std::set<ClientCard*>::const_iterator end, int acc);
 
 	void UpdateDeclarableList();
+
 	void RefreshCardCountDisplay();
 
 	irr::gui::IGUIElement* panel;
 	bool is_dragging_cardtext;
-	bool is_dragging_lstLog;
-	bool is_dragging_lstReplayList;
-	bool is_dragging_lstSinglePlayList;
-	bool is_dragging_lstBotList;
-	bool is_dragging_lstDecks;
-	bool is_dragging_lstANCard;
-    bool is_selectable;
-    int dragging_tab_start_pos;
-	int dragging_tab_start_y;
-    std::vector<int> ancard;
+	int dragging_cardtext_start_pos;
+	int dragging_cardtext_start_y;
+	std::vector<int> ancard;
 	int hovered_controler;
 	int hovered_location;
 	size_t hovered_sequence;

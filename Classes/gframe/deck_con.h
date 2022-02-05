@@ -5,12 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include "client_card.h"
-
-#include "config.h"
-#ifdef _IRR_ANDROID_PLATFORM_
-#include <android/TouchEventTransferAndroid.h>
-#include <android/android_tools.h>
-#endif
+#include "../ocgcore/mtrandom.h"
 
 namespace ygo {
 
@@ -31,6 +26,9 @@ public:
 	void RefreshReadonly(int catesel);
 	void ChangeCategory(int catesel);
 	void ShowDeckManage();
+	void ShowBigCard(int code, float zoom);
+	void ZoomBigCard(s32 centerx = -1, s32 centery = -1);
+	void CloseBigCard();
 
 	bool CardNameContains(const wchar_t *haystack, const wchar_t *needle);
 
@@ -79,8 +77,9 @@ public:
 	int prev_sel;
 	bool is_modified;
 	bool readonly;
+	mt19937 rnd;
 
-	std::unordered_map<int, int>* filterList;
+	const std::unordered_map<int, int>* filterList;
 	std::vector<code_pointer> results;
 	wchar_t result_string[8];
 };

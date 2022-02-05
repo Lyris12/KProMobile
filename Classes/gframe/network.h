@@ -141,7 +141,7 @@ public:
 	DuelPlayer* host_player;
 	HostInfo host_info;
 	int duel_stage;
-	unsigned long pduel;
+	intptr_t pduel;
 	wchar_t name[20];
 	wchar_t pass[20];
 };
@@ -218,6 +218,7 @@ public:
 #define DECKERROR_MAINCOUNT		0x6
 #define DECKERROR_EXTRACOUNT	0x7
 #define DECKERROR_SIDECOUNT		0x8
+#define DECKERROR_NOTAVAIL		0x9
 
 #define MODE_SINGLE		0x0
 #define MODE_MATCH		0x1

@@ -1,6 +1,5 @@
 package cn.garymb.ygomobile.ui.home;
 
-import android.content.ComponentName;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -12,8 +11,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -61,7 +62,6 @@ import java.util.List;
 import cn.garymb.ygodata.YGOGameOptions;
 import cn.garymb.ygomobile.AppsSettings;
 import cn.garymb.ygomobile.Constants;
-import cn.garymb.ygomobile.YGOMobileActivity;
 import cn.garymb.ygomobile.YGOStarter;
 import cn.garymb.ygomobile.bean.Deck;
 import cn.garymb.ygomobile.bean.ServerInfo;
@@ -69,13 +69,14 @@ import cn.garymb.ygomobile.bean.ServerList;
 import cn.garymb.ygomobile.bean.events.ServerInfoEvent;
 import cn.garymb.ygomobile.lite.BuildConfig;
 import cn.garymb.ygomobile.lite.R;
+import cn.garymb.ygomobile.loader.ImageLoader;
 import cn.garymb.ygomobile.ui.activities.BaseActivity;
 import cn.garymb.ygomobile.ui.activities.FileLogActivity;
 import cn.garymb.ygomobile.ui.activities.WebActivity;
 import cn.garymb.ygomobile.ui.adapters.ServerListAdapter;
 import cn.garymb.ygomobile.ui.adapters.SimpleListAdapter;
 import cn.garymb.ygomobile.ui.cards.CardDetailRandom;
-import cn.garymb.ygomobile.ui.cards.CardSearchAcitivity;
+import cn.garymb.ygomobile.ui.cards.CardSearchActivity;
 import cn.garymb.ygomobile.ui.cards.DeckManagerActivity;
 import cn.garymb.ygomobile.ui.cards.deck.DeckUtils;
 import cn.garymb.ygomobile.ui.mycard.MyCardActivity;
@@ -85,16 +86,14 @@ import cn.garymb.ygomobile.ui.plus.VUiKit;
 import cn.garymb.ygomobile.ui.preference.SettingsActivity;
 import cn.garymb.ygomobile.ui.widget.Shimmer;
 import cn.garymb.ygomobile.ui.widget.ShimmerTextView;
-import cn.garymb.ygomobile.utils.ComponentUtils;
 import cn.garymb.ygomobile.utils.FileLogUtil;
 import cn.garymb.ygomobile.utils.ScreenUtil;
 import cn.garymb.ygomobile.utils.YGOUtil;
 import ocgcore.CardManager;
+import ocgcore.DataManager;
 import ocgcore.data.Card;
 
 import static cn.garymb.ygomobile.Constants.ASSET_SERVER_LIST;
-import static cn.garymb.ygomobile.Constants.URL_DONATE;
-import static cn.garymb.ygomobile.Constants.URL_DONATE_CN;
 
 public abstract class HomeActivity extends BaseActivity implements NavigationView.OnNavigationItemSelectedListener, OnDuelAssistantListener {
 
@@ -108,14 +107,16 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
     private ServerListManager mServerListManager;
     private DuelAssistantManagement duelAssistantManagement;
     private CardManager mCardManager;
-    private SparseArray<Card> cards;
+    private CardDetailRandom mCardDetailRandom;
+    private ImageLoader mImageLoader;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
         setExitAnimEnable(false);
-        mCardManager = new CardManager(AppsSettings.get().getDataBaseFile().getAbsolutePath(), null);
+        mImageLoader = new ImageLoader(false);
+        mCardManager = DataManager.get().getCardManager();
         //server list
         initServerlist();
         //event
@@ -124,7 +125,6 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
         AnimationShake();
         tv = (ShimmerTextView) findViewById(R.id.shimmer_tv);
         toggleAnimation(tv);
-
         QbSdk.PreInitCallback cb = new QbSdk.PreInitCallback() {
             @Override
             public void onViewInitFinished(boolean arg0) {
@@ -142,8 +142,16 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
         };
         //x5内核初始化接口
         QbSdk.initX5Environment(this, cb);
+        if (!BuildConfig.BUILD_TYPE.equals("debug")) {
+            //release才检查版本
+            if (!Constants.ACTION_OPEN_GAME.equals(getIntent().getAction())) {
+                Log.d(Constants.TAG, "start check update");
         //check update
         //Beta.checkUpgrade(false, false);
+            } else {
+                Log.d(Constants.TAG, "skip check update");
+            }
+        }
         //初始化决斗助手
         initDuelAssistant();
         //萌卡
@@ -156,43 +164,50 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
     protected void onResume() {
         super.onResume();
         BacktoDuel();
+        duelAssistantCheck();
+        //server list
+        mServerListManager.syncLoadData();
+    }
+
+    @Override
+    protected void onStop() {
+        //mImageLoader.clearZipCache();
+        super.onStop();
     }
 
     private void duelAssistantCheck() {
         if (AppsSettings.get().isServiceDuelAssistant()) {
             Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
+            handler.postDelayed(() -> {
                     try {
                         FileLogUtil.writeAndTime("主页决斗助手检查");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                     duelAssistantManagement.checkClip(ID_MAINACTIVITY);
-                }
             }, 500);
         }
     }
 
+
     @Override
     protected void onStart() {
         super.onStart();
-        duelAssistantCheck();
+
     }
 
     @Override
-    public void onJoinRoom(String password, int id) {
+    public void onJoinRoom(String host, int port, String password, int id) {
         if (id == ID_MAINACTIVITY) {
-            QuickjoinRoom(password);
+            quickjoinRoom(host, port, password);
         }
     }
 
     @Override
     public void onCardSearch(String key, int id) {
         if (id == ID_MAINACTIVITY) {
-            Intent intent = new Intent(this, CardSearchAcitivity.class);
-            intent.putExtra(CardSearchAcitivity.SEARCH_MESSAGE, key);
+            Intent intent = new Intent(this, CardSearchActivity.class);
+            intent.putExtra(CardSearchActivity.SEARCH_MESSAGE, key);
             startActivity(intent);
         }
     }
@@ -214,7 +229,7 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
         duelAssistantManagement = DuelAssistantManagement.getInstance();
         duelAssistantManagement.init(getApplicationContext());
         duelAssistantManagement.addDuelAssistantListener(this);
-        YGOUtil.startDuelService(this);
+//        YGOUtil.startDuelService(this);
     }
 
     //检查是否有刘海
@@ -293,19 +308,16 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
         switch (id) {
             case R.id.nav_webpage: {
                 String url;
-                if (BuildConfig.APPLICATION_ID == "cn.garymb.ygomobile.EN" || BuildConfig.APPLICATION_ID == "cn.garymb.ygomobile.KO") {
-                    url = URL_DONATE;
-                } else {
-                    url = URL_DONATE_CN;
-                }
                 Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse(url));
+                intent.setData(Uri.parse(BuildConfig.URL_DONATE));
                 startActivity(intent);
             }
             break;
             case R.id.action_game:
                 setRandomCardDetail();
-                CardDetailRandom.showRandromCardDetailToast(this);
+                if (mCardDetailRandom != null) {
+                    mCardDetailRandom.show();
+                }
                 openGame();
                 break;
             case R.id.action_settings: {
@@ -326,14 +338,14 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
                 builder.show();
             }
             break;
-            case R.id.action_add_server:
-                mServerListManager.addServer();
+            case R.id.action_download_ex:
+                WebActivity.open(this, getString(R.string.action_download_expansions), Constants.URL_YGO233_ADVANCE);
                 break;
             case R.id.action_card_search:
-                startActivity(new Intent(this, CardSearchAcitivity.class));
+                startActivity(new Intent(this, CardSearchActivity.class));
                 break;
             case R.id.action_deck_manager:
-                startActivity(new Intent(this, DeckManagerActivity.getDeckManager()));
+                DeckManagerActivity.start(this, null);
                 break;
             case R.id.action_join_qq_group:
                 String key = "anEjPCDdhLgxtfLre-nT52G1Coye3LkK";
@@ -349,7 +361,7 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
                 Button btnTutorial = viewDialog.findViewById(R.id.tutorial);
 
                 btnMasterRule.setOnClickListener((v) -> {
-                    WebActivity.open(this, getString(R.string.masterrule), Constants.URL_MASTERRULE_CN);
+                    WebActivity.open(this, getString(R.string.masterrule), Constants.URL_MASTER_RULE_CN);
                     dialog.dismiss();
                 });
                 btnTutorial.setOnClickListener((v) -> {
@@ -487,11 +499,11 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
         addMenuButton(mMenuIds, menu, R.id.action_card_search, R.string.card_search, R.drawable.search);
         addMenuButton(mMenuIds, menu, R.id.action_deck_manager, R.string.deck_manager, R.drawable.deck);
 
-        addMenuButton(mMenuIds, menu, R.id.action_add_server, R.string.action_add_server, R.drawable.addsever);
+        addMenuButton(mMenuIds, menu, R.id.action_download_ex, R.string.action_download_expansions, R.drawable.downloadimages);
         addMenuButton(mMenuIds, menu, R.id.action_game, R.string.action_game, R.drawable.start);
         addMenuButton(mMenuIds, menu, R.id.action_help, R.string.help, R.drawable.help);
 
-        addMenuButton(mMenuIds, menu, R.id.action_reset_game_res, R.string.reset_game_res, R.drawable.downloadimages);
+        addMenuButton(mMenuIds, menu, R.id.action_reset_game_res, R.string.reset_game_res, R.drawable.reset);
         addMenuButton(mMenuIds, menu, R.id.action_settings, R.string.settings, R.drawable.setting);
         addMenuButton(mMenuIds, menu, R.id.nav_webpage, R.string.donation, R.drawable.about);
 
@@ -594,17 +606,13 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
             if (isUrl) {
                 Deck deckInfo = new Deck(getString(R.string.rename_deck) + System.currentTimeMillis(), Uri.parse(deckMessage));
                 File file = deckInfo.saveTemp(AppsSettings.get().getDeckDir());
-                Intent startdeck = new Intent(this, DeckManagerActivity.getDeckManager());
-                startdeck.putExtra(Intent.EXTRA_TEXT, file.getAbsolutePath());
-                startActivity(startdeck);
+                DeckManagerActivity.start(this, file.getAbsolutePath());
             } else {
                 //如果是卡组文本
                 try {
                     //以当前时间戳作为卡组名保存卡组
                     File file = DeckUtils.save(getString(R.string.rename_deck) + System.currentTimeMillis(), deckMessage);
-                    Intent startdeck = new Intent(this, DeckManagerActivity.getDeckManager());
-                    startdeck.putExtra(Intent.EXTRA_TEXT, file.getAbsolutePath());
-                    startActivity(startdeck);
+                    DeckManagerActivity.start(this, file.getAbsolutePath());
                 } catch (IOException e) {
                     e.printStackTrace();
                     Toast.makeText(this, getString(R.string.save_failed_bcos) + e, Toast.LENGTH_SHORT).show();
@@ -613,10 +621,20 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
         });
     }
 
-    private void QuickjoinRoom(String password) {
+    public void quickjoinRoom(String host, int port, String password) {
+
+        String message;
+        if (!TextUtils.isEmpty(host))
+            message = getString(R.string.quick_join)
+                    + "\nIP：" + host
+                    + "\n端口：" + port
+                    + "\n密码：" + password;
+        else
+            message = getString(R.string.quick_join) + "：\"" + password + "\"";
+
         DialogPlus dialog = new DialogPlus(this);
         dialog.setTitle(R.string.question);
-        dialog.setMessage(getString(R.string.quick_join) + password + "\"");
+        dialog.setMessage(message);
         dialog.setMessageGravity(Gravity.CENTER_HORIZONTAL);
         dialog.setLeftButtonText(R.string.Cancel);
         dialog.setRightButtonText(R.string.join);
@@ -640,7 +658,13 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
                 return fileList;
             }).done((list) -> {
                 if (list != null) {
+                    String host1 = host;
+                    int port1 = port;
                     ServerInfo serverInfo = list.getServerInfoList().get(0);
+                    if (!TextUtils.isEmpty(host1)) {
+                        serverInfo.setServerAddr(host1);
+                        serverInfo.setPort(port1);
+                    }
                     joinGame(serverInfo, password);
                 }
             });
@@ -654,12 +678,12 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
         //加载数据库中所有卡片卡片
         mCardManager.loadCards();
         //mCardManager = DataManager.get().getCardManager();
-        cards = mCardManager.getAllCards();
+        SparseArray<Card> cards = mCardManager.getAllCards();
         int y = (int) (Math.random() * cards.size());
         Card cardInfo = cards.valueAt(y);
         if (cardInfo == null)
             return;
-        CardDetailRandom.RandomCardDetail(this, cardInfo);
+        mCardDetailRandom = CardDetailRandom.genRandomCardDetail(this, mImageLoader, cardInfo);
     }
 
     public void showTipsToast() {
@@ -674,6 +698,16 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
     public void initServerlist() {
         mServerList = $(R.id.list_server);
         mServerListAdapter = new ServerListAdapter(this);
+        LayoutInflater infla = LayoutInflater.from(this);
+        View footView = infla.inflate(R.layout.item_ic_add, null);
+        TextView add_server = footView.findViewById(R.id.add_server);
+        add_server.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mServerListManager.addServer();
+            }
+        });
+        mServerListAdapter.addFooterView(footView);
         //server list
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         mServerList.setLayoutManager(linearLayoutManager);

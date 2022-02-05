@@ -3,6 +3,11 @@ package ocgcore.data;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.TextUtils;
+
+import androidx.annotation.NonNull;
+
+import java.util.Locale;
 
 import ocgcore.enums.CardType;
 
@@ -22,6 +27,8 @@ public class Card extends CardData implements Parcelable {
     public String Name;
     public String Desc;
 
+    public int RealCode;
+
     public Card() {
     }
 
@@ -30,11 +37,13 @@ public class Card extends CardData implements Parcelable {
         if (card != null) {
             this.Name = card.Name;
             this.Desc = card.Desc;
+            this.RealCode = card.RealCode;
         }
     }
 
     public Card(int code) {
         super(code);
+        this.Name = "Unknown";
     }
 
     public Card(CardData cardData) {
@@ -42,15 +51,15 @@ public class Card extends CardData implements Parcelable {
         if (cardData != null) {
             this.Code = cardData.Code;
             this.Alias = cardData.Alias;
-            this.Setcode = cardData.Setcode;
+            this.SetCode = cardData.SetCode;
             this.Type = cardData.Type;
             this.Level = cardData.Level;
             this.Attribute = cardData.Attribute;
             this.Race = cardData.Race;
             this.Attack = cardData.Attack;
             this.Defense = cardData.Defense;
-            this.LScale = cardData.LScale;
-            this.RScale = cardData.RScale;
+            this.LeftScale = cardData.LeftScale;
+            this.RightScale = cardData.RightScale;
             this.Category = cardData.Category;
         }
     }
@@ -59,10 +68,11 @@ public class Card extends CardData implements Parcelable {
         super(in);
         this.Name = in.readString();
         this.Desc = in.readString();
+        this.RealCode = in.readInt();
     }
 
     public static boolean isType(long Type, CardType type) {
-        return ((Type & type.value()) != 0);
+        return ((Type & type.getId()) != 0);
     }
 
     public static boolean isSpellTrap(long Type) {
@@ -78,16 +88,32 @@ public class Card extends CardData implements Parcelable {
         return this;
     }
 
+    @Override
+    public int getCode() {
+        if(RealCode > 0){
+            return RealCode;
+        }
+        return Code;//super.getCode();
+    }
+
+    public void setRealCode(int realCode) {
+        RealCode = realCode;
+    }
+
     public int getStar() {
         return (Level & 0xff);
     }
 
+    public int getLinkNumber(){
+        return getStar();
+    }
+
     public boolean isType(CardType type) {
-        return ((Type & type.value()) != 0);
+        return ((Type & type.getId()) != 0);
     }
 
     public boolean onlyType(CardType type) {
-        return (Type == type.value());
+        return (Type == type.getId());
     }
 
     public boolean isSpellTrap() {
@@ -101,17 +127,17 @@ public class Card extends CardData implements Parcelable {
     public long[] getSetCode() {
         long[] setcodes = new long[SETCODE_MAX];
         for (int i = 0, k = 0; i < SETCODE_MAX; k += 0x10, i++) {
-            setcodes[i] = (Setcode >> k) & 0xffff;
+            setcodes[i] = (SetCode >> k) & 0xffff;
         }
         return setcodes;
     }
 
     public void setSetCode(long[] setcodes) {
         int i = 0;
-        this.Setcode = 0;
+        this.SetCode = 0;
         if (setcodes != null) {
             for (long sc : setcodes) {
-                this.Setcode += (sc << i);
+                this.SetCode += (sc << i);
                 i += 0x10;
             }
         }
@@ -128,20 +154,39 @@ public class Card extends CardData implements Parcelable {
         return false;
     }
 
+    public boolean containsName(String key){
+        return Name != null && Name.toLowerCase(Locale.US).contains(key);
+    }
+
+    public boolean containsDesc(String key){
+        return Desc != null && Desc.toLowerCase(Locale.US).contains(key);
+    }
+
+    /**
+     * 同样一张卡，不同卡图，它们属性应该是一样的
+     */
+    public boolean isSame(Card c){
+        if(c.Code == this.Code || c.Alias == this.Code || c.Code == this.Alias) {
+            return TextUtils.equals(c.Name, this.Name) && c.Type == this.Type && c.Ot == this.Ot;
+        }
+        return false;
+    }
+
+    @NonNull
     @Override
     public String toString() {
         return "Card{" +
                 "Code=" + Code +
                 ", Alias=" + Alias +
-                ", Setcode=" + Setcode +
+                ", Setcode=" + SetCode +
                 ", Type=" + Type +
                 ", Level=" + Level +
                 ", Attribute=" + Attribute +
                 ", Race=" + Race +
                 ", Attack=" + Attack +
                 ", Defense=" + Defense +
-                ", LScale=" + LScale +
-                ", RScale=" + RScale +
+                ", LScale=" + LeftScale +
+                ", RScale=" + RightScale +
                 ", Name='" + Name + '\'' +
                 ", Desc='" + Desc + '\'' +
                 '}';
@@ -157,5 +202,6 @@ public class Card extends CardData implements Parcelable {
         super.writeToParcel(dest, flags);
         dest.writeString(this.Name);
         dest.writeString(this.Desc);
+        dest.writeInt(this.RealCode);
     }
 }

@@ -21,6 +21,8 @@ import java.io.File;
 
 import cn.garymb.ygomobile.lite.R;
 import cn.garymb.ygomobile.ui.activities.BaseActivity;
+import cn.garymb.ygomobile.utils.FileUtils;
+import cn.garymb.ygomobile.utils.IOUtils;
 
 
 public class FileActivity extends BaseActivity implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener
@@ -108,7 +110,7 @@ public class FileActivity extends BaseActivity implements AdapterView.OnItemClic
                         return;
                     }
                     File dir = new File(mFileAdapter.getCurPath(), name);
-                    dir.mkdirs();
+                    IOUtils.createFolder(dir);
                     if (dir.isDirectory()) {
                         mFileAdapter.setPath(dir.getAbsolutePath());
                     }
@@ -270,7 +272,7 @@ public class FileActivity extends BaseActivity implements AdapterView.OnItemClic
         } else {
             mFileAdapter.setPath(mFileOpenInfo.getDefPath());
         }
-        mFileAdapter.setFilefilter(mFileOpenInfo.getFileFilter());
+        mFileAdapter.setFileFilter(mFileOpenInfo.getFileFilter());
         mFileAdapter.setOnlyFolder(mFileOpenInfo.getType() == FileOpenType.SelectFolder);
         mFileAdapter.loadFiles();
     }

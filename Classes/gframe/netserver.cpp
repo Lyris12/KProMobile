@@ -233,8 +233,8 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, char* data, unsigned int len) {
 			duel_mode = new TagDuel();
 			duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, TagDuel::TagTimer, duel_mode);
 		}
-		if(pkt->info.rule > 3)
-			pkt->info.rule = 0;
+		if(pkt->info.rule > 5)
+			pkt->info.rule = 5;
 		if(pkt->info.mode > 2)
 			pkt->info.mode = 0;
 		unsigned int hash = 1;
@@ -246,13 +246,7 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, char* data, unsigned int len) {
 		}
 		if(hash == 1)
 			pkt->info.lflist = deckManager._lfList[0].hash;
-#ifdef _IRR_ANDROID_PLATFORM_
-        HostInfo tmp;
-        memcpy(&tmp, &pkt->info, sizeof(struct HostInfo));
-        duel_mode->host_info = tmp;
-#else
 		duel_mode->host_info = pkt->info;
-#endif
 		BufferIO::CopyWStr(pkt->name, duel_mode->name, 20);
 		BufferIO::CopyWStr(pkt->pass, duel_mode->pass, 20);
 		duel_mode->JoinGame(dp, 0, true);

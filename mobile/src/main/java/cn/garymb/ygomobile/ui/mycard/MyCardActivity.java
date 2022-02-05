@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
@@ -24,7 +25,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.drawerlayout.widget.DrawerLayout;
 
-import com.bumptech.glide.Glide;
 import com.google.android.material.navigation.NavigationView;
 import com.tencent.smtt.sdk.ValueCallback;
 import com.tencent.smtt.sdk.WebChromeClient;
@@ -40,6 +40,7 @@ import cn.garymb.ygomobile.ui.activities.BaseActivity;
 import cn.garymb.ygomobile.ui.cards.DeckManagerActivity;
 import cn.garymb.ygomobile.ui.mycard.mcchat.SplashActivity;
 import cn.garymb.ygomobile.utils.ActivityUtils;
+import cn.garymb.ygomobile.utils.glide.GlideCompat;
 
 public class MyCardActivity extends BaseActivity implements MyCard.MyCardListener, NavigationView.OnNavigationItemSelectedListener {
 
@@ -56,19 +57,18 @@ public class MyCardActivity extends BaseActivity implements MyCard.MyCardListene
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            switch (msg.what) {
-                case TYPE_MC_LOGIN:
-                    String[] ss = (String[]) msg.obj;
-                    if (!TextUtils.isEmpty(ss[1]) && ActivityUtils.isActivityExist(MyCardActivity.this)) {
-                        Glide.with(MyCardActivity.this).load(Uri.parse(ss[1])).into(mHeadView);
-                    }
-                    mNameView.setText(ss[0]);
-                    mStatusView.setText(ss[2]);
-                    break;
+            if (msg.what == TYPE_MC_LOGIN) {
+                String[] ss = (String[]) msg.obj;
+                if (!TextUtils.isEmpty(ss[1]) && ActivityUtils.isActivityExist(MyCardActivity.this)) {
+                    GlideCompat.with(MyCardActivity.this).load(Uri.parse(ss[1])).into(mHeadView);
+                }
+                mNameView.setText(ss[0]);
+                mStatusView.setText(ss[2]);
             }
         }
     };
     private ProgressBar mProgressBar;
+    private TextView tv_back_mc;
     private ValueCallback<Uri> uploadMessage;
     private ValueCallback<Uri[]> mUploadCallbackAboveL;
 
@@ -88,6 +88,7 @@ public class MyCardActivity extends BaseActivity implements MyCard.MyCardListene
         mWebViewPlus = $(R.id.webbrowser);
         mDrawerlayout = $(R.id.drawer_layout);
         mProgressBar = $(R.id.progressBar);
+        tv_back_mc = $(R.id.tv_back_mc);
         mProgressBar.setMax(100);
 
         NavigationView navigationView = $(R.id.nav_main);
@@ -97,6 +98,8 @@ public class MyCardActivity extends BaseActivity implements MyCard.MyCardListene
         mNameView = navHead.findViewById(R.id.tv_name);
         mStatusView = navHead.findViewById(R.id.tv_dp);
         //mWebViewPlus.enableHtml5();
+
+        tv_back_mc.setOnClickListener(view-> onHome());
 
         WebSettings settings = mWebViewPlus.getSettings();
         settings.setUserAgentString(settings.getUserAgentString() + MessageFormat.format(
@@ -111,6 +114,10 @@ public class MyCardActivity extends BaseActivity implements MyCard.MyCardListene
             public void onProgressChanged(WebView view, int newProgress) {
                 if (newProgress == 100) {
                     mProgressBar.setVisibility(View.GONE);
+                    if (view.getUrl().contains(mMyCard.getMcHost()))
+                        tv_back_mc.setVisibility(View.GONE);
+                    else
+                        tv_back_mc.setVisibility(View.VISIBLE);
                 } else {
                     if (View.GONE == mProgressBar.getVisibility()) {
                         mProgressBar.setVisibility(View.VISIBLE);
@@ -195,6 +202,10 @@ public class MyCardActivity extends BaseActivity implements MyCard.MyCardListene
     protected void onBackHome() {
         if (mDrawerlayout.isDrawerOpen(Gravity.LEFT)) {
             closeDrawer();
+            return;
+        }
+        if (mWebViewPlus.getUrl().equals(mMyCard.getMcMainUrl())) {
+            finish();
             return;
         }
         if (mWebViewPlus.canGoBack()) {

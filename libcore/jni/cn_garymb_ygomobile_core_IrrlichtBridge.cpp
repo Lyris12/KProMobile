@@ -186,6 +186,8 @@ static void* join_game_thread(void* param) {
 		ygo::mainGame->gMutex.unlock();
 		return NULL;
 	}
+	//auto exit when join game by mycard.
+	//exit_on_return = true;
 	irr::android::YGOGameOptions options = irr::android::YGOGameOptions(param);
 	irr::SEvent event;
 
@@ -297,7 +299,7 @@ static void* join_game_thread(void* param) {
 JNIEXPORT void JNICALL Java_cn_garymb_ygomobile_core_IrrlichtBridge_nativeSetInputFix(
 		JNIEnv* env, jclass clazz, jlong handle, jint x, jint y) {
 	if(ygo::mainGame) {
-		__android_log_print(ANDROID_LOG_INFO, "ygo", "setInputFix posX=%d, posY=%d", x, y);
+		ALOGD("setInputFix posX=%d, posY=%d", x, y);
 		ygo::mainGame->setPositionFix(core::position2di(x, y));
 	}
 }

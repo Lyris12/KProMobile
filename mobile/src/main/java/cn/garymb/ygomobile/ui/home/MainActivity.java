@@ -23,16 +23,15 @@ import cn.garymb.ygomobile.AppsSettings;
 import cn.garymb.ygomobile.Constants;
 import cn.garymb.ygomobile.GameUriManager;
 import cn.garymb.ygomobile.YGOStarter;
-import cn.garymb.ygomobile.core.IrrlichtBridge;
 import cn.garymb.ygomobile.lite.R;
 import cn.garymb.ygomobile.ui.activities.WebActivity;
+import cn.garymb.ygomobile.ui.cards.CardFavorites;
 import cn.garymb.ygomobile.ui.plus.DialogPlus;
 import cn.garymb.ygomobile.ui.plus.VUiKit;
 import cn.garymb.ygomobile.utils.FileUtils;
 import cn.garymb.ygomobile.utils.IOUtils;
 import cn.garymb.ygomobile.utils.NetUtils;
 import cn.garymb.ygomobile.utils.YGOUtil;
-import ocgcore.ConfigManager;
 import ocgcore.DataManager;
 
 import static cn.garymb.ygomobile.Constants.ACTION_RELOAD;
@@ -51,7 +50,6 @@ public class MainActivity extends HomeActivity {
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.READ_EXTERNAL_STORAGE,
     };
-    public ConfigManager favConf = DataManager.openConfig(AppsSettings.get().getSystemConfig());
     ResCheckTask mResCheckTask;
     private GameUriManager mGameUriManager;
     private ImageUpdater mImageUpdater;
@@ -66,8 +64,6 @@ public class MainActivity extends HomeActivity {
         ActivityCompat.requestPermissions(this, PERMISSIONS, 0);
         //资源复制
         checkRes();
-        //加载收藏夹
-        favConf.read();
     }
 
     @SuppressLint({"StringFormatMatches", "StringFormatInvalid"})
@@ -85,6 +81,8 @@ public class MainActivity extends HomeActivity {
 
     private void checkRes() {
         checkResourceDownload((error, isNew) -> {
+            //加载收藏夹
+            CardFavorites.get().load();
             if (error < 0) {
                 enableStart = false;
             } else {
@@ -107,7 +105,7 @@ public class MainActivity extends HomeActivity {
                         Button btnTutorial = viewDialog.findViewById(R.id.tutorial);
 
                         btnMasterRule.setOnClickListener((v) -> {
-                            WebActivity.open(this, getString(R.string.masterrule), Constants.URL_MASTERRULE_CN);
+                            WebActivity.open(this, getString(R.string.masterrule), Constants.URL_MASTER_RULE_CN);
                             dialog.dismiss();
                         });
                         btnTutorial.setOnClickListener((v) -> {
@@ -138,36 +136,33 @@ public class MainActivity extends HomeActivity {
                                     }
                                 }
                             });*/
-                    dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                        @Override
-                        public void onDismiss(DialogInterface dialogInterface) {
-                            if (AppsSettings.get().isServiceDuelAssistant() && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
-                                YGOUtil.isServicePermission(MainActivity.this, true);
-                            File oriDeckFiles = new File(ORI_DECK);
-                            File deckFiles = new File(AppsSettings.get().getDeckDir());
-                            if (oriDeckFiles.exists() && deckFiles.list().length <= 1) {
-                                DialogPlus dlgpls = new DialogPlus(MainActivity.this);
-                                dlgpls.setTitle(R.string.tip);
-                                dlgpls.setMessage(R.string.restore_deck);
-                                dlgpls.setLeftButtonText(R.string.Cancel);
-                                dlgpls.setLeftButtonListener((dlg, i) -> {
-                                    dlgpls.dismiss();
-                                });
-                                dlgpls.setRightButtonText(R.string.deck_restore);
-                                dlgpls.setRightButtonListener((dlg, i) -> {
-                                    startPermissionsActivity();
-                                    dlgpls.dismiss();
-                                });
-                                dlgpls.show();
-                            }
-
+                    dialog.setOnDismissListener(dialogInterface -> {
+//                        if (AppsSettings.get().isServiceDuelAssistant() && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
+//                            YGOUtil.isServicePermission(MainActivity.this, true);
+                        File oriDeckFiles = new File(ORI_DECK);
+                        File deckFiles = new File(AppsSettings.get().getDeckDir());
+                        if (oriDeckFiles.exists() && deckFiles.list().length <= 1) {
+                            DialogPlus dlgpls = new DialogPlus(MainActivity.this);
+                            dlgpls.setTitle(R.string.tip);
+                            dlgpls.setMessage(R.string.restore_deck);
+                            dlgpls.setLeftButtonText(R.string.Cancel);
+                            dlgpls.setLeftButtonListener((dlg, i) -> {
+                                dlgpls.dismiss();
+                            });
+                            dlgpls.setRightButtonText(R.string.deck_restore);
+                            dlgpls.setRightButtonListener((dlg, i) -> {
+                                startPermissionsActivity();
+                                dlgpls.dismiss();
+                            });
+                            dlgpls.show();
                         }
+
                     });
                     dialog.show();
                 }
             } else {
-                if (AppsSettings.get().isServiceDuelAssistant() && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
-                    YGOUtil.isServicePermission(MainActivity.this, true);
+//                if (AppsSettings.get().isServiceDuelAssistant() && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
+//                    YGOUtil.isServicePermission(MainActivity.this, true);
                 getGameUriManager().doIntent(getIntent());
             }
 
@@ -191,10 +186,6 @@ public class MainActivity extends HomeActivity {
     protected void onResume() {
         super.onResume();
         YGOStarter.onResumed(this);
-        //如果游戏Activity已经不存在了，则
-        if (!YGOStarter.isGameRunning(getActivity())) {
-            sendBroadcast(new Intent(IrrlichtBridge.ACTION_STOP).setPackage(getPackageName()));
-        }
     }
 
     @Override
@@ -279,6 +270,9 @@ public class MainActivity extends HomeActivity {
 
                 IOUtils.copyFilesFromAssets(this, getDatapath(Constants.CORE_SKIN_PATH),
                         AppsSettings.get().getCoreSkinPath(), false);
+                String fonts = AppsSettings.get().getResourcePath() + "/" + Constants.FONT_DIRECTORY;
+                if (new File(fonts).list() != null)
+                    FileUtils.delFile(fonts);
                 IOUtils.copyFilesFromAssets(this, getDatapath(Constants.FONT_DIRECTORY),
                         AppsSettings.get().getFontDirPath(), true);
                 /*
@@ -314,5 +308,4 @@ public class MainActivity extends HomeActivity {
     /*        checkResourceDownload((result, isNewVersion) -> {
                 Toast.makeText(this, R.string.tip_reset_game_res, Toast.LENGTH_SHORT).show();
             });*/
-
 }
