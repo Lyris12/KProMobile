@@ -147,9 +147,10 @@ public interface Constants {
     int DECK_SIDE_COUNT = DECK_EXTRA_COUNT;
     String URL_HELP = "http://note.youdao.com/noteshare?id=8ae2dc824b7dc04a95a4665a938e2251";
     String URL_MASTER_RULE_CN = "https://ocg-rule.readthedocs.io/";
-    String WIKI_SEARCH_URL = "https://ygocdb.com/card/";
-    String URL_YGOCC_ADVANCE = "https://github.com/Lyris12/YGOCC-Moon-mobile/commits/master";
-    String URL_YGOCC_FILE = "https://github.com/Lyris12/YGOCC-Moon-mobile/archive/master.zip";
+    String WIKI_SEARCH_URL = "https://yugipedia.com/wiki/";
+    String URL_YGO233_ADVANCE = "https://ygo233.com/pre";
+    String URL_YGO233_DATAVER = "https://ygo233.com/pre/dataver";
+    String URL_YGO233_FILE = "https://ygo233.com/pre/download-ygomobile";
 
     String SERVER_FILE = "server_list.xml";
     String SHARE_FILE = ".share_deck.png";
