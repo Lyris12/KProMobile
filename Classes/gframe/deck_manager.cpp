@@ -2,7 +2,7 @@
 #include "data_manager.h"
 #include "network.h"
 #include "game.h"
-#include "base64.h"
+#include "myfilesystem.h"
 
 namespace ygo {
 
@@ -48,9 +48,10 @@ void DeckManager::LoadLFListSingle(const char* path) {
 		fclose(fp);
 	}
 }
-void DeckManager::LoadLFList() {
-	LoadLFListSingle("expansions/lflist.conf");
-	LoadLFListSingle("lflist.conf");
+void DeckManager::LoadLFList(android::InitOptions *options) {
+	io::path workingDir = options->getWorkDir();
+	LoadLFListSingle((workingDir + path("/expansions/lflist.conf")).c_str());
+	LoadLFListSingle((workingDir + path("/lflist.conf")).c_str());
 	LFList nolimit;
 	nolimit.listName = L"N/A";
 	nolimit.hash = 0;
@@ -64,7 +65,7 @@ const wchar_t* DeckManager::GetLFListName(int lfhash) {
 		return lit->listName.c_str();
 	return dataManager.unknown_string;
 }
-const std::unordered_map<int, int>* DeckManager::GetLFListContent(int lfhash) {
+std::unordered_map<int, int>* DeckManager::GetLFListContent(int lfhash) {
 	auto lit = std::find_if(_lfList.begin(), _lfList.end(), [lfhash](const ygo::LFList& list) {
 		return list.hash == lfhash;
 	});
@@ -73,8 +74,6 @@ const std::unordered_map<int, int>* DeckManager::GetLFListContent(int lfhash) {
 	return nullptr;
 }
 static int checkAvail(int ot, int avail) {
-	if(!!(ot & 0x4))
-		return 0;
 	if((ot & avail) == avail)
 		return 0;
 	if((ot & AVAIL_OCG) && !(avail == AVAIL_OCG))
@@ -209,7 +208,7 @@ void DeckManager::GetCategoryPath(wchar_t* ret, int index, const wchar_t* text) 
 		myswprintf(catepath, L"./pack");
 		break;
 	case 1:
-		myswprintf(catepath, mainGame->gameConf.bot_deck_path);
+		myswprintf(catepath, L"./windbot/Decks");
 		break;
 	case -1:
 	case 2:
@@ -287,7 +286,7 @@ bool DeckManager::SaveDeck(Deck& deck, const wchar_t* file) {
 	FILE* fp = OpenDeckFile(file, "w");
 	if(!fp)
 		return false;
-	fprintf(fp, "#created by ...\n#main\n");
+	fprintf(fp, "#created by ygomobile\n#main\n");
 	for(size_t i = 0; i < deck.main.size(); ++i)
 		fprintf(fp, "%d\n", deck.main[i]->first);
 	fprintf(fp, "#extra\n");
@@ -309,40 +308,6 @@ bool DeckManager::DeleteDeck(const wchar_t* file) {
 	int result = unlink(filefn);
 	return result == 0;
 #endif
-}
-int DeckManager::TypeCount(std::vector<code_pointer> list, unsigned int ctype) {
-	int res = 0;
-	for(size_t i = 0; i < list.size(); ++i) {
-		code_pointer cur = list[i];
-		if(cur->second.type & ctype)
-			res++;
-	}
-	return res;
-}
-bool DeckManager::LoadDeckFromCode(Deck& deck, const char *code, int len) {
-	char data[1024], *pdeck = data, *data_ = data;
-	int decoded_len = Base64::DecodedLength(code, len);
-	if(decoded_len > 1024 || decoded_len < 8 || !Base64::Decode(code, len, data_, decoded_len))
-		return false;
-	int mainc = BufferIO::ReadInt32(pdeck);
-	int sidec = BufferIO::ReadInt32(pdeck);
-	int errorcode = LoadDeck(deck, (int*)pdeck, mainc, sidec);
-	return (errorcode == 0);
-}
-int DeckManager::SaveDeckToCode(Deck& deck, char* code) {
-	char deckbuf[1024], *pdeck = deckbuf;
-	BufferIO::WriteInt32(pdeck, deck.main.size() + deck.extra.size());
-	BufferIO::WriteInt32(pdeck, deck.side.size());
-	for(size_t i = 0; i < deck.main.size(); ++i)
-		BufferIO::WriteInt32(pdeck, deck.main[i]->first);
-	for(size_t i = 0; i < deck.extra.size(); ++i)
-		BufferIO::WriteInt32(pdeck, deck.extra[i]->first);
-	for(size_t i = 0; i < deck.side.size(); ++i)
-		BufferIO::WriteInt32(pdeck, deck.side[i]->first);
-	int len = pdeck - deckbuf;
-	int encoded_len = Base64::EncodedLength(len);
-	Base64::Encode(deckbuf, len, code, encoded_len+1);
-	return encoded_len;
 }
 bool DeckManager::CreateCategory(const wchar_t* name) {
 	if(!FileSystem::IsDirExists(L"./deck") && !FileSystem::MakeDir(L"./deck"))
@@ -371,4 +336,15 @@ bool DeckManager::DeleteCategory(const wchar_t* name) {
 		return false;
 	return FileSystem::DeleteDir(localname);
 }
+
+int DeckManager::TypeCount(std::vector<code_pointer> list, unsigned int ctype) {
+	int res = 0;
+	for(size_t i = 0; i < list.size(); ++i) {
+		code_pointer cur = list[i];
+		if(cur->second.type & ctype)
+			res++;
+	}
+	return res;
+}
+
 }

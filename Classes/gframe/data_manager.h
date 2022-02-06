@@ -2,7 +2,11 @@
 #define DATAMANAGER_H
 
 #include "config.h"
+#ifdef _IRR_ANDROID_PLATFORM_
+#include <sqlite3.h>
+#else
 #include "sqlite3.h"
+#endif
 #include "spmemvfs/spmemvfs.h"
 #include "client_card.h"
 #include <unordered_map>
@@ -16,13 +20,13 @@ public:
 	bool LoadStrings(const char* file);
 	bool LoadStrings(IReadFile* reader);
 	void ReadStringConfLine(const char* linebuf);
-	bool Error(spmemvfs_db_t* pDB, sqlite3_stmt* pStmt = 0);
+	bool Error(spmemvfs_db_t* pDB, sqlite3_stmt* pStmt = 0, int err = 0);
 	bool GetData(int code, CardData* pData);
 	code_pointer GetCodePointer(int code);
 	bool GetString(int code, CardString* pStr);
 	const wchar_t* GetName(int code);
 	const wchar_t* GetText(int code);
-	const wchar_t* GetDesc(unsigned int strCode);
+	const wchar_t* GetDesc(int strCode);
 	const wchar_t* GetSysString(int code);
 	const wchar_t* GetVictoryString(int code);
 	const wchar_t* GetCounterName(int code);
@@ -55,8 +59,8 @@ public:
 	static const wchar_t* unknown_string;
 	static int CardReader(int, void*);
 	static byte* ScriptReaderEx(const char* script_name, int* slen);
-	static byte* ScriptReaderExSingle(const char* path, const char* script_name, int* slen, int pre_len = 2);
 	static byte* ScriptReader(const char* script_name, int* slen);
+	static byte* ScriptReaderZip(const char* script_name, int* slen);
 	static IFileSystem* FileSystem;
 };
 

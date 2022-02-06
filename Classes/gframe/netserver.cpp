@@ -246,7 +246,13 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, char* data, unsigned int len) {
 		}
 		if(hash == 1)
 			pkt->info.lflist = deckManager._lfList[0].hash;
+#ifdef _IRR_ANDROID_PLATFORM_
+        HostInfo tmp;
+        memcpy(&tmp, &pkt->info, sizeof(struct HostInfo));
+        duel_mode->host_info = tmp;
+#else
 		duel_mode->host_info = pkt->info;
+#endif
 		BufferIO::CopyWStr(pkt->name, duel_mode->name, 20);
 		BufferIO::CopyWStr(pkt->pass, duel_mode->pass, 20);
 		duel_mode->JoinGame(dp, 0, true);

@@ -141,7 +141,7 @@ public:
 	DuelPlayer* host_player;
 	HostInfo host_info;
 	int duel_stage;
-	intptr_t pduel;
+	unsigned long pduel;
 	wchar_t name[20];
 	wchar_t pass[20];
 };
@@ -198,7 +198,6 @@ public:
 #define STOC_HS_PLAYER_ENTER	0x20
 #define STOC_HS_PLAYER_CHANGE	0x21
 #define STOC_HS_WATCH_CHANGE	0x22
-#define STOC_SRVPRO_ROOMLIST	0x31
 
 #define PLAYERCHANGE_OBSERVE	0x8
 #define PLAYERCHANGE_READY		0x9

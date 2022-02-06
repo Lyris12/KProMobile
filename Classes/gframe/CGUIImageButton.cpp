@@ -3,6 +3,9 @@
 #endif
 
 #include "CGUIImageButton.h"
+#if defined(_IRR_ANDROID_PLATFORM_)
+#include "game.h"
+#endif
 
 namespace irr {
 namespace gui {
@@ -47,9 +50,20 @@ void Draw2DImageRotation(video::IVideoDriver* driver, video::ITexture* image, co
 	material.Lighting = false;
 	material.ZWriteEnable = false;
 	material.TextureLayer[0].Texture = image;
+#if defined(_IRR_ANDROID_PLATFORM_)
+	if (!ygo::mainGame->isNPOTSupported) {
+		material.TextureLayer[0].TextureWrapU = ETC_CLAMP_TO_EDGE;
+		material.TextureLayer[0].TextureWrapV = ETC_CLAMP_TO_EDGE;
+	}
+	if (useAlphaChannel)
+			material.MaterialType = (video::E_MATERIAL_TYPE)ygo::mainGame->ogles2TrasparentAlpha;
+		else material.MaterialType = (video::E_MATERIAL_TYPE)ygo::mainGame->ogles2Solid;
+#else
 	if (useAlphaChannel)
 		material.MaterialType = irr::video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 	else material.MaterialType = irr::video::EMT_SOLID;
+#endif
+
 	driver->setMaterial(material);
 	driver->drawIndexedTriangleList(&vertices[0], 4, &indices[0], 2);
 	driver->setTransform(irr::video::ETS_PROJECTION, oldProjMat);
@@ -86,9 +100,19 @@ void Draw2DImageQuad(video::IVideoDriver* driver, video::ITexture* image, core::
 	material.Lighting = false;
 	material.ZWriteEnable = false;
 	material.TextureLayer[0].Texture = image;
+#if defined(_IRR_ANDROID_PLATFORM_)
+	if (!ygo::mainGame->isNPOTSupported) {
+		material.TextureLayer[0].TextureWrapU = ETC_CLAMP_TO_EDGE;
+		material.TextureLayer[0].TextureWrapV = ETC_CLAMP_TO_EDGE;
+	}
+	if (useAlphaChannel)
+			material.MaterialType = (video::E_MATERIAL_TYPE)ygo::mainGame->ogles2TrasparentAlpha;
+		else material.MaterialType = (video::E_MATERIAL_TYPE)ygo::mainGame->ogles2Solid;
+#else
 	if (useAlphaChannel)
 		material.MaterialType = irr::video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 	else material.MaterialType = irr::video::EMT_SOLID;
+#endif
 	driver->setMaterial(material);
 	driver->drawIndexedTriangleList(&vertices[0], 4, &indices[0], 2);
 	driver->setTransform(irr::video::ETS_PROJECTION, oldProjMat);

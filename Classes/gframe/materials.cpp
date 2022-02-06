@@ -18,13 +18,18 @@ Materials::Materials() {
 	SetS3DVertex(vCardBack, 0.35f, -0.5f, -0.35f, 0.5f, 0, -1, 0, 0, 1, 1);
 	SetS3DVertex(vSymbol, -0.35f, -0.35f, 0.35f, 0.35f, 0.01f, 1, 0, 0, 1, 1);
 	SetS3DVertex(vNegate, -0.25f, -0.28f, 0.25f, 0.22f, 0.01f, 1, 0, 0, 1, 1);
-	SetS3DVertex(vChainNum, -0.35f, -0.35f, 0.35f, 0.35f, 0, 1, 0, 0, 0.19375f, 0.2421875f);
+	SetS3DVertex(vChainNum, -0.35f, -0.35f, 0.35f, 0.35f, 0.1, 1, 0, 0, 0.19375f, 0.2421875f);
 	SetS3DVertex(vActivate, -0.5f, -0.5f, 0.5f, 0.5f, 0, 1, 0, 0, 1, 1);
 	SetS3DVertex(vField, -1.0f, -4.0f, 9.0f, 4.0f, 0, 1, 0, 0, 1, 1);
-	SetS3DVertex(vPScale, -0.35f, -0.5, 0.35, 0.5f, 0, 1, 0, 0, 1, 1);
-	SetS3DVertex(vFieldSpell, 1.2f, -3.2f, 6.7f, 3.2f, 0, 1, 0, 0, 1, 1);
-	SetS3DVertex(vFieldSpell1, 1.2f, 0.8f, 6.7f, 3.2f, 0, 1, 0, 0.2f, 1, 0.63636f);
-	SetS3DVertex(vFieldSpell2, 1.2f, -3.2f, 6.7f, -0.8f, 0, 1, 1, 0.63636f, 0, 0.2f);
+    SetS3DVertex(vPScale, -0.35f, -0.5, 0.35, 0.5f, 0, 1, 0, 0, 1, 1);//pendulum scale image
+	SetS3DVertex(vFieldSpell, 1.2f, -3.2f, 6.7f, 3.2f, -0.01, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldSpell1, 1.2f, 0.8f, 6.7f, 3.2f, -0.01, 1, 0, 0.2f, 1, 0.63636f);
+	SetS3DVertex(vFieldSpell2, 1.2f, -3.2f, 6.7f, -0.8f, -0.01, 1, 1, 0.63636f, 0, 0.2f);//better fieldspell showing
+	SetS3DVertex(vTotalAtkme, 0.5f, 1.3f, 1.5f, 2, 1, 1, 0, 0, 1, 1);
+	SetS3DVertex(vTotalAtkop, 6.4f, -0.1f, 7.4f, 0.65f, 1, 1, 0, 0, 1, 1);
+	SetS3DVertex(vTotalAtkmeT, 2.5f, 0.95f, 3.5f, 1.65f, 1, 1, 0, 0, 1, 1);
+	SetS3DVertex(vTotalAtkopT, 4.45f, 0.4f, 5.45f, 1.1f, 1, 1, 0, 0, 1, 1);
+	SetS3DVertex(vSelField, -0.5f, -0.5f, 0.5f, 0.5f, 0, 1, 0, 0, 1, 1);
 
 	/*
 	//background grids
@@ -183,6 +188,7 @@ Materials::Materials() {
 	iRectangle[4] = 1;
 	iRectangle[5] = 3;
 
+    //deck
 	SetS3DVertex(vFieldDeck[0], 6.9f, 2.7f, 7.7f, 3.9f, 0, 1, 0, 0, 0, 0);
 	//grave
 	SetS3DVertex(vFieldGrave[0][0], 6.9f, 0.1f, 7.7f, 1.3f, 0, 1, 0, 0, 0, 0);
@@ -282,8 +288,8 @@ Materials::Materials() {
 void Materials::GenArrow(float y) {
 	float ay = 1.0f;
 	for (int i = 0; i < 19; ++i) {
-		vArrow[i * 2] = S3DVertex(vector3df(0.1f, ay * y, -2.0f * (ay * ay - 1.0f)), vector3df(0, ay * y, 1), 0xc000ff00, vector2df(0, 0));
-		vArrow[i * 2 + 1] = S3DVertex(vector3df(-0.1f, ay * y, -2.0f * (ay * ay - 1.0f)), vector3df(0, ay * y, 1), 0xc000ff00, vector2df(0, 0));
+		vArrow[i * 2] = S3DVertex(vector3df(0.1f, ay * y, -2.0f * (ay * ay - 1.0f)), vector3df(0, ay * y, 1), 0xc000ffff, vector2df(0, 0));
+		vArrow[i * 2 + 1] = S3DVertex(vector3df(-0.1f, ay * y, -2.0f * (ay * ay - 1.0f)), vector3df(0, ay * y, 1), 0xc000ffff, vector2df(0, 0));
 		ay -= 0.1f;
 	}
 	vArrow[36].Pos.X = 0.2f;

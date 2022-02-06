@@ -40,7 +40,6 @@ void SingleDuel::JoinGame(DuelPlayer* dp, void* pdata, bool is_creater) {
 			return;
 		}
 		CTOS_JoinGame* pkt = (CTOS_JoinGame*)pdata;
-		/* disabled version check
 		if(pkt->version != PRO_VERSION) {
 			STOC_ErrorMsg scem;
 			scem.msg = ERRMSG_VERERROR;
@@ -49,7 +48,6 @@ void SingleDuel::JoinGame(DuelPlayer* dp, void* pdata, bool is_creater) {
 			NetServer::DisconnectPlayer(dp);
 			return;
 		}
-		*/
 		wchar_t jpass[20];
 		BufferIO::CopyWStr(pkt->pass, jpass, 20);
 		if(wcscmp(jpass, pass)) {
@@ -434,8 +432,6 @@ void SingleDuel::TPResult(DuelPlayer* dp, unsigned char tp) {
 	set_card_reader((card_reader)DataManager::CardReader);
 	set_message_handler((message_handler)SingleDuel::MessageHandler);
 	pduel = create_duel(duel_seed);
-	preload_script(pduel, "./script/special.lua", 0);
-	preload_script(pduel, "./script/init.lua", 0);
 	set_player_info(pduel, 0, host_info.start_lp, host_info.start_hand, host_info.draw_count);
 	set_player_info(pduel, 1, host_info.start_lp, host_info.start_hand, host_info.draw_count);
 	int opt = (int)host_info.duel_rule << 16;
@@ -580,17 +576,6 @@ int SingleDuel::Analyze(char* msgbuffer, unsigned int len) {
 		offset = pbuf;
 		unsigned char engType = BufferIO::ReadUInt8(pbuf);
 		switch (engType) {
-		case MSG_RESET_TIME: {
-			player = BufferIO::ReadInt8(pbuf);
-			short time = BufferIO::ReadInt16(pbuf);
-			if(host_info.time_limit) {
-				if(time)
-					time_limit[player] = time;
-				else
-					time_limit[player] = host_info.time_limit;				
-			}
-			break;			
-		}
 		case MSG_RETRY: {
 			WaitforResponse(last_response);
 			NetServer::SendBufferToPlayer(players[last_response], STOC_GAME_MSG, offset, pbuf - offset);
@@ -619,11 +604,7 @@ int SingleDuel::Analyze(char* msgbuffer, unsigned int len) {
 					NetServer::ReSendToPlayer(*oit);
 				break;
 			}
-			case 10:
-			case 21:
-			case 22:
-			case 23:
-			case 24: {
+			case 10: {
 				NetServer::SendBufferToPlayer(players[0], STOC_GAME_MSG, offset, pbuf - offset);
 				NetServer::SendBufferToPlayer(players[1], STOC_GAME_MSG, offset, pbuf - offset);
 				for(auto oit = observers.begin(); oit != observers.end(); ++oit)
@@ -1579,7 +1560,7 @@ void SingleDuel::RefreshSingle(int player, int location, int sequence, int flag)
 			NetServer::ReSendToPlayer(*pit);
 	}
 }
-int SingleDuel::MessageHandler(intptr_t fduel, int type) {
+int SingleDuel::MessageHandler(long fduel, int type) {
 	if(!enable_log)
 		return 0;
 	char msgbuf[1024];

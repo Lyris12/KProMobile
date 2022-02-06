@@ -7,7 +7,7 @@
 
 namespace ygo {
 
-intptr_t ReplayMode::pduel = 0;
+long ReplayMode::pduel = 0;
 Replay ReplayMode::cur_replay;
 bool ReplayMode::is_continuing = true;
 bool ReplayMode::is_closing = false;
@@ -165,8 +165,6 @@ bool ReplayMode::StartDuel() {
 		cur_replay.ReadName(mainGame->dInfo.clientname);
 	}
 	pduel = create_duel(rnd());
-	preload_script(pduel, "./script/special.lua", 0);
-	preload_script(pduel, "./script/init.lua", 0);
 	int start_lp = cur_replay.ReadInt32();
 	int start_hand = cur_replay.ReadInt32();
 	int draw_count = cur_replay.ReadInt32();
@@ -177,8 +175,6 @@ bool ReplayMode::StartDuel() {
 	set_player_info(pduel, 1, start_lp, start_hand, draw_count);
 	mainGame->dInfo.lp[0] = start_lp;
 	mainGame->dInfo.lp[1] = start_lp;
-	mainGame->dInfo.start_lp[0] = start_lp;
-	mainGame->dInfo.start_lp[1] = start_lp;
 	myswprintf(mainGame->dInfo.strLP[0], L"%d", mainGame->dInfo.lp[0]);
 	myswprintf(mainGame->dInfo.strLP[1], L"%d", mainGame->dInfo.lp[1]);
 	mainGame->dInfo.turn = 0;
@@ -252,13 +248,7 @@ void ReplayMode::EndDuel() {
 		mainGame->HideElement(mainGame->wCardSelect);
 		mainGame->PopupElement(mainGame->wMessage);
 		mainGame->gMutex.unlock();
-		if(auto_watch_mode) {
-			mainGame->actionSignal.Wait(2000);
-			mainGame->device->closeDevice();
-		}
-		else {
-			mainGame->actionSignal.Wait();
-		}
+		mainGame->actionSignal.Wait();
 		mainGame->gMutex.lock();
 		mainGame->dInfo.isStarted = false;
 		mainGame->dInfo.isFinished = true;
@@ -274,7 +264,7 @@ void ReplayMode::EndDuel() {
 		mainGame->device->setEventReceiver(&mainGame->menuHandler);
 		mainGame->gMutex.unlock();
 		if(exit_on_return)
-			mainGame->device->closeDevice();
+			mainGame->OnGameClose();
 	}
 }
 void ReplayMode::Restart(bool refresh) {
@@ -325,10 +315,6 @@ bool ReplayMode::ReplayAnalyze(char* msg, unsigned int len) {
 		bool pauseable = true;
 		mainGame->dInfo.curMsg = BufferIO::ReadUInt8(pbuf);
 		switch (mainGame->dInfo.curMsg) {
-		case MSG_RESET_TIME: {
-			pbuf += 3;
-			break;
-		}
 		case MSG_RETRY: {
 			if(mainGame->dInfo.isReplaySkiping) {
 				mainGame->dInfo.isReplaySkiping = false;
@@ -340,13 +326,7 @@ bool ReplayMode::ReplayAnalyze(char* msg, unsigned int len) {
 			mainGame->PopupElement(mainGame->wMessage);
 			mainGame->gMutex.unlock();
 			mainGame->actionSignal.Reset();
-			if (auto_watch_mode){
-				mainGame->actionSignal.Wait(2000);
-				mainGame->device->closeDevice();
-			}
-			else{
-				mainGame->actionSignal.Wait();
-			}
+			mainGame->actionSignal.Wait();
 			return false;
 		}
 		case MSG_HINT: {
@@ -963,7 +943,7 @@ void ReplayMode::ReplayReload() {
 	/*len = */query_field_card(pduel, 1, LOCATION_REMOVED, flag, queryBuffer, 0);
 	mainGame->dField.UpdateFieldCard(mainGame->LocalPlayer(1), LOCATION_REMOVED, (char*)queryBuffer);
 }
-int ReplayMode::MessageHandler(intptr_t fduel, int type) {
+int ReplayMode::MessageHandler(long fduel, int type) {
 	if(!enable_log)
 		return 0;
 	char msgbuf[1024];

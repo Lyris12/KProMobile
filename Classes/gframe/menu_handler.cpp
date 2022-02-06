@@ -12,10 +12,15 @@
 namespace ygo {
 
 void UpdateDeck() {
-	BufferIO::CopyWStr(mainGame->cbCategorySelect->getItem(mainGame->cbCategorySelect->getSelected()),
-		mainGame->gameConf.lastcategory, 64);
-	BufferIO::CopyWStr(mainGame->cbDeckSelect->getItem(mainGame->cbDeckSelect->getSelected()),
-		mainGame->gameConf.lastdeck, 64);
+    char linebuf[256];
+	BufferIO::CopyWStr(mainGame->cbCategorySelect->getItem(mainGame->cbCategorySelect->getSelected()), mainGame->gameConf.lastcategory, 64);
+	BufferIO::EncodeUTF8(mainGame->gameConf.lastcategory, linebuf);
+    android::setLastCategory(mainGame->appMain, linebuf);
+
+	BufferIO::CopyWStr(mainGame->cbDeckSelect->getItem(mainGame->cbDeckSelect->getSelected()), mainGame->gameConf.lastdeck, 64);
+	BufferIO::EncodeUTF8(mainGame->gameConf.lastdeck, linebuf);
+	android::setLastDeck(mainGame->appMain, linebuf);
+		
 	char deckbuf[1024];
 	char* pdeck = deckbuf;
 	BufferIO::WriteInt32(pdeck, deckManager.current_deck.main.size() + deckManager.current_deck.extra.size());
@@ -31,6 +36,12 @@ void UpdateDeck() {
 bool MenuHandler::OnEvent(const irr::SEvent& event) {
 	if(mainGame->dField.OnCommonEvent(event))
 		return false;
+#ifdef _IRR_ANDROID_PLATFORM_
+	irr::SEvent transferEvent;
+	if (irr::android::TouchEventTransferAndroid::OnTransferCommon(event, false)) {
+		return true;
+	}
+#endif
 	switch(event.EventType) {
 	case irr::EET_GUI_EVENT: {
 		irr::gui::IGUIElement* caller = event.GUIEvent.Caller;
@@ -46,12 +57,14 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 		switch(event.GUIEvent.EventType) {
 		case irr::gui::EGET_BUTTON_CLICKED: {
 			if(id < 110)
-				soundManager.PlaySoundEffect(SOUND_MENU);
+				mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::SOUND_MENU);
 			else
-				soundManager.PlaySoundEffect(SOUND_BUTTON);
+				mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::BUTTON);
 			switch(id) {
 			case BUTTON_MODE_EXIT: {
-				mainGame->device->closeDevice();
+				mainGame->soundManager->StopBGM();
+				mainGame->SaveConfig();
+				mainGame->OnGameClose();
 				break;
 			}
 			case BUTTON_LAN_MODE: {
@@ -85,13 +98,9 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					int status = evutil_getaddrinfo(hostname, port, &hints, &answer);
 					if(status != 0) {
 						mainGame->gMutex.lock();
-						soundManager.PlaySoundEffect(SOUND_INFO);
-						mainGame->env->addMessageBox(L"", dataManager.GetSysString(1412));
+						mainGame->soundManager->PlaySoundEffect(SoundManager::SFX::INFO);
+						mainGame->addMessageBox(L"", dataManager.GetSysString(1412));
 						mainGame->gMutex.unlock();
-						if (auto_watch_mode) {
-							mainGame->actionSignal.Wait(2000);
-							mainGame->device->closeDevice();
-						}
 						break;
 					} else {
 						sockaddr_in * sin = ((struct sockaddr_in *)answer->ai_addr);
@@ -113,7 +122,7 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				mainGame->HideElement(mainGame->wLanWindow);
 				mainGame->ShowElement(mainGame->wMainMenu);
 				if(exit_on_return)
-					mainGame->device->closeDevice();
+					mainGame->OnGameClose();
 				break;
 			}
 			case BUTTON_LAN_REFRESH: {
@@ -204,8 +213,9 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				else
 					mainGame->ShowElement(mainGame->wLanWindow);
 				mainGame->wChat->setVisible(false);
+				mainGame->SaveConfig();
 				if(exit_on_return)
-					mainGame->device->closeDevice();
+					mainGame->OnGameClose();
 				break;
 			}
 			case BUTTON_REPLAY_MODE: {
@@ -224,18 +234,16 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				break;
 			}
 			case BUTTON_LOAD_REPLAY: {
-				if(open_file) {
-					ReplayMode::cur_replay.OpenReplay(open_file_name);
-					open_file = false;
-				} else {
 					if(mainGame->lstReplayList->getSelected() == -1)
 						break;
 					if(!ReplayMode::cur_replay.OpenReplay(mainGame->lstReplayList->getListItem(mainGame->lstReplayList->getSelected())))
 						break;
-				}
 				mainGame->ClearCardInfo();
+				mainGame->imgCard->setScaleImage(true);
 				mainGame->wCardImg->setVisible(true);
 				mainGame->wInfos->setVisible(true);
+				mainGame->wPallet->setVisible(true);
+				mainGame->imgChat->setVisible(false);
 				mainGame->wReplay->setVisible(true);
 				mainGame->wReplayControl->setVisible(true);
 				mainGame->btnReplayStart->setVisible(false);
@@ -259,13 +267,30 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				mainGame->gMutex.lock();
 				wchar_t textBuffer[256];
 				myswprintf(textBuffer, L"%ls\n%ls", mainGame->lstReplayList->getListItem(sel), dataManager.GetSysString(1363));
-				mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->guiFont, textBuffer);
+				mainGame->SetStaticText(mainGame->stQMessage, 370 * mainGame->xScale, mainGame->textFont, textBuffer);
 				mainGame->PopupElement(mainGame->wQuery);
 				mainGame->gMutex.unlock();
 				prev_operation = id;
 				prev_sel = sel;
 				break;
 			}
+				case BUTTON_SHARE_REPLAY: {
+					int sel = mainGame->lstReplayList->getSelected();
+					if(sel == -1)
+						break;
+					mainGame->gMutex.lock();
+                    char name[1024];
+					BufferIO::EncodeUTF8(mainGame->lstReplayList->getListItem(sel), name);
+					mainGame->gMutex.unlock();
+					prev_operation = id;
+					prev_sel = sel;
+#ifdef _IRR_ANDROID_PLATFORM_
+					ALOGD("1share replay file=%s", name);
+					android::OnShareFile(mainGame->appMain, "yrp", name);
+					ALOGD("2after share replay file:index=%d", sel);
+#endif
+					break;
+				}
 			case BUTTON_RENAME_REPLAY: {
 				int sel = mainGame->lstReplayList->getSelected();
 				if(sel == -1)
@@ -355,6 +380,32 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					NetServer::StopServer();
 					break;
 				}
+#elif defined(_IRR_ANDROID_PLATFORM_)
+				char args[512];
+				wchar_t warg1[512];
+				if(mainGame->botInfo[sel].select_deckfile) {
+					wchar_t botdeck[256];
+					deckManager.GetDeckFile(botdeck, mainGame->cbBotDeckCategory, mainGame->cbBotDeck);
+					myswprintf(warg1, L"%ls DeckFile='%ls'", mainGame->botInfo[sel].command, botdeck);
+				}
+				else
+					myswprintf(warg1, L"%ls", mainGame->botInfo[sel].command);
+				char arg1[512];
+				BufferIO::EncodeUTF8(warg1, arg1);
+				char arg2[32];
+				arg2[0]=0;
+				if(mainGame->chkBotHand->isChecked())
+					sprintf(arg2, " Hand=1");
+				char arg3[32];
+				sprintf(arg3, " Port=%d", mainGame->gameConf.serverport);
+				sprintf(args, "%s%s%s", arg1, arg2, arg3);
+				android::runWindbot(mainGame->appMain, args);
+				if(!NetServer::StartServer(mainGame->gameConf.serverport))
+					break;
+				if(!DuelClient::StartClient(0x7f000001, mainGame->gameConf.serverport)) {
+					NetServer::StopServer();
+					break;
+				}
 #else
 				if(fork() == 0) {
 					usleep(100000);
@@ -390,7 +441,8 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				break;
 			}
 			case BUTTON_LOAD_SINGLEPLAY: {
-				if(!open_file && mainGame->lstSinglePlayList->getSelected() == -1)
+                mainGame->imgChat->setVisible(false);
+				if(mainGame->lstSinglePlayList->getSelected() == -1)
 					break;
 				mainGame->singleSignal.SetNoWait(false);
 				SingleMode::StartPlay();
@@ -403,44 +455,7 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			}
 			case BUTTON_DECK_EDIT: {
 				mainGame->RefreshCategoryDeck(mainGame->cbDBCategory, mainGame->cbDBDecks);
-				if(open_file && deckManager.LoadDeck(open_file_name)) {
-#ifdef WIN32
-					wchar_t *dash = wcsrchr(open_file_name, L'\\');
-#else
-					wchar_t *dash = wcsrchr(open_file_name, L'/');
-#endif
-					wchar_t *dot = wcsrchr(open_file_name, L'.');
-					if(dash && dot && !mywcsncasecmp(dot, L".ydk", 4)) { // full path
-						wchar_t deck_name[256];
-						wcsncpy(deck_name, dash + 1, dot - dash - 1);
-						deck_name[dot - dash - 1] = L'\0';
-						mainGame->ebDeckname->setText(deck_name);
-						mainGame->cbDBCategory->setSelected(-1);
-						mainGame->cbDBDecks->setSelected(-1);
-						mainGame->btnManageDeck->setEnabled(false);
-						mainGame->cbDBCategory->setEnabled(false);
-						mainGame->cbDBDecks->setEnabled(false);
-					} else if(dash) { // has category
-						wchar_t deck_name[256];
-						wcsncpy(deck_name, dash + 1, 256);
-						for(size_t i = 0; i < mainGame->cbDBDecks->getItemCount(); ++i) {
-							if(!wcscmp(mainGame->cbDBDecks->getItem(i), deck_name)) {
-								wcscpy(mainGame->gameConf.lastdeck, deck_name);
-								mainGame->cbDBDecks->setSelected(i);
-								break;
-							}
-						}
-					} else { // only deck name
-						for(size_t i = 0; i < mainGame->cbDBDecks->getItemCount(); ++i) {
-							if(!wcscmp(mainGame->cbDBDecks->getItem(i), open_file_name)) {
-								wcscpy(mainGame->gameConf.lastdeck, open_file_name);
-								mainGame->cbDBDecks->setSelected(i);
-								break;
-							}
-						}
-					}
-					open_file = false;
-				} else if(mainGame->cbDBCategory->getSelected() != -1 && mainGame->cbDBDecks->getSelected() != -1) {
+				if(mainGame->cbDBCategory->getSelected() != -1 && mainGame->cbDBDecks->getSelected() != -1) {
 					deckManager.LoadDeck(mainGame->cbDBCategory, mainGame->cbDBDecks);
 					mainGame->ebDeckname->setText(L"");
 				}
@@ -471,13 +486,13 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				if(prev_operation == BUTTON_RENAME_REPLAY) {
 					wchar_t newname[256];
 					BufferIO::CopyWStr(mainGame->ebRSName->getText(), newname, 256);
-					if(mywcsncasecmp(newname + wcslen(newname) - 4, L".yrp", 4)) {
+					if(wcsncasecmp(newname + wcslen(newname) - 4, L".yrp", 4)) {
 						myswprintf(newname, L"%ls.yrp", mainGame->ebRSName->getText());
 					}
 					if(Replay::RenameReplay(mainGame->lstReplayList->getListItem(prev_sel), newname)) {
 						mainGame->lstReplayList->setItem(prev_sel, newname, -1);
 					} else {
-						mainGame->env->addMessageBox(L"", dataManager.GetSysString(1365));
+						mainGame->addMessageBox(L"", dataManager.GetSysString(1365));
 					}
 				}
 				prev_operation = 0;
@@ -490,6 +505,16 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				prev_sel = -1;
 				break;
 			}
+			case BUTTON_SETTINGS: {
+                mainGame->HideElement(mainGame->wMainMenu);
+                mainGame->ShowElement(mainGame->wSettings);
+			    break;
+			}
+			case BUTTON_CLOSE_SETTINGS: {
+                mainGame->HideElement(mainGame->wSettings);
+                mainGame->ShowElement(mainGame->wMainMenu);
+				break;
+			}
 			}
 			break;
 		}
@@ -499,10 +524,6 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				int sel = mainGame->lstHostList->getSelected();
 				if(sel == -1)
 					break;
-				if(DuelClient::is_srvpro) {
-					mainGame->ebJoinPass->setText(DuelClient::hosts_srvpro[sel].c_str());
-					break;
-				}
 				int addr = DuelClient::hosts[sel].ipaddr;
 				int port = DuelClient::hosts[sel].port;
 				wchar_t buf[20];
@@ -541,7 +562,7 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					myswprintf(infobuf, L"%ls\n===VS===\n%ls\n", namebuf[0], namebuf[1]);
 				repinfo.append(infobuf);
 				mainGame->ebRepStartTurn->setText(L"1");
-				mainGame->SetStaticText(mainGame->stReplayInfo, 180, mainGame->guiFont, repinfo.c_str());
+				mainGame->SetStaticText(mainGame->stReplayInfo, 180 * mainGame->xScale, mainGame->guiFont, (wchar_t*)repinfo.c_str());
 				break;
 			}
 			case LISTBOX_SINGLEPLAY_LIST: {
@@ -591,14 +612,14 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					}
 				}
 				fclose(fp);
-				mainGame->SetStaticText(mainGame->stSinglePlayInfo, 200, mainGame->guiFont, message.c_str());
+				mainGame->SetStaticText(mainGame->stSinglePlayInfo, 200 * mainGame->xScale, mainGame->guiFont, message.c_str());
 				break;
 			}
 			case LISTBOX_BOT_LIST: {
 				int sel = mainGame->lstBotList->getSelected();
 				if(sel == -1)
 					break;
-				mainGame->SetStaticText(mainGame->stBotInfo, 200, mainGame->guiFont, mainGame->botInfo[sel].desc);
+				mainGame->SetStaticText(mainGame->stBotInfo, 200 * mainGame->xScale, mainGame->guiFont, mainGame->botInfo[sel].desc);
 				mainGame->cbBotDeckCategory->setVisible(mainGame->botInfo[sel].select_deckfile);
 				mainGame->cbBotDeck->setVisible(mainGame->botInfo[sel].select_deckfile);
 				break;

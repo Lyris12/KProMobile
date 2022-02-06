@@ -4,50 +4,40 @@
 #include "config.h"
 #include "data_manager.h"
 #include <unordered_map>
-#include <queue>
+#include <list>
+#include <string>
 
 namespace ygo {
 
 class ImageManager {
 public:
-	std::vector<std::wstring> ImageList[7];
-	int saved_image_id[7];
-	bool Initial();
-	//random image
-	irr::video::ITexture* GetRandomImage(int image_type);
-	irr::video::ITexture* GetRandomImage(int image_type, s32 width, s32 height);
-	void RefreshRandomImageList();
-	void RefreshImageDir(std::wstring path, int image_type);
+	bool Initial(const irr::io::path dir);
 	void SetDevice(irr::IrrlichtDevice* dev);
 	void ClearTexture();
 	void RemoveTexture(int code);
-	void ResizeTexture();
-	irr::video::ITexture* GetTextureFromFile(const char* file, s32 width, s32 height);
-	irr::video::ITexture* GetTexture(int code, bool fit = false);
+//	irr::video::ITexture* GetTextureFromFile(char* file, s32 width, s32 height);
+	irr::video::ITexture* GetTexture(int code);
 	irr::video::ITexture* GetBigPicture(int code, float zoom);
 	irr::video::ITexture* GetTextureThumb(int code);
 	irr::video::ITexture* GetTextureField(int code);
-	static int LoadThumbThread();
+	
+	path image_work_path;
 
-	std::unordered_map<int, irr::video::ITexture*> tMap[2];
+	std::unordered_map<int, irr::video::ITexture*> tMap;
 	std::unordered_map<int, irr::video::ITexture*> tThumb;
 	std::unordered_map<int, irr::video::ITexture*> tFields;
-	std::unordered_map<int, irr::video::IImage*> tThumbLoading;
-	std::queue<int> tThumbLoadingCodes;
-	std::mutex tThumbLoadingMutex;
-	bool tThumbLoadingThreadRunning;
 	irr::IrrlichtDevice* device;
 	irr::video::IVideoDriver* driver;
-	irr::video::ITexture* tCover[4];
-	irr::video::ITexture* tUnknown;
-	irr::video::ITexture* tUnknownFit;
-	irr::video::ITexture* tUnknownThumb;
+	irr::video::ITexture* tCover[2];
 	irr::video::ITexture* tBigPicture;
-	irr::video::ITexture* tLoading;
+	irr::video::ITexture* tUnknown;
 	irr::video::ITexture* tAct;
 	irr::video::ITexture* tAttack;
+	irr::video::ITexture* tTotalAtk;
 	irr::video::ITexture* tNegated;
 	irr::video::ITexture* tChain;
+	irr::video::ITexture* tSelField;
+	irr::video::ITexture* tSelFieldLinkArrows[10];
 	irr::video::ITexture* tNumber;
 	irr::video::ITexture* tLPFrame;
 	irr::video::ITexture* tLPBar;
@@ -61,12 +51,33 @@ public:
 	irr::video::ITexture* tBackGround;
 	irr::video::ITexture* tBackGround_menu;
 	irr::video::ITexture* tBackGround_deck;
-	irr::video::ITexture* tCardType;
 	irr::video::ITexture* tField[2];
 	irr::video::ITexture* tFieldTransparent[2];
 	irr::video::ITexture* tRScale[14];
 	irr::video::ITexture* tLScale[14];
 	irr::video::ITexture* tClock;
+	irr::video::ITexture* tCardType;
+	irr::video::ITexture* tAvatar[2];
+	irr::video::ITexture* tLPBarFrame;
+	irr::video::ITexture* tSettings;
+    irr::video::ITexture* tLogs;
+    irr::video::ITexture* tMute;
+    irr::video::ITexture* tPlay;
+	irr::video::ITexture* tTalk;
+	irr::video::ITexture* tShut;
+	irr::video::ITexture* tClose;
+    irr::video::ITexture* tTitleBar;
+	irr::video::ITexture* tWindow;
+	irr::video::ITexture* tWindow_V;
+	irr::video::ITexture* tDialog_L;
+	irr::video::ITexture* tDialog_S;
+	irr::video::ITexture* tButton_L;
+	irr::video::ITexture* tButton_L_pressed;
+	irr::video::ITexture* tButton_S;
+	irr::video::ITexture* tButton_S_pressed;
+	irr::video::ITexture* tButton_C;
+	irr::video::ITexture* tButton_C_pressed;
+    std::list<std::string> support_types;
 };
 
 extern ImageManager imageManager;

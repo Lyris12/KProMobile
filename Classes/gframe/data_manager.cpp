@@ -28,13 +28,18 @@ bool DataManager::LoadDB(const wchar_t* wfile) {
 	reader->read(mem->data, mem->total);
 	reader->drop();
 	(mem->data)[mem->total] = '\0';
-	if(spmemvfs_open_db(&db, file, mem) != SQLITE_OK)
-		return Error(&db);
+	int err = 0;
+	if((err = spmemvfs_open_db(&db, file, mem)) != SQLITE_OK)
+		return Error(&db, NULL, err);
 	sqlite3* pDB = db.handle;
 	sqlite3_stmt* pStmt;
-	const char* sql = "select * from datas,texts where datas.id=texts.id";
-	if(sqlite3_prepare_v2(pDB, sql, -1, &pStmt, 0) != SQLITE_OK)
-		return Error(&db);
+	const char* sql_2 = "select datas._id, ot, alias, setcode, type, atk, def, level, race, attribute, category, texts.* from datas,texts where datas._id = texts._id;";
+	const char* sql = "select datas.id, ot, alias, setcode, type, atk, def, level, race, attribute, category, texts.* from datas,texts where datas.id = texts.id;";
+	if((err = sqlite3_prepare_v2(pDB, sql, -1, &pStmt, 0)) != SQLITE_OK){
+		if((err = sqlite3_prepare_v2(pDB,sql_2, -1, &pStmt, 0)) != SQLITE_OK){
+		    return Error(&db, NULL, err);
+		}
+	}
 	CardDataC cd;
 	CardString cs;
 	int step = 0;
@@ -138,11 +143,13 @@ void DataManager::ReadStringConfLine(const char* linebuf) {
 		_setnameStrings[value] = strBuffer;
 	}
 }
-bool DataManager::Error(spmemvfs_db_t* pDB, sqlite3_stmt* pStmt) {
+bool DataManager::Error(spmemvfs_db_t* pDB, sqlite3_stmt* pStmt, int errNo) {
 	wchar_t strBuffer[4096];
-	BufferIO::DecodeUTF8(sqlite3_errmsg(pDB->handle), strBuffer);
+	const char* msg = sqlite3_errmsg(pDB->handle);
+	BufferIO::DecodeUTF8(msg, strBuffer);
 	if(pStmt)
 		sqlite3_finalize(pStmt);
+	ALOGE("cdb Error code=%d,msg=%s", errNo, msg);
 	spmemvfs_close_db(pDB);
 	spmemvfs_env_fini();
 	return false;
@@ -184,10 +191,10 @@ const wchar_t* DataManager::GetText(int code) {
 		return csit->second.text.c_str();
 	return unknown_string;
 }
-const wchar_t* DataManager::GetDesc(unsigned int strCode) {
-	if(strCode < 10000u)
+const wchar_t* DataManager::GetDesc(int strCode) {
+	if((unsigned int)strCode < 10000u)
 		return GetSysString(strCode);
-	unsigned int code = (strCode >> 4) & 0x0fffffff;
+	unsigned int code = strCode >> 4;
 	unsigned int offset = strCode & 0xf;
 	auto csit = _strings.find(code);
 	if(csit == _strings.end())
@@ -225,7 +232,7 @@ const wchar_t* DataManager::GetSetName(int code) {
 unsigned int DataManager::GetSetCode(const wchar_t* setname) {
 	for(auto csit = _setnameStrings.begin(); csit != _setnameStrings.end(); ++csit) {
 		auto xpos = csit->second.find_first_of(L'|');//setname|another setname or extra info
-		if(csit->second.compare(0, xpos, setname) == 0 || csit->second.compare(xpos + 1, csit->second.length(), setname) == 0 || mainGame->CheckRegEx(csit->second, setname, true))
+		if(csit->second.compare(0, xpos, setname) == 0 || csit->second.compare(xpos + 1, csit->second.length(), setname) == 0)
 			return csit->first;
 	}
 	return 0;
@@ -352,33 +359,40 @@ int DataManager::CardReader(int code, void* pData) {
 	return 0;
 }
 byte* DataManager::ScriptReaderEx(const char* script_name, int* slen) {
-	byte* buffer;
-	if(!mainGame->gameConf.prefer_expansion_script) {
-		buffer = ScriptReaderExSingle("", script_name, slen);
-		if(buffer)
-			return buffer;
+	// default script name: ./script/c%d.lua
+	char first[256];
+	char second[256];
+	if(mainGame->gameConf.prefer_expansion_script) {
+		sprintf(first, "expansions/%s", script_name + 2);
+		sprintf(second, "%s", script_name + 2);
+	} else {
+		sprintf(first, "%s", script_name + 2);
+		sprintf(second, "expansions/%s", script_name + 2);
 	}
-	buffer = ScriptReaderExSingle("specials/", script_name, slen, 9);
-	if(buffer)
-		return buffer;
-	buffer = ScriptReaderExSingle("expansions/", script_name, slen);
-	if(buffer)
-		return buffer;
-	return ScriptReaderExSingle("", script_name, slen);
-}
-byte* DataManager::ScriptReaderExSingle(const char* path, const char* script_name, int* slen, int pre_len) {
-	char sname[256];
-	sprintf(sname, "%s%s", path, script_name + pre_len); //default script name: ./script/c%d.lua
-	return ScriptReader(sname, slen);
+	if(mainGame->gameConf.prefer_expansion_script) {
+		if(ScriptReader(first, slen))
+			return scriptBuffer;
+		if(ScriptReader(second, slen))
+			return scriptBuffer;
+	}
+	if(ScriptReaderZip(first, slen))
+		return scriptBuffer;
+	else
+		return ScriptReaderZip(second, slen);
 }
 byte* DataManager::ScriptReader(const char* script_name, int* slen) {
-#ifdef _WIN32
-	wchar_t fname[256];
-	BufferIO::DecodeUTF8(script_name, fname);
-	IReadFile* reader = FileSystem->createAndOpenFile(fname);
-#else
+	FILE *fp = fopen(script_name, "rb");
+	if(!fp)
+		return 0;
+	int len = fread(scriptBuffer, 1, sizeof(scriptBuffer), fp);
+	fclose(fp);
+	if(len >= sizeof(scriptBuffer))
+		return 0;
+	*slen = len;
+	return scriptBuffer;
+}
+byte* DataManager::ScriptReaderZip(const char* script_name, int* slen) {
 	IReadFile* reader = FileSystem->createAndOpenFile(script_name);
-#endif
 	if(reader == NULL)
 		return 0;
 	size_t size = reader->getSize();

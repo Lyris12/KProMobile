@@ -6,6 +6,9 @@
 #include <vector>
 #include <set>
 #include <map>
+#ifdef _IRR_ANDROID_PLATFORM_
+#include <android/TouchEventTransferAndroid.h>
+#endif
 
 namespace ygo {
 
@@ -20,6 +23,7 @@ struct ChainInfo {
 	int location;
 	int sequence;
 	bool solved;
+	bool need_distinguish;
 	std::set<ClientCard*> target;
 };
 
@@ -32,7 +36,6 @@ public:
 	std::vector<ClientCard*> grave[2];
 	std::vector<ClientCard*> remove[2];
 	std::vector<ClientCard*> extra[2];
-	std::vector<ClientCard*> limbo_temp;
 	std::set<ClientCard*> overlay_cards;
 	std::vector<ClientCard*> summonable_cards;
 	std::vector<ClientCard*> spsummonable_cards;
@@ -65,8 +68,7 @@ public:
 	int announce_count;
 	int select_counter_count;
 	int select_counter_type;
-	int current_mset_param;
-	std::vector<ClientCard *> selectable_cards;
+	std::vector<ClientCard*> selectable_cards;
 	std::vector<ClientCard*> selected_cards;
 	std::set<ClientCard*> selectsum_cards;
 	std::vector<ClientCard*> selectsum_all;
@@ -122,14 +124,20 @@ public:
 	bool check_sum_trib(std::set<ClientCard*>::const_iterator index, std::set<ClientCard*>::const_iterator end, int acc);
 
 	void UpdateDeclarableList();
-
 	void RefreshCardCountDisplay();
 
 	irr::gui::IGUIElement* panel;
 	bool is_dragging_cardtext;
-	int dragging_cardtext_start_pos;
-	int dragging_cardtext_start_y;
-	std::vector<int> ancard;
+	bool is_dragging_lstLog;
+	bool is_dragging_lstReplayList;
+	bool is_dragging_lstSinglePlayList;
+	bool is_dragging_lstBotList;
+	bool is_dragging_lstDecks;
+	bool is_dragging_lstANCard;
+    bool is_selectable;
+    int dragging_tab_start_pos;
+	int dragging_tab_start_y;
+    std::vector<int> ancard;
 	int hovered_controler;
 	int hovered_location;
 	size_t hovered_sequence;
