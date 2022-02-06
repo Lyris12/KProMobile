@@ -2,14 +2,6 @@ apply plugin: 'com.android.application'
 //apply plugin: 'me.tatarka.retrolambda'
 
 android {
-    signingConfigs {
-        debug {
-            storeFile file('F:\\mobile\\tools\\Lyris.jks')
-            storePassword '123456'
-            keyAlias = 'ygo'
-            keyPassword '123456'
-        }
-    }
     compileSdkVersion rootProject.ext.compileSdkVersion
 
     defaultConfig {

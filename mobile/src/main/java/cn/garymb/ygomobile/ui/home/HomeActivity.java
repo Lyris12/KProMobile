@@ -339,7 +339,7 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
             }
             break;
             case R.id.action_download_ex:
-                WebActivity.open(this, getString(R.string.action_download_expansions), Constants.URL_YGO233_ADVANCE);
+                WebActivity.open(this, getString(R.string.action_download_expansions), Constants.URL_YGOCC_ADVANCE);
                 break;
             case R.id.action_card_search:
                 startActivity(new Intent(this, CardSearchActivity.class));

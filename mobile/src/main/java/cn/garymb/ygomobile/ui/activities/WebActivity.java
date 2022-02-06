@@ -1,8 +1,8 @@
 package cn.garymb.ygomobile.ui.activities;
 
 import static cn.garymb.ygomobile.Constants.ASSET_SERVER_LIST;
-import static cn.garymb.ygomobile.Constants.URL_YGO233_ADVANCE;
-import static cn.garymb.ygomobile.Constants.URL_YGO233_FILE;
+import static cn.garymb.ygomobile.Constants.URL_YGOCC_ADVANCE;
+import static cn.garymb.ygomobile.Constants.URL_YGOCC_FILE;
 import static cn.garymb.ygomobile.utils.DownloadUtil.TYPE_DOWNLOAD_EXCEPTION;
 
 import android.annotation.SuppressLint;
@@ -125,7 +125,7 @@ public class WebActivity extends BaseActivity {
         });*/
         if (doIntent(getIntent())) {
             mWebViewPlus.loadUrl(mUrl);
-            if (mUrl.equals(URL_YGO233_ADVANCE)) {
+            if (mUrl.equals(URL_YGOCC_ADVANCE)) {
                 btn_download.setVisibility(View.VISIBLE);
             } else {
                 btn_download.setVisibility(View.GONE);
@@ -281,7 +281,7 @@ public class WebActivity extends BaseActivity {
         if (file.exists()) {
             FileUtils.deleteFile(file);
         }
-        DownloadUtil.get().download(URL_YGO233_FILE, file.getParent(), file.getName(), new DownloadUtil.OnDownloadListener() {
+        DownloadUtil.get().download(URL_YGOCC_FILE, file.getParent(), file.getName(), new DownloadUtil.OnDownloadListener() {
             @Override
             public void onDownloadSuccess(File file) {
                 Message message = new Message();
