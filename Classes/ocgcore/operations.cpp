@@ -289,7 +289,7 @@ void field::send_to(card* target, effect* reason_effect, uint32 reason, uint32 r
 void field::move_to_field(card* target, uint32 move_player, uint32 playerid, uint32 destination, uint32 positions, uint32 enable, uint32 ret, uint32 pzone, uint32 zone) {
 	if(!(destination & LOCATION_ONFIELD) || !positions)
 		return;
-	if(destination == target->current.location && playerid == target->current.controler)
+	if(destination == target->current.location && playerid == target->current.controler && target->current.pzone == !!pzone)
 		return;
 	target->to_field_param = (move_player << 24) + (playerid << 16) + (destination << 8) + positions;
 	add_process(PROCESSOR_MOVETOFIELD, 0, 0, (group*)target, enable, ret + (pzone << 8), zone);
@@ -2772,11 +2772,12 @@ int32 field::special_summon_rule(uint16 step, uint8 sumplayer, card* target, uin
 			else
 				targetplayer = 1 - sumplayer;
 		}
-		if(positions == 0)
-			positions = POS_FACEUP_ATTACK;
 		std::vector<int32> retval;
 		peffect->get_value(target, 0, &retval);
 		uint32 summon_info = retval.size() > 0 ? retval[0] : 0;
+		positions = target->get_spsummonable_position(peffect, ((summon_info & 0xf00ffff) | SUMMON_TYPE_SPECIAL), positions, sumplayer, targetplayer);
+		if(positions == 0)
+			positions = POS_FACEUP_ATTACK;
 		uint32 zone = retval.size() > 1 ? retval[1] : 0xff;
 		target->summon_info = (summon_info & 0xf00ffff) | SUMMON_TYPE_SPECIAL | ((uint32)target->current.location << 16);
 		target->enable_field_effect(false);
@@ -2990,7 +2991,8 @@ int32 field::special_summon_rule(uint16 step, uint8 sumplayer, card* target, uin
 			if(ct1 == 0)
 				zone = flag1;
 		}
-		move_to_field(pcard, sumplayer, sumplayer, LOCATION_MZONE, POS_FACEUP, FALSE, 0, FALSE, zone);
+		uint8 positions = pcard->get_spsummonable_position(peffect, ((peffect->get_value(pcard) & 0xff00ffff) | SUMMON_TYPE_SPECIAL), POS_FACEUP, sumplayer, sumplayer);
+		move_to_field(pcard, sumplayer, sumplayer, LOCATION_MZONE, positions, FALSE, 0, FALSE, zone);
 		return FALSE;
 	}
 	case 24: {
@@ -3186,7 +3188,8 @@ int32 field::special_summon_step(uint16 step, group* targets, card* target, uint
 					zone &= flag1;
 			}
 		}
-		move_to_field(target, target->summon_player, playerid, LOCATION_MZONE, positions, FALSE, 0, FALSE, zone);
+		uint8 sumpositions = target->get_spsummonable_position(core.reason_effect, (target->summon_info & 0xff00ffff), positions, target->summon_player, playerid);
+		move_to_field(target, target->summon_player, playerid, LOCATION_MZONE, sumpositions, FALSE, 0, FALSE, zone);
 		return FALSE;
 	}
 	case 2: {
@@ -5145,8 +5148,9 @@ int32 field::activate_effect(uint16 step, effect* peffect) {
 	case 0: {
 		card* phandler = peffect->get_handler();
 		int32 playerid = phandler->current.controler;
-		nil_event.event_code = EVENT_FREE_CHAIN;
-		if(!peffect->is_activateable(playerid, nil_event))
+		tevent test_event;
+		test_event.event_code = EVENT_FREE_CHAIN;
+		if(!peffect->is_activateable(playerid, test_event))
 			return TRUE;
 		chain newchain;
 		newchain.flag = 0;
