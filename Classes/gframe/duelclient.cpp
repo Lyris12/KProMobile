@@ -4104,6 +4104,7 @@ void DuelClient::BeginRefreshHost() {
 	if(is_refreshing)
 		return;
 	is_refreshing = true;
+	DuelClient::is_srvpro = false;
 	mainGame->btnLanRefresh->setEnabled(false);
 	mainGame->lstHostList->clear();
 	remotes.clear();
