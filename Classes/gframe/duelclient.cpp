@@ -354,7 +354,7 @@ void DuelClient::HandleSTOCPacketLan(char* data, unsigned int len) {
 		mainGame->gMutex.lock();
 		mainGame->lstHostList->clear();
 		hosts_srvpro.clear();
-		unsigned short count = BufferIO::ReadUInt16(pdata);
+		unsigned short count = (unsigned short)BufferIO::ReadInt16(pdata);
 		char temp1[64];
 		char temp2[128];
 		wchar_t roomname[32];
