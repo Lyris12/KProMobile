@@ -236,7 +236,7 @@ struct processor {
 	instant_f_list quick_f_chain;
 	card_set leave_confirmed;
 	card_set special_summoning;
-	card_set ss_tograve_set;
+	card_set unable_tofield_set;
 	card_set equiping_cards;
 	card_set control_adjust_set[2];
 	card_set unique_destroy_set;
@@ -560,7 +560,7 @@ public:
 
 	//operations
 	int32 negate_chain(uint8 chaincount);
-	int32 disable_chain(uint8 chaincount);
+	int32 disable_chain(uint8 chaincount, uint8 forced);
 	void change_chain_effect(uint8 chaincount, int32 replace_op);
 	void change_target(uint8 chaincount, group* targets);
 	void change_target_player(uint8 chaincount, uint8 playerid);

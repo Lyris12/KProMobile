@@ -1,5 +1,7 @@
 package cn.garymb.ygomobile.ui.home;
 
+import static cn.garymb.ygomobile.Constants.ASSET_SERVER_LIST;
+
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -11,7 +13,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -28,7 +29,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -40,7 +40,6 @@ import com.app.hubert.guide.listener.OnLayoutInflatedListener;
 import com.app.hubert.guide.model.GuidePage;
 import com.app.hubert.guide.model.HighLight;
 import com.app.hubert.guide.model.HighlightOptions;
-import com.google.android.material.navigation.NavigationView;
 import com.nightonke.boommenu.BoomButtons.BoomButton;
 import com.nightonke.boommenu.BoomButtons.TextOutsideCircleButton;
 import com.nightonke.boommenu.BoomMenuButton;
@@ -93,9 +92,7 @@ import ocgcore.CardManager;
 import ocgcore.DataManager;
 import ocgcore.data.Card;
 
-import static cn.garymb.ygomobile.Constants.ASSET_SERVER_LIST;
-
-public abstract class HomeActivity extends BaseActivity implements NavigationView.OnNavigationItemSelectedListener, OnDuelAssistantListener {
+public abstract class HomeActivity extends BaseActivity implements OnDuelAssistantListener {
 
     private static final int ID_MAINACTIVITY = 0;
 
@@ -145,11 +142,7 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
         if (!BuildConfig.BUILD_TYPE.equals("debug")) {
             //release才检查版本
             if (!Constants.ACTION_OPEN_GAME.equals(getIntent().getAction())) {
-                Log.d(Constants.TAG, "start check update");
-        //check update
         //Beta.checkUpgrade(false, false);
-            } else {
-                Log.d(Constants.TAG, "skip check update");
             }
         }
         //初始化决斗助手
@@ -287,14 +280,6 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
     }
 
     @Override
-    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        if (doMenu(item.getItemId())) {
-            return true;
-        }
-        return false;
-    }
-
-    @Override
     public HomeActivity getActivity() {
         return this;
     }
@@ -307,7 +292,6 @@ public abstract class HomeActivity extends BaseActivity implements NavigationVie
     private boolean doMenu(int id) {
         switch (id) {
             case R.id.nav_webpage: {
-                String url;
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setData(Uri.parse(BuildConfig.URL_DONATE));
                 startActivity(intent);
