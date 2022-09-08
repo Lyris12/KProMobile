@@ -44,8 +44,8 @@ import cn.garymb.ygomobile.bean.ServerInfo;
 import cn.garymb.ygomobile.bean.ServerList;
 import cn.garymb.ygomobile.lite.R;
 import cn.garymb.ygomobile.ui.adapters.ServerListAdapter;
-import cn.garymb.ygomobile.ui.cards.CardSearchActivity;
-import cn.garymb.ygomobile.ui.cards.DeckManagerActivity;
+import cn.garymb.ygomobile.ui.cards.CardSearchFragment;
+import cn.garymb.ygomobile.ui.cards.DeckManagerFragment;
 import cn.garymb.ygomobile.ui.cards.deck.DeckUtils;
 import cn.garymb.ygomobile.ui.home.MainActivity;
 import cn.garymb.ygomobile.ui.home.ServerListManager;
@@ -225,6 +225,7 @@ public class DuelAssistantService extends Service implements OnDuelAssistantList
         bt_close.setOnClickListener(v -> disJoinDialog());
         bt_join.setOnClickListener(v -> {
             disJoinDialog();
+            Intent startSetting = new Intent(getBaseContext(), MainActivity.class);
             //如果是卡组url
             if (isUrl) {
                 Deck deckInfo = new Deck(getString(R.string.rename_deck) + System.currentTimeMillis(), Uri.parse(deckMessage));
@@ -232,13 +233,16 @@ public class DuelAssistantService extends Service implements OnDuelAssistantList
                 if (!deckInfo.isCompleteDeck()){
                     YGOUtil.show("当前卡组缺少完整信息，将只显示已有卡片");
                 }
-                DeckManagerActivity.start(DuelAssistantService.this, file.getAbsolutePath());
+
+                startSetting.putExtra("flag", 2);
+                startSetting.putExtra(Intent.EXTRA_TEXT, file.getAbsolutePath());
             } else {
                 //如果是卡组文本
                 try {
                     //以当前时间戳作为卡组名保存卡组
                     File file = DeckUtils.save(getString(R.string.rename_deck) + System.currentTimeMillis(), deckMessage);
-                    DeckManagerActivity.start(DuelAssistantService.this, file.getAbsolutePath());
+                    startSetting.putExtra("flag", 2);
+                    startSetting.putExtra(Intent.EXTRA_TEXT, file.getAbsolutePath());
                 } catch (IOException e) {
                     e.printStackTrace();
                     Toast.makeText(DuelAssistantService.this, getString(R.string.save_failed_bcos) + e, Toast.LENGTH_SHORT).show();
@@ -371,9 +375,9 @@ public class DuelAssistantService extends Service implements OnDuelAssistantList
     @Override
     public void onCardSearch(String key, int id) {
         if (id == ClipManagement.ID_CLIP_LISTENER) {
-            Intent intent = new Intent(DuelAssistantService.this, CardSearchActivity.class);
+            Intent intent = new Intent(DuelAssistantService.this, CardSearchFragment.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.putExtra(CardSearchActivity.SEARCH_MESSAGE, key);
+            intent.putExtra(CardSearchFragment.SEARCH_MESSAGE, key);
             startActivity(intent);
         }
     }

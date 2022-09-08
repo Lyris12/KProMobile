@@ -9,8 +9,8 @@ android {
         minSdkVersion 21
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 29
-        versionCode 390800618
-        versionName "Thirdeye"
+        versionCode 310020906
+        versionName "Gloxinia"
         flavorDimensions "versionCode"
         vectorDrawables.useSupportLibrary = true
         ndk {
@@ -25,6 +25,7 @@ android {
     productFlavors {
         cn {
             resValue 'string', 'app_name', 'KProMobile'
+            applicationIdSuffix ".CN"
             buildConfigField 'String', 'URL_DONATE', '"https://afdian.net/@ygomobile"'
             manifestPlaceholders = [APP_ID: "0b6f110306"]
         }
@@ -100,9 +101,11 @@ dependencies {
 //    implementation 'com.android.support:appcompat-v7:' + rootProject.ext.supportVersion
 //    implementation 'com.android.support:recyclerview-v7:' + rootProject.ext.supportVersion
 //    implementation 'com.android.support:design:' + rootProject.ext.supportVersion
-
+    implementation 'cn.hutool:hutool-all:latest.release'
     implementation 'org.jdeferred:jdeferred-android-aar:1.2.4'
     implementation 'com.github.bumptech.glide:glide:4.12.0'
+    implementation 'androidx.navigation:navigation-fragment:2.3.5'
+    implementation 'androidx.navigation:navigation-ui:2.3.5'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.12.0'
     implementation('com.github.chrisbanes.photoview:library:1.2.4') {
         implementation 'com.github.chrisbanes.photoview:library:1.2.4'
@@ -119,7 +122,7 @@ dependencies {
     implementation 'com.nightonke:boommenu:2.1.0'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     //dialog库
-    implementation 'com.github.feihuaduo:DialogUtils:1.8.9.20'
+    implementation 'com.github.feihuaduo:DialogUtils:1.8.9.23'
     //recyclerview的adapter库
     implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:3.0.4'
     implementation 'androidx.appcompat:appcompat:1.2.0'
@@ -137,4 +140,16 @@ dependencies {
     implementation 'com.bm.photoview:library:1.4.1'
     //引导页库
     implementation 'com.github.huburt-Hu:NewbieGuide:v2.4.4'
+    //androidX 版本使用下面的依赖
+    implementation 'com.github.xiaohaibin:XBanner:androidx_v1.2.0'
+    implementation 'com.android.support:multidex:1.0.3'
+    implementation 'com.flyco.tablayout:FlycoTabLayout_Lib:2.1.2@aar'
+
+    implementation 'com.github.jenly1314:circleprogressview:1.1.3'
+
+    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation "androidx.palette:palette:1.0.0"
+    implementation 'com.ashokvarma.android:bottom-navigation-bar:2.2.0'
+    //圆形头像
+    implementation 'de.hdodenhof:circleimageview:2.2.0'
 }

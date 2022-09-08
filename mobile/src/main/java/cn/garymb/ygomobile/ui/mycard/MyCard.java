@@ -1,38 +1,54 @@
 package cn.garymb.ygomobile.ui.mycard;
 
+import static junit.framework.Assert.assertEquals;
+
+import static cn.garymb.ygomobile.Constants.ARG_DECK;
+import static cn.garymb.ygomobile.Constants.QUERY_YGO_TYPE;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
 
+import com.app.hubert.guide.util.LogUtil;
+import com.google.gson.Gson;
 import com.tencent.smtt.sdk.WebView;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
 import cn.garymb.ygodata.YGOGameOptions;
+import cn.garymb.ygomobile.App;
 import cn.garymb.ygomobile.AppsSettings;
+import cn.garymb.ygomobile.Constants;
 import cn.garymb.ygomobile.YGOStarter;
 import cn.garymb.ygomobile.bean.events.DeckFile;
-import cn.garymb.ygomobile.ui.cards.DeckManagerActivity;
+import cn.garymb.ygomobile.lite.BuildConfig;
+import cn.garymb.ygomobile.ui.mycard.bean.McUser;
+import cn.garymb.ygomobile.ui.mycard.mcchat.management.UserManagement;
 import cn.garymb.ygomobile.ui.plus.DefWebViewClient;
 import cn.garymb.ygomobile.utils.DeckUtil;
-
-import static junit.framework.Assert.assertEquals;
+import cn.garymb.ygomobile.utils.JsonUtil;
+import cn.garymb.ygomobile.utils.OkhttpUtil;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 public class MyCard {
 
@@ -41,10 +57,82 @@ public class MyCard {
     private static final String mCommunityUrl = "https://ygobbs.com/login";
     private static final String return_sso_url = "https://mycard.moe/mobile/?";
     private static final String HOST_MC = "mycard.moe";
-    private static final String MC_MAIN_URL = "https://mycard.moe/mobile/ygopro/lobby";
+    public static final String MC_MAIN_URL = "https://mycard.moe/mobile/ygopro/lobby";
+
+    public static final String MYCARD_NEWS_URL = "https://api.mycard.moe/apps.json";
+    public static final String MYCARD_POST_URL = "https://ygobbs.com/t/";
+    public static final String YGO_LFLIST_URL = "https://raw.githubusercontent.com/moecube/ygopro/server/lflist.conf";
+
+    public static final String ARG_TOPIC_LIST = "topic_list";
+    public static final String ARG_TOPICS = "topics";
+    public static final String ARG_ID = "id";
+    public static final String ARG_TITLE = "title";
+    public static final String ARG_IMAGE_URL = "image_url";
+    public static final String ARG_CREATE_TIME = "created_at";
+    public static final String ARG_OTHER = "other";
+
+
+    public static final String ARG_MC_NAME = "name";
+    public static final String ARG_MC_PASSWORD = "password";
+    public static final String ARG_YGOPRO = "ygopro";
+    public static final String ARG_ZH_CN = "zh-CN";
+    public static final String ARG_IMAGE = "image";
+    public static final String ARG_UPDATE_AT = "updated_at";
+    public static final String ARG_URL = "url";
+    public static final String ARG_NEWS = "news";
+    public static final String ARG_USERNAME = "username";
+    public static final String MYCARD_USER_DUEL_URL = "https://sapi.moecube.com:444/ygopro/arena/user";
+
+    public static final String ACTION_OPEN_MYCARD = "ygomobile.intent.action.MYCARD";
+    public static final String URL_MC_LOGIN = "https://accounts.moecube.com/";
+    public static final String URL_MC_LOGOUT = "https://accounts.moecube.com/signin";
+    public static final String ARG_SSO = "sso";
+    public static final String URL_MC_WATCH_DUEL_FUN = "wss://tiramisu.mycard.moe:7923/?filter=started";
+    public static final String URL_MC_WATCH_DUEL_MATCH = "wss://tiramisu.mycard.moe:8923/?filter=started";
+    public static final String URL_MC_MATCH = "https://api.mycard.moe/ygopro/match";
+    public static final String ARG_EVENT = "event";
+    public static final String ARG_DATA = "data";
+    public static final String HOST_MC_MATCH = "tiramisu.mycard.moe";
+    public static final String HOST_MC_OTHER = "tiramisu.mycard.moe";
+    public static final int PORT_MC_MATCH = 8911;
+    public static final int PORT_MC_OTHER = 7911;
+    public static final String ARG_LOCALE = "locale";
+    public static final String ARG_ARENA = "arena";
+    public static final String ARG_ATHLEIC = "athletic";
+    public static final String ARG_ENTERTAIN = "entertain";
+    public static final String ARG_ADDRESS = "address";
+    public static final String ARG_PORT = "port";
+    public static final String PACKAGE_NAME_EZ = "com.ourygo.ez";
     private static final Charset UTF_8 = Charset.forName("UTF-8");
-    private final DefWebViewClient mDefWebViewClient;
-    private final User mUser = new User();
+    private final DefWebViewClient mDefWebViewClient = new DefWebViewClient() {
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+//                if (url.startsWith(return_sso_url)) {
+//
+//
+//                    String sso = Uri.parse(url).getQueryParameter("sso");
+//                    String data = new String(Base64.decode(Uri.parse(url).getQueryParameter("sso"), Base64.NO_WRAP), UTF_8);
+//                    Uri info = new Uri.Builder().encodedQuery(data).build();
+//                    mUser.external_id = Integer.parseInt(info.getQueryParameter("external_id"));
+//                    mUser.username = info.getQueryParameter("username");
+//                    mUser.name = info.getQueryParameter("name");
+//                    mUser.email = info.getQueryParameter("email");
+//                    mUser.avatar_url = info.getQueryParameter("avatar_url");
+//                    mUser.admin = info.getBooleanQueryParameter("admin", false);
+//                    mUser.moderator = info.getBooleanQueryParameter("moderator", false);
+//                    lastModified.edit().putString("user_external_id", mUser.external_id + "").apply();
+//                    lastModified.edit().putString("user_name", mUser.username).apply();
+//                    //UserManagement.setUserName(mUser.username);
+//                    //UserManagement.setUserPassword(mUser.external_id+"");
+//                    mUser.login = true;
+//                    if (getMyCardListener() != null) {
+//                        getMyCardListener().onLogin(mUser.name, mUser.avatar_url, null);
+//                    }
+//                    return false;
+//                }
+            return super.shouldOverrideUrlLoading(view, url);
+        }
+    };
     private final SharedPreferences lastModified;
     private MyCardListener mMyCardListener;
     private Activity mContext;
@@ -52,33 +140,39 @@ public class MyCard {
     public MyCard(Activity context) {
         mContext = context;
         lastModified = context.getSharedPreferences("lastModified", Context.MODE_PRIVATE);
-        mDefWebViewClient = new DefWebViewClient() {
+    }
+
+    public static String getMCLogoutUrl(){
+        String home="return_sso_url="+Uri.encode(mHomeUrl);
+        String base64=Base64.encodeToString(home.getBytes(), Base64.NO_WRAP);
+        Uri.Builder uri = Uri.parse(URL_MC_LOGOUT)
+                .buildUpon();
+        uri.appendQueryParameter("sso",base64);
+        return uri.build().toString();
+    }
+
+    //获取mc新闻列表
+    public static void findMyCardNews(OnMyCardNewsQueryListener onMyCardNewsQueryListener) {
+        OkhttpUtil.get(MYCARD_NEWS_URL, new Callback() {
             @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if (url.startsWith(return_sso_url)) {
-                    String sso = Uri.parse(url).getQueryParameter("sso");
-                    String data = new String(Base64.decode(Uri.parse(url).getQueryParameter("sso"), Base64.NO_WRAP), UTF_8);
-                    Uri info = new Uri.Builder().encodedQuery(data).build();
-                    mUser.external_id = Integer.parseInt(info.getQueryParameter("external_id"));
-                    mUser.username = info.getQueryParameter("username");
-                    mUser.name = info.getQueryParameter("name");
-                    mUser.email = info.getQueryParameter("email");
-                    mUser.avatar_url = info.getQueryParameter("avatar_url");
-                    mUser.admin = info.getBooleanQueryParameter("admin", false);
-                    mUser.moderator = info.getBooleanQueryParameter("moderator", false);
-                    lastModified.edit().putString("user_external_id", mUser.external_id + "").apply();
-                    lastModified.edit().putString("user_name", mUser.username).apply();
-                    //UserManagement.setUserName(mUser.username);
-                    //UserManagement.setUserPassword(mUser.external_id+"");
-                    mUser.login = true;
-                    if (getMyCardListener() != null) {
-                        getMyCardListener().onLogin(mUser.name, mUser.avatar_url, null);
-                    }
-                    return false;
-                }
-                return super.shouldOverrideUrlLoading(view, url);
+            public void onFailure(Call call, IOException e) {
+                onMyCardNewsQueryListener.onMyCardNewsQuery(null, e.toString());
             }
-        };
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String json = response.body().string();
+                try {
+                    onMyCardNewsQueryListener.onMyCardNewsQuery(JsonUtil.getMyCardNewsList(json), null);
+                } catch (JSONException e) {
+                    onMyCardNewsQueryListener.onMyCardNewsQuery(null, e.toString());
+                }
+            }
+        });
+    }
+
+    public interface OnMyCardNewsQueryListener {
+        void onMyCardNewsQuery(List<McNews> mcNewsList, String exception);
     }
 
     private static String byteArrayToHexString(byte[] array) {
@@ -108,21 +202,6 @@ public class MyCard {
         return mHomeUrl;
     }
 
-//    public String getLoginUrl() throws NoSuchAlgorithmException, InvalidKeyException {
-//        Uri.Builder payloadBuilder = new Uri.Builder();
-//        payloadBuilder.appendQueryParameter("return_sso_url", return_sso_url);
-//        byte[] payload = Base64.encode(payloadBuilder.build().getQuery().getBytes(UTF_8), Base64.NO_WRAP);
-//
-//        Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
-//        SecretKeySpec secret_key = new SecretKeySpec(key.getBytes(UTF_8), "HmacSHA256");
-//        sha256_HMAC.init(secret_key);
-//        String signature = byteArrayToHexString(sha256_HMAC.doFinal(payload));
-//        Uri.Builder requestBuilder = Uri.parse(sso_url).buildUpon();
-//        requestBuilder.appendQueryParameter("sso", new String(payload, UTF_8));
-//        requestBuilder.appendQueryParameter("sig", signature);
-//        return requestBuilder.build().toString();
-//    }
-
     public String getBBSUrl() {
         return mCommunityUrl;
     }
@@ -140,25 +219,12 @@ public class MyCard {
         mMyCardListener = myCardListener;
         webView.setWebViewClient(getWebViewClient());
         webView.addJavascriptInterface(new MyCard.Ygopro(mContext, myCardListener), "ygopro");
-        String name = lastModified.getString("user_name", null);
-        String headurl = lastModified.getString("user_avatar_url", null);
-        if (mMyCardListener != null) {
-            if (!TextUtils.isEmpty(name)) {
-                mMyCardListener.onLogin(name, headurl, null);
-            }
-        }
     }
 
     public interface MyCardListener {
-        void onLogin(String name, String icon, String statu);
+        void onLogin(McUser mcUser,String exception);
 
-        void watchReplay();
-
-        void puzzleMode();
-
-        void openDrawer();
-
-        void closeDrawer();
+        void onUpdate(String name, String icon, String statu);
 
         void backHome();
 
@@ -166,33 +232,12 @@ public class MyCard {
 
         void onHome();
 
-    }
+        /**
+         *
+         * @param message 退出登录的提示，web端传
+         */
+        void onLogout(String message);
 
-    public static class User {
-        int external_id;
-        String username;
-        String name;
-        String email;
-        String avatar_url;
-        boolean admin;
-        boolean moderator;
-        boolean login;
-
-        public User() {
-
-        }
-
-        public String getJID() {
-            return username + "@mycard.moe";
-        }
-
-        public String getPassword() {
-            return String.valueOf(external_id);
-        }
-
-        public String getConference() {
-            return "ygopro_china_north@conference.mycard.moe";
-        }
     }
 
     public class Ygopro {
@@ -204,32 +249,6 @@ public class MyCard {
         private Ygopro(Activity activity, MyCardListener listener) {
             this.activity = activity;
             mListener = listener;
-        }
-
-        @JavascriptInterface
-        public void edit_deck() {
-            activity.startActivity(new Intent(activity, DeckManagerActivity.class));
-        }
-
-        @JavascriptInterface
-        public void watch_replay() {
-            if (mListener != null) {
-                activity.runOnUiThread(mListener::watchReplay);
-            }
-        }
-
-        @JavascriptInterface
-        public void puzzle_mode() {
-            if (mListener != null) {
-                activity.runOnUiThread(mListener::puzzleMode);
-            }
-        }
-
-        @JavascriptInterface
-        public void openDrawer() {
-            if (mListener != null) {
-                activity.runOnUiThread(mListener::openDrawer);
-            }
         }
 
         @JavascriptInterface
@@ -245,13 +264,6 @@ public class MyCard {
                 activity.runOnUiThread(() -> {
                     mListener.share(text);
                 });
-            }
-        }
-
-        @JavascriptInterface
-        public void closeDrawer() {
-            if (mListener != null) {
-                activity.runOnUiThread(mListener::closeDrawer);
             }
         }
 
@@ -356,16 +368,35 @@ public class MyCard {
         }
 
         @JavascriptInterface
+        public void loginUser(String userInfo,String exception){
+            McUser mcUser = null;
+            if (TextUtils.isEmpty(exception)) {
+                mcUser = new Gson().fromJson(userInfo, McUser.class);
+                UserManagement.getDx().setMcUser(mcUser);
+            }
+            if (mListener!=null)
+                mListener.onLogin(mcUser,exception);
+        }
+
+        @JavascriptInterface
         public void updateUser(String name, String headurl, String status) {
+            McUser mcUser=UserManagement.getDx().getMcUser();
+            if (mcUser==null)
+                mcUser=new McUser();
+            mcUser.setUsername(name);
+            mcUser.setAvatar_url(headurl);
+            mcUser.setEmail(status);
+            UserManagement.getDx().setMcUser(mcUser);
             if (mListener != null) {
-                mUser.name = name;
-                mUser.avatar_url = headurl;
-                mUser.login = true;
-                lastModified.edit()
-                        .putString("user_name", name)
-                        .putString("user_avatar_url", headurl)
-                        .apply();
-                mListener.onLogin(name, headurl, status);
+                mListener.onUpdate(name, headurl, status);
+            }
+        }
+
+        @JavascriptInterface
+        public void logoutUser(String message){
+            UserManagement.getDx().logout();
+            if (mListener!=null) {
+                mListener.onLogout(message);
             }
         }
 
@@ -411,5 +442,22 @@ public class MyCard {
             }
         }
 
+    }
+
+    public static String getMycardPostUrl(String id) {
+        return MYCARD_POST_URL + id;
+    }
+
+    public static String getImagePath(Context context) {
+//        return context.getExternalFilesDir("image").getAbsolutePath();
+        return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath(), "YGOMobile OY").getAbsolutePath();
+    }
+
+    public static String getImageCachePath() {
+        return App.get().getExternalFilesDir("cache/image").getAbsolutePath();
+    }
+
+    public static String getCachePath() {
+        return App.get().getExternalFilesDir("cache").getAbsolutePath();
     }
 }

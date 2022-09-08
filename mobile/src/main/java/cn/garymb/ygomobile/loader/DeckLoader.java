@@ -1,5 +1,8 @@
 package cn.garymb.ygomobile.loader;
 
+import static cn.garymb.ygomobile.Constants.newIDsArray;
+import static cn.garymb.ygomobile.Constants.oldIDsArray;
+
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
@@ -16,6 +19,7 @@ import cn.garymb.ygomobile.bean.Deck;
 import cn.garymb.ygomobile.bean.DeckInfo;
 import cn.garymb.ygomobile.ui.cards.deck.DeckItemType;
 import cn.garymb.ygomobile.utils.IOUtils;
+import cn.hutool.core.util.ArrayUtil;
 import ocgcore.data.Card;
 import ocgcore.data.LimitList;
 
@@ -65,10 +69,17 @@ public class DeckLoader {
                         Log.w("kk", "read not number " + line);
                     continue;
                 }
+                if (line.length() > 9) {//密码如果大于9位直接过滤
+                    continue;
+                }
                 Integer id = Integer.parseInt(line);
                 if (type == DeckItemType.MainCard && deck.getMainCount() < Constants.DECK_MAIN_MAX) {
                     Integer i = mIds.get(id);
                     if (i == null) {
+                        if (ArrayUtil.contains(oldIDsArray, id)) {
+                            id = ArrayUtil.get(newIDsArray,id);
+                            Log.i("3.10.1","看看id="+id);
+                        }
                         mIds.put(id, 1);
                         deck.addMain(id);
                     } else if (i < Constants.CARD_MAX_COUNT) {

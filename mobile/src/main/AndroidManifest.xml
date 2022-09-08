@@ -27,9 +27,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <meta-data
+            <!--meta-data
                 android:name="android.app.shortcuts"
-                android:resource="@xml/shortcuts" />
+                android:resource="@xml/shortcuts" /-->
 
         </activity>
 
@@ -134,31 +134,6 @@
             android:name="cn.garymb.ygomobile.YGOMobileActivity"
             android:theme="@style/AppTheme.Game"
             tools:replace="android:theme" />
-
-        <activity
-            android:name="cn.garymb.ygomobile.ui.preference.SettingsActivity"
-            android:configChanges="orientation|keyboardHidden|navigation|screenSize"
-            android:label="@string/settings"
-            android:launchMode="singleTop"
-            android:screenOrientation="portrait"
-            android:theme="@style/AppTheme"
-            android:windowSoftInputMode="stateAlwaysHidden|adjustResize" />
-        <activity
-            android:name="cn.garymb.ygomobile.ui.cards.CardSearchActivity"
-            android:configChanges="orientation|keyboardHidden|navigation|screenSize"
-            android:label="@string/card_search"
-            android:launchMode="singleTop"
-            android:screenOrientation="portrait"
-            android:theme="@style/AppTheme"
-            android:windowSoftInputMode="stateAlwaysHidden|adjustPan" />
-        <activity
-            android:name="cn.garymb.ygomobile.ui.cards.DeckManagerActivity"
-            android:configChanges="orientation|keyboardHidden|navigation|screenSize"
-            android:label="@string/deck_manager"
-            android:launchMode="singleTop"
-            android:screenOrientation="portrait"
-            android:theme="@style/AppTheme"
-            android:windowSoftInputMode="stateAlwaysHidden|adjustPan" />
         <activity
             android:name="cn.garymb.ygomobile.ui.file.FileActivity"
             android:configChanges="orientation|keyboardHidden|navigation|screenSize"
@@ -170,22 +145,8 @@
             android:name="cn.garymb.ygomobile.ui.activities.WebActivity"
             android:configChanges="orientation|keyboardHidden|navigation|screenSize"
             android:launchMode="singleTop"
-            android:theme="@style/AppTheme"
-            android:windowSoftInputMode="stateAlwaysHidden|adjustResize" />
-        <activity
-            android:name="cn.garymb.ygomobile.ui.mycard.MyCardActivity"
-            android:configChanges="orientation|keyboardHidden|navigation|screenSize"
-            android:launchMode="singleTop"
             android:theme="@style/AppTheme.Mycard"
-            android:windowSoftInputMode="stateAlwaysHidden|adjustResize"/>
-
-        <activity
-            android:name="cn.garymb.ygomobile.ui.mycard.mcchat.McchatActivity"
-            android:label="@string/app_name"
-            android:windowSoftInputMode="stateHidden|adjustResize" />
-        <activity
-            android:name="cn.garymb.ygomobile.ui.mycard.mcchat.SplashActivity"
-            android:theme="@style/AppTheme.Mycard" />
+            android:windowSoftInputMode="stateAlwaysHidden|adjustResize" />
         <activity android:name="cn.garymb.ygomobile.ui.activities.FileLogActivity" />
         <activity
             android:name="cn.garymb.ygomobile.ui.activities.PermissionsActivity"
@@ -205,7 +166,7 @@
 
         <!-- 如果已经安装过原版YGOMobile，请注释掉或修改成其他，否则会导致无法安装 -->
         <provider
-            android:name="cn.garymb.ygomobile.ui.preference.YGOPreferencesProvider"
+            android:name="cn.garymb.ygomobile.ui.settings.YGOPreferencesProvider"
             android:authorities="${applicationId}.ui.preference.YGOPreferencesProvider"
             android:exported="false"
             android:grantUriPermissions="true" />

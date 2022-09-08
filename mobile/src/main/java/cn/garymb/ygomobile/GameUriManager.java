@@ -18,7 +18,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.ourygo.assistant.base.listener.OnDeRoomListener;
+
 import com.ourygo.assistant.util.YGODAUtil;
 
 import java.io.File;
@@ -28,9 +28,8 @@ import java.util.Locale;
 import cn.garymb.ygodata.YGOGameOptions;
 import cn.garymb.ygomobile.bean.Deck;
 import cn.garymb.ygomobile.lite.R;
-import cn.garymb.ygomobile.ui.cards.DeckManagerActivity;
+import cn.garymb.ygomobile.ui.home.HomeFragment;
 import cn.garymb.ygomobile.ui.home.MainActivity;
-import cn.garymb.ygomobile.ui.preference.SettingsActivity;
 import cn.garymb.ygomobile.utils.FileUtils;
 import cn.garymb.ygomobile.utils.IOUtils;
 import cn.garymb.ygomobile.utils.YGOUtil;
@@ -39,6 +38,7 @@ import ocgcore.DataManager;
 
 public class GameUriManager {
     private Activity activity;
+    private HomeFragment homeFragment;
     private String fname;
 
     public GameUriManager(Activity activity) {
@@ -197,7 +197,7 @@ public class GameUriManager {
     }
 
     private void doUri(Uri uri) {
-        Intent startSetting = new Intent(activity, SettingsActivity.class);
+        Intent startSetting = new Intent(activity, MainActivity.class);
         if ("file".equals(uri.getScheme()) || "content".equals(uri.getScheme())) {
             File file = toLocalFile(uri);
             if (file == null || !file.exists()) {
@@ -210,9 +210,11 @@ public class GameUriManager {
             boolean isLua = file.getName().toLowerCase(Locale.US).endsWith(".lua");
             Log.i(Constants.TAG, "open file:" + uri + "->" + file.getAbsolutePath());
             if (isYdk) {
-                DeckManagerActivity.start(activity, file.getAbsolutePath());
+                startSetting.putExtra(Intent.EXTRA_TEXT, file.getAbsolutePath());
+                activity.startActivity(startSetting);
             } else if (isYpk) {
                 if (!AppsSettings.get().isReadExpansions()) {
+                    startSetting.putExtra("flag", 4);
                     activity.startActivity(startSetting);
                     Toast.makeText(activity, R.string.ypk_go_setting, Toast.LENGTH_LONG).show();
                 } else {
@@ -246,17 +248,18 @@ public class GameUriManager {
                 } else {
                     Deck deckInfo = new Deck(uri);
                     File file = deckInfo.saveTemp(AppsSettings.get().getDeckDir());
-                    if (!deckInfo.isCompleteDeck()){
+                    if (!deckInfo.isCompleteDeck()) {
                         YGOUtil.show("当前卡组缺少完整信息，将只显示已有卡片");
                     }
-                    DeckManagerActivity.start(activity, file.getAbsolutePath());
+                    startSetting.putExtra(Intent.EXTRA_TEXT, file.getAbsolutePath());
+                    activity.startActivity(startSetting);
                 }
             } else if (Constants.URI_ROOM.equals(host)) {
                 YGODAUtil.deRoomListener(uri, (host1, port, password, exception) -> {
                     if (TextUtils.isEmpty(exception))
                         if (activity instanceof MainActivity) {
-                            MainActivity mainActivity = (MainActivity) activity;
-                            mainActivity.quickjoinRoom(host1, port, password);
+                            homeFragment = new HomeFragment();
+                            homeFragment.quickjoinRoom(host1, port, password);
                         } else {
                             YGOUtil.show(exception);
                         }
@@ -287,7 +290,9 @@ public class GameUriManager {
             }
         }
         if (deck != null && deck.exists()) {
-            DeckManagerActivity.start(activity, deck.getAbsolutePath());
+            Intent startSetting = new Intent(activity, MainActivity.class);
+            startSetting.putExtra(Intent.EXTRA_TEXT, deck.getAbsolutePath());
+            activity.startActivity(startSetting);
         } else {
             Log.w("kk", "no find " + name);
             activity.finish();

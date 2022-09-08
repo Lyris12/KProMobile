@@ -92,6 +92,7 @@
     </string-array>
     <!-- settings -->
 
+    <string name="server_list">Duel Servers</string>
     <string name="server_name">Name:</string>
     <string name="server_ip">Host:</string>
     <string name="server_user">User:</string>
@@ -105,7 +106,7 @@
     <string name="server_is_exist">the server is exist</string>
     <string name="server_info_error">server info is bad.</string>
     <string name="card_search">Card Search</string>
-    <string name="deck_manager">Deck Manager</string>
+    <string name="deck_manager">Deck</string>
     <string name="category_manager"> Categorized Deck Select</string>
     <string name="search">Search</string>
     <string name="search_open">Select</string>
@@ -145,6 +146,7 @@
     <string name="unsort">Unsort</string>
     <string name="sort">Sort</string>
     <string name="loading">loading..."</string>
+    <string name="loading_failed">loading failed"</string>
     <string name="question">Question</string>
     <string name="question_delete_deck">delete this deck?</string>
     <string name="noname">noname</string>
@@ -167,10 +169,10 @@
     <string name="all">All</string>
     <string name="refresh">Refresh</string>
     <string name="select_deck">Click here to select Deck</string>
-    <string name="quit_deck_tip">Quit deck editor?</string>
+    <string name="quit_deck_tip">Deck has not been saved yet, quit App?</string>
     <string name="deck_delete_text">Drag here to delete</string>
     <string name="question_keep_cur_deck">keep current cards?</string>
-    <string name="check_choose_file" formatted="false">Determine the choose %s ？</string>
+    <string name="check_choose_file" formatted="false">Determine the choose %s \?</string>
     <string name="settings_deck_delete_dialog">Delete Card use dialog</string>
     <string name="settings_deck_delete_dialog_desc">show delete card dialog in deck editor</string>
     <string name="delete_card" formatted="false">Delete %s ?</string>
@@ -205,6 +207,7 @@
     <string name="failed_reason">Logining failed because of</string>
     <string name="send">Send</string>
     <string name="bbs">Community</string>
+    <string name="McNews">News</string>
     <string name="settings_pref_settings_only_game">Only start game</string>
     <string name="only_game_tip">reset this setting, need clean data of app</string>
     <string name="title_use_ex">Use Expansions</string>
@@ -231,6 +234,7 @@
     <string name="Open_Alert_Window">To Open Pop-ups</string>
     <string name="Function_Menu">MENU</string>
     <string name="Join_QQ">QQ Group</string>
+    <string name="about_Join_QQ">join QQ group to report problems</string>
     <string name="donatefor">your donation will be used for keeping severs updating, buying card to get artworks and purchasing new phone to adapt</string>
     <string name="coverSelect">click covers and select files</string>
     <string name="bgSelect">click background and select files</string>
@@ -306,7 +310,7 @@
     <string name="guide_server_edit">Server edit\: edit server information. for example\: change nickname</string>
     <string name="guide_help">Help\: specifically guide How to use YGOMobile and learn Master Rules</string>
     <string name="guide_settings">Settings\: turn on Expansions and DuelAssistant.set game avatars, background, cardback. </string>
-    <string name="guide_reset">Reset Resources\: click to reset when pictures or any files are mistaken deleted</string>
+    <string name="guide_reset">click to reset when pictures or any files are mistaken deleted</string>
     <string name="guide_abt_room_list">Inputted password will be recorded. Lone-Press to delete record(s)</string>
     <string name="guide_join_room">you can join game without password to start random duel with default mode
                                 \n use specified password and share other players to join same game
@@ -316,6 +320,7 @@
     <string name="guide_button_search_result">click to see search result\n also here will shows favorite cards</string>
     <string name="guide_view_deck_manager">click to change Decks\n you can manage deck categories here</string>
     <string name="guide_view_move_card">press a card to move it to other place\nlong-press this card to delete it</string>
+    <string name="guide_view_banner">Mycard News, you can click to see\only in Chinese now, Sorry</string>
     <string name="title_delete_ex">delete expansions</string>
     <string name="about_delete_ex">if you need to delte all expansion cards</string>
     <string name="file_installed">file loaded</string>
@@ -329,4 +334,13 @@
     <string name="settings_screen_padding">Reserved height of curved screen</string>
     <string name="tip_load_cdb_error">Load database error</string>
     <string name="action_download_expansions">download\\nexpansions</string>
+    <string name="replay">Watch replay</string>
+    <string name="bot_mode">Bot game</string>
+    <string name="personal">My</string>
+    <string name="login_mycard">login</string>
+    <string name="logout_mycard">Logout mycard\?</string>
+    <string name="back_to_mycard_home">back to homepage</string>
+    <string name="edit_your_message">Input your message</string>
+    <string name="login_succeed">Chatroom logined</string>
+    <string name="reChatJoining">relogining\.\.\.</string>
 </resources>
