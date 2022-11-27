@@ -35,15 +35,12 @@ import static cn.garymb.ygomobile.Constants.SETTINGS_CARD_BG;
 import static cn.garymb.ygomobile.Constants.SETTINGS_COVER;
 import static cn.garymb.ygomobile.ui.home.ResCheckTask.getDatapath;
 
-import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
@@ -61,7 +58,6 @@ import android.widget.Toast;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.signature.MediaStoreSignature;
 
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -69,21 +65,17 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import cn.garymb.ygomobile.App;
 import cn.garymb.ygomobile.AppsSettings;
 import cn.garymb.ygomobile.Constants;
 import cn.garymb.ygomobile.lite.R;
 import cn.garymb.ygomobile.ui.adapters.SimpleListAdapter;
 import cn.garymb.ygomobile.ui.home.MainActivity;
 import cn.garymb.ygomobile.ui.plus.DialogPlus;
-import com.ourygo.assistant.service.DuelAssistantService;
 import cn.garymb.ygomobile.ui.plus.VUiKit;
-import cn.garymb.ygomobile.ui.settings.PreferenceFragmentPlus;
 import cn.garymb.ygomobile.utils.FileUtils;
 import cn.garymb.ygomobile.utils.IOUtils;
 import cn.garymb.ygomobile.utils.SystemUtils;
 import cn.garymb.ygomobile.utils.glide.GlideCompat;
-import ocgcore.ConfigManager;
 import ocgcore.DataManager;
 
 public class SettingFragment extends PreferenceFragmentPlus {
@@ -159,14 +151,6 @@ public class SettingFragment extends PreferenceFragmentPlus {
                     return false;
                 }
             }*/
-            if (PREF_FONT_SIZE.equals(preference.getKey())) {
-                int size = Constants.DEF_PREF_FONT_SIZE;
-                try {
-                    size = Integer.parseInt(String.valueOf(value));
-                } catch (Exception e) {
-
-                }
-            }
             if (preference instanceof CheckBoxPreference) {
                 CheckBoxPreference checkBoxPreference = (CheckBoxPreference) preference;
                 mSharedPreferences.edit().putBoolean(preference.getKey(), checkBoxPreference.isChecked()).apply();
@@ -175,14 +159,6 @@ public class SettingFragment extends PreferenceFragmentPlus {
                     //设置使用额外卡库后重新加载卡片数据
                     DataManager.get().load(true);
                 }
-                //开关决斗助手
-                if (preference.getKey().equals(PREF_START_SERVICEDUELASSISTANT)) {
-//                    if (checkBoxPreference.isChecked()) {
-//                        getActivity().startService(new Intent(getActivity(), DuelAssistantService.class));
-//                    } else {
-//                        getActivity().stopService(new Intent(getActivity(), DuelAssistantService.class));
-//                    }
-                    }
                 return true;
             }
             boolean rs = super.onPreferenceChange(preference, value);
@@ -212,9 +188,6 @@ public class SettingFragment extends PreferenceFragmentPlus {
         if (PREF_JOIN_QQ.equals(key)) {
             String groupkey = "anEjPCDdhLgxtfLre-nT52G1Coye3LkK";
             joinQQGroup(groupkey);
-        }
-        if (PREF_CHECK_UPDATE.equals(key)) {
-            //Beta.checkUpgrade();
         }
         if (PREF_DEL_EX.equals(key)) {
             File[] ypks = new File(AppsSettings.get().getExpansionsPath().getAbsolutePath()).listFiles();
@@ -452,7 +425,7 @@ public class SettingFragment extends PreferenceFragmentPlus {
                 //处理数据
 //                ResCheckTask.doSomeTrickOnDatabase(db.getAbsolutePath());
                 return true;
-            } catch (Exception e) {
+            } catch (Exception ignored) {
 
             } finally {
                 IOUtils.close(in);
@@ -483,11 +456,9 @@ public class SettingFragment extends PreferenceFragmentPlus {
                     IOUtils.createFolder(dir);
                     IOUtils.copyFilesFromAssets(getActivity(), getDatapath(Constants.CORE_SKIN_PENDULUM_PATH),
                             dir.getAbsolutePath(), false);
-                } catch (IOException e) {
+                } catch (IOException ignored) {
                 }
-            }).done((re) -> {
-                dlg.dismiss();
-            });
+            }).done((re) -> dlg.dismiss());
         } else {
             IOUtils.delete(dir);
         }

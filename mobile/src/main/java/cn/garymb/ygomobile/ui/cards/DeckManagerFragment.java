@@ -55,7 +55,7 @@ import com.feihua.dialogutils.util.DialogUtils;
 import com.nightonke.boommenu.BoomButtons.BoomButton;
 import com.nightonke.boommenu.BoomButtons.TextOutsideCircleButton;
 import com.nightonke.boommenu.BoomMenuButton;
-import com.ourygo.assistant.util.DuelAssistantManagement;
+import com.ourygo.lib.duelassistant.util.DuelAssistantManagement;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -181,12 +181,15 @@ public class DeckManagerFragment extends BaseFragemnt implements RecyclerViewIte
         mRecyclerView.setPadding(mRecyclerView.getPaddingLeft(), 0, mRecyclerView.getPaddingRight(), mRecyclerView.getPaddingBottom());
         mRecyclerView.setAdapter((mDeckAdapater = new DeckAdapater(getContext(), mRecyclerView, getImageLoader())));
         mRecyclerView.setLayoutManager(new DeckLayoutManager(getContext(), Constants.DECK_WIDTH_COUNT));
+
         mDeckItemTouchHelper = new DeckItemTouchHelper(mDeckAdapater);
         ItemTouchHelperPlus touchHelper = new ItemTouchHelperPlus(getContext(), mDeckItemTouchHelper);
         touchHelper.setItemDragListener(this);
         touchHelper.setEnableClickDrag(Constants.DECK_SINGLE_PRESS_DRAG);
         touchHelper.attachToRecyclerView(mRecyclerView);
+
         mRecyclerView.addOnItemTouchListener(new RecyclerViewItemListener(mRecyclerView, this));
+
         initBoomMenuButton(layoutView.findViewById(R.id.bmb));
         layoutView.findViewById(R.id.btn_nav_search).setOnClickListener((v) -> doMenu(R.id.action_search));
         layoutView.findViewById(R.id.btn_nav_list).setOnClickListener((v) -> doMenu(R.id.action_card_list));
@@ -367,7 +370,7 @@ public class DeckManagerFragment extends BaseFragemnt implements RecyclerViewIte
     //region load deck
     private void loadDeckFromFile(File file) {
         if (!mCardLoader.isOpen() || file == null || !file.exists()) {
-            setCurDeck(new DeckInfo());
+            setCurDeck(new DeckInfo(), false);
             return;
         }
         DialogPlus dlg = DialogPlus.show(getContext(), null, getString(R.string.loading));
@@ -379,7 +382,7 @@ public class DeckManagerFragment extends BaseFragemnt implements RecyclerViewIte
             }
         }).done((rs) -> {
             dlg.dismiss();
-            setCurDeck(rs);
+            setCurDeck(rs, file.getParent().equals(mSettings.getPackDeckDir()) ? true : false);
         });
     }
 
@@ -416,7 +419,7 @@ public class DeckManagerFragment extends BaseFragemnt implements RecyclerViewIte
             mCardSelector.initItems();
             initLimitListSpinners(mLimitSpinner, mCardLoader.getLimitList());
             //设置当前卡组
-            setCurDeck(rs);
+            setCurDeck(rs, ydk.getParent().equals(mSettings.getPackDeckDir()) ? true : false);
             //设置收藏夹
             mCardSelector.showFavorites(false);
         });
@@ -425,7 +428,7 @@ public class DeckManagerFragment extends BaseFragemnt implements RecyclerViewIte
     /**
      * 设置当前卡组
      */
-    private void setCurDeck(DeckInfo deckInfo) {
+    private void setCurDeck(DeckInfo deckInfo, boolean isPack) {
         if (deckInfo == null) {
             deckInfo = new DeckInfo();
         }
@@ -435,7 +438,7 @@ public class DeckManagerFragment extends BaseFragemnt implements RecyclerViewIte
             mSettings.setLastDeckPath(file.getAbsolutePath());
             tv_deck.setText(name);
         }
-        mDeckAdapater.setDeck(deckInfo);
+        mDeckAdapater.setDeck(deckInfo, isPack);
         mDeckAdapater.notifyDataSetChanged();
     }
 
@@ -747,8 +750,9 @@ public class DeckManagerFragment extends BaseFragemnt implements RecyclerViewIte
                     if (mDeckAdapater.getYdkFile() == null) {
                         inputDeckName(null, null, true);
                     } else {
-                        if (TextUtils.equals(mDeckAdapater.getYdkFile().getParent(), mSettings.getAiDeckDir())) {
-                            Toast.makeText(getContext(), R.string.donot_editor_bot_Deck, Toast.LENGTH_SHORT).show();
+                        if (TextUtils.equals(mDeckAdapater.getYdkFile().getParent(), mSettings.getAiDeckDir()) ||
+                                TextUtils.equals(mDeckAdapater.getYdkFile().getParent(), mSettings.getPackDeckDir())) {
+                            Toast.makeText(getContext(), R.string.donot_edit_Deck, Toast.LENGTH_SHORT).show();
                         } else {
                             save(mDeckAdapater.getYdkFile());
                         }
@@ -760,8 +764,9 @@ public class DeckManagerFragment extends BaseFragemnt implements RecyclerViewIte
                     Toast.makeText(getContext(), R.string.unable_to_edit_empty_deck, Toast.LENGTH_SHORT).show();
                     return true;
                 }
-                if (TextUtils.equals(mDeckAdapater.getYdkFile().getParent(), mSettings.getAiDeckDir())) {
-                    Toast.makeText(getContext(), R.string.donot_editor_bot_Deck, Toast.LENGTH_SHORT).show();
+                if (TextUtils.equals(mDeckAdapater.getYdkFile().getParent(), mSettings.getAiDeckDir()) ||
+                        TextUtils.equals(mDeckAdapater.getYdkFile().getParent(), mSettings.getPackDeckDir())) {
+                    Toast.makeText(getContext(), R.string.donot_edit_Deck, Toast.LENGTH_SHORT).show();
                 } else {
                     inputDeckName(mDeckAdapater.getYdkFile(), mDeckAdapater.getYdkFile().getParent(), false);
                 }
@@ -775,7 +780,7 @@ public class DeckManagerFragment extends BaseFragemnt implements RecyclerViewIte
                 builder.setMessage(R.string.question_clear_deck);
                 builder.setMessageGravity(Gravity.CENTER_HORIZONTAL);
                 builder.setLeftButtonListener((dlg, rs) -> {
-                    mDeckAdapater.setDeck(new DeckInfo());
+                    mDeckAdapater.setDeck(new DeckInfo(), false);
                     mDeckAdapater.notifyDataSetChanged();
                     dlg.dismiss();
                 });
@@ -787,8 +792,9 @@ public class DeckManagerFragment extends BaseFragemnt implements RecyclerViewIte
                     Toast.makeText(getContext(), R.string.unable_to_edit_empty_deck, Toast.LENGTH_SHORT).show();
                     return true;
                 }
-                if (TextUtils.equals(mDeckAdapater.getYdkFile().getParent(), mSettings.getAiDeckDir())) {
-                    Toast.makeText(getContext(), R.string.donot_editor_bot_Deck, Toast.LENGTH_SHORT).show();
+                if (TextUtils.equals(mDeckAdapater.getYdkFile().getParent(), mSettings.getAiDeckDir()) ||
+                        TextUtils.equals(mDeckAdapater.getYdkFile().getParent(), mSettings.getPackDeckDir())) {
+                    Toast.makeText(getContext(), R.string.donot_edit_Deck, Toast.LENGTH_SHORT).show();
                 } else {
                     builder.setTitle(R.string.question);
                     builder.setMessage(R.string.question_delete_deck);
@@ -832,12 +838,12 @@ public class DeckManagerFragment extends BaseFragemnt implements RecyclerViewIte
         });
         builder.setRightButtonListener((dlg, rs) -> {
             dlg.dismiss();
-            setCurDeck(null);
+            setCurDeck(null, false);
             inputDeckName(null, savePath, true);
         });
         builder.setOnCloseLinster((dlg) -> {
             dlg.dismiss();
-            setCurDeck(null);
+            setCurDeck(null, false);
             inputDeckName(null, savePath, true);
         });
         builder.show();
@@ -914,7 +920,7 @@ public class DeckManagerFragment extends BaseFragemnt implements RecyclerViewIte
         Button bt_image_share = viewDialog.findViewById(R.id.bt_image_share);
         Button bt_code_share = viewDialog.findViewById(R.id.bt_code_share);
         TextView tv_code = viewDialog.findViewById(R.id.et_code);
-        tv_code.setText(deck.toAppUri().toString());
+        tv_code.setText(deck.toUri().toString());
         ImageUtil.show(getContext(), savePath, iv_image, System.currentTimeMillis() + "");
 
         bt_code_share.setOnClickListener(v -> {
@@ -1154,6 +1160,12 @@ public class DeckManagerFragment extends BaseFragemnt implements RecyclerViewIte
     private void doBackUpDeck() {
         try {
             FileUtils.copyDir(mSettings.getDeckDir(), ORI_DECK, true);
+            File ydks = new File(ORI_DECK);
+            File[] subYdks = ydks.listFiles();
+            for (File files : subYdks) {
+                if (files.getName().contains("-") && files.getName().contains(" new cards"))
+                    files.delete();
+            }
         } catch (Throwable e) {
             Toast.makeText(getContext(), e + "", Toast.LENGTH_SHORT).show();
         }
@@ -1190,7 +1202,7 @@ public class DeckManagerFragment extends BaseFragemnt implements RecyclerViewIte
                 if (file != null) {
                     loadDeckFromFile(file);
                 } else {
-                    setCurDeck(new DeckInfo());
+                    setCurDeck(new DeckInfo(), false);
                 }
                 return;
             }

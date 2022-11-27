@@ -13,8 +13,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 
 import cn.garymb.ygomobile.Constants;
 import cn.garymb.ygomobile.bean.Deck;
@@ -27,6 +25,8 @@ import ocgcore.data.Card;
 import ocgcore.data.LimitList;
 
 public class DeckLoader {
+    private static Boolean isChanged;
+
     public static DeckInfo readDeck(CardLoader cardLoader, File file, LimitList limitList) {
         DeckInfo deckInfo = null;
         FileInputStream fileinputStream = null;
@@ -35,6 +35,10 @@ public class DeckLoader {
             deckInfo = readDeck(cardLoader, fileinputStream, limitList);
             if (deckInfo != null) {
                 deckInfo.source = file;
+                if (isChanged) {
+                    DeckUtils.save(deckInfo, deckInfo.source);
+                    isChanged = false;
+                }
             }
         } catch (Exception e) {
             Log.e("deckreader", "read 1", e);
@@ -48,11 +52,11 @@ public class DeckLoader {
         Deck deck = new Deck();
         SparseArray<Integer> mIds = new SparseArray<>();
         InputStreamReader in = null;
+        DeckItemType type = DeckItemType.Space;
         try {
             in = new InputStreamReader(inputStream, "utf-8");
             BufferedReader reader = new BufferedReader(in);
             String line = null;
-            DeckItemType type = DeckItemType.Space;
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("!side")) {
                     type = DeckItemType.SideCard;
@@ -63,6 +67,8 @@ public class DeckLoader {
                         type = DeckItemType.MainCard;
                     } else if (line.startsWith("#extra")) {
                         type = DeckItemType.ExtraCard;
+                    } else {
+                        type = DeckItemType.Pack;
                     }
                     continue;
                 }
@@ -72,7 +78,7 @@ public class DeckLoader {
                         Log.w("kk", "read not number " + line);
                     continue;
                 }
-                if (line.length() > 9) {//密码如果大于9位直接过滤
+                if (line.equals("0") || line.length() > 9) {//密码为0或者长度大于9位直接过滤
                     continue;
                 }
                 Integer id = Integer.parseInt(line);
@@ -103,6 +109,15 @@ public class DeckLoader {
                         mIds.put(id, i + 1);
                         deck.addSide(id);
                     }
+                } else if (type == DeckItemType.Pack) {
+                    Integer i = mIds.get(id);
+                    if (i == null) {
+                        mIds.put(id, 1);
+                        deck.addPack(id);
+                    } else if (i < Constants.CARD_MAX_COUNT) {
+                        mIds.put(id, i + 1);
+                        deck.addPack(id);
+                    }
                 }
             }
         } catch (IOException e) {
@@ -113,7 +128,7 @@ public class DeckLoader {
         DeckInfo deckInfo = new DeckInfo();
         SparseArray<Card> tmp = cardLoader.readCards(deck.getMainlist(), true);
         int code;
-        boolean isChanged = false;
+        isChanged = false;
         for (Integer id : deck.getMainlist()) {
             if (ArrayUtil.contains(oldIDsArray, tmp.get(id).getCode())) {
                 code = ArrayUtil.get(newIDsArray, ArrayUtil.indexOf(oldIDsArray, tmp.get(id).getCode()));
@@ -121,7 +136,11 @@ public class DeckLoader {
                 tmp.put(id, cardLoader.readAllCardCodes().get(code));
                 isChanged = true;
             }
-            deckInfo.addMainCards(tmp.get(id));
+            if (type == DeckItemType.Pack) {
+                deckInfo.addMainCards(id, tmp.get(id), true);
+            } else {
+                deckInfo.addMainCards(id, tmp.get(id), false);
+            }
         }
         tmp = cardLoader.readCards(deck.getExtraList(), true);
         for (Integer id : deck.getExtraList()) {
@@ -143,9 +162,6 @@ public class DeckLoader {
                 isChanged = true;
             }
             deckInfo.addSideCards(tmp.get(id));
-        }
-        if (isChanged) {
-            //DeckUtils.save(deckInfo,inputStream.read());
         }
         return deckInfo;
     }

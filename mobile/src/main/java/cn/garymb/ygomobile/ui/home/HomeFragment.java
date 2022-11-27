@@ -1,14 +1,10 @@
 package cn.garymb.ygomobile.ui.home;
 
 import static cn.garymb.ygomobile.Constants.ASSET_SERVER_LIST;
+import static cn.garymb.ygomobile.Constants.URL_YGO233_DATAVER;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.DashPathEffect;
-import android.graphics.Paint;
-import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -24,29 +20,23 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import com.app.hubert.guide.NewbieGuide;
-import com.app.hubert.guide.core.Controller;
-import com.app.hubert.guide.listener.OnHighlightDrewListener;
-import com.app.hubert.guide.listener.OnLayoutInflatedListener;
-import com.app.hubert.guide.model.GuidePage;
-import com.app.hubert.guide.model.HighLight;
-import com.app.hubert.guide.model.HighlightOptions;
-import com.ourygo.assistant.base.listener.OnDuelAssistantListener;
-import com.ourygo.assistant.util.DuelAssistantManagement;
-import com.ourygo.assistant.util.Util;
+
+import com.ourygo.lib.duelassistant.listener.OnDuelAssistantListener;
+import com.ourygo.lib.duelassistant.util.DuelAssistantManagement;
+import com.ourygo.lib.duelassistant.util.Util;
 import com.stx.xhb.androidx.XBanner;
 import com.tubb.smrv.SwipeMenuRecyclerView;
 
@@ -77,7 +67,6 @@ import cn.garymb.ygomobile.ui.activities.WebActivity;
 import cn.garymb.ygomobile.ui.adapters.ServerListAdapter;
 import cn.garymb.ygomobile.ui.adapters.SimpleListAdapter;
 import cn.garymb.ygomobile.ui.cards.CardDetailRandom;
-import cn.garymb.ygomobile.ui.cards.deck.DeckUtils;
 import cn.garymb.ygomobile.ui.mycard.McNews;
 import cn.garymb.ygomobile.ui.mycard.MyCard;
 import cn.garymb.ygomobile.ui.mycard.mcchat.util.ImageUtil;
@@ -86,10 +75,15 @@ import cn.garymb.ygomobile.ui.plus.VUiKit;
 import cn.garymb.ygomobile.ui.widget.Shimmer;
 import cn.garymb.ygomobile.ui.widget.ShimmerTextView;
 import cn.garymb.ygomobile.utils.FileLogUtil;
+import cn.garymb.ygomobile.utils.OkhttpUtil;
+import cn.garymb.ygomobile.utils.SharedPreferenceUtil;
 import cn.garymb.ygomobile.utils.YGOUtil;
 import ocgcore.CardManager;
 import ocgcore.DataManager;
 import ocgcore.data.Card;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 
 public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListener, View.OnClickListener {
@@ -99,11 +93,13 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
     private static final int TYPE_BANNER_QUERY_OK = 0;
     private static final int TYPE_BANNER_QUERY_EXCEPTION = 1;
     private static final int TYPE_RES_LOADING_OK = 2;
+    private static final int TYPE_GET_DATA_VER_OK = 3;
     private static final String ARG_MC_NEWS_LIST = "mcNewsList";
     private boolean isMcNewsLoadException = false;
 
-    private RelativeLayout ll_back;
+    private LinearLayout ll_back;
     ShimmerTextView tv;
+    ShimmerTextView tv2;
     Shimmer shimmer;
     private SwipeMenuRecyclerView mServerList;
     private ServerListAdapter mServerListAdapter;
@@ -123,6 +119,7 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
     private CardView cv_watch_replay;
     //辅助功能
     private CardView cv_download_ex;
+    private LinearLayoutCompat ll_new_notice;
     //外连
     private CardView cv_donation;
     private CardView cv_help;
@@ -134,7 +131,10 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
-        layoutView = inflater.inflate(R.layout.fragment_home, container, false);
+        if (isHorizontal)
+            layoutView = inflater.inflate(R.layout.fragment_home_horizontal, container, false);
+        else
+            layoutView = inflater.inflate(R.layout.fragment_home, container, false);
         initView(layoutView);
         initBanner(layoutView, savedInstanceState);
         //初始化决斗助手
@@ -145,6 +145,7 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
         if (!EventBus.getDefault().isRegistered(this)) {//加上判断
             EventBus.getDefault().register(this);
         }
+        showExNew();
         //showNewbieGuide("homePage");
         return layoutView;
     }
@@ -181,6 +182,7 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
         cv_watch_replay.setOnClickListener(this);
         cv_download_ex = view.findViewById(R.id.action_download_ex);
         cv_download_ex.setOnClickListener(this);
+        ll_new_notice = view.findViewById(R.id.ll_new_notice);
         /*
         cv_download_ex.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -197,7 +199,9 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
         ll_back = view.findViewById(R.id.return_to_duel);
         ll_back.setOnClickListener(this);
         tv = (ShimmerTextView) view.findViewById(R.id.shimmer_tv);
+        tv2 = (ShimmerTextView) view.findViewById(R.id.shimmer_tv2);
         toggleAnimation(tv);
+        toggleAnimation(tv2);
 
         mImageLoader = new ImageLoader(false);
         mCardManager = DataManager.get().getCardManager();
@@ -205,13 +209,17 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
 
     //轮播图
     public void initBanner(View view, Bundle saveBundle) {
-        Log.i("3.10.0看看saveBundle", saveBundle + "");
         xb_banner = view.findViewById(R.id.xb_banner);
         cv_banner = view.findViewById(R.id.cv_banner);
         cv_banner.post(() -> {
             ViewGroup.LayoutParams layoutParams = cv_banner.getLayoutParams();
-            layoutParams.width = cv_banner.getWidth();
-            layoutParams.height = layoutParams.width / 3;
+            if (isHorizontal) {
+                layoutParams.width = cv_banner.getWidth();
+                layoutParams.height = layoutParams.width / 5;
+            } else {
+                layoutParams.width = cv_banner.getWidth();
+                layoutParams.height = layoutParams.width / 3;
+            }
             cv_banner.setLayoutParams(layoutParams);
         });
         tv_banner_loading = view.findViewById(R.id.tv_banner_loading);
@@ -260,10 +268,43 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
                     tv_banner_loading.setText(R.string.loading_failed);
                     isMcNewsLoadException = true;
                     break;
+                case TYPE_GET_DATA_VER_OK:
+                    WebActivity.dataVer = msg.obj.toString();
+                    String oldVer = SharedPreferenceUtil.getExpansionDataVer();
+                    if (!TextUtils.isEmpty(WebActivity.dataVer)) {
+                        if (!WebActivity.dataVer.equals(oldVer)) {
+                            ll_new_notice.setVisibility(View.VISIBLE);
+                        } else {
+                            ll_new_notice.setVisibility(View.GONE);
+                        }
+                    } else {
+                        showExNew();
+                        ll_new_notice.setVisibility(View.GONE);
+                    }
             }
 
         }
     };
+
+    public void showExNew() {
+        if (AppsSettings.get().isReadExpansions()) {
+            OkhttpUtil.get(URL_YGO233_DATAVER, new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    Log.i(BuildConfig.VERSION_NAME, "error" + e);
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    String json = response.body().string();
+                    Message message = new Message();
+                    message.what = TYPE_GET_DATA_VER_OK;
+                    message.obj = json;
+                    handler.sendMessage(message);
+                }
+            });
+        }
+    }
 
     private void findMcNews() {
         isMcNewsLoadException = false;
@@ -445,12 +486,12 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
         }
     }
 
-    public void toggleAnimation(View target) {
+    public void toggleAnimation(ShimmerTextView target) {
         if (shimmer != null && shimmer.isAnimating()) {
             shimmer.cancel();
         } else {
             shimmer = new Shimmer();
-            shimmer.start(tv);
+            shimmer.start(target);
         }
     }
 
@@ -470,7 +511,7 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
     }
 
     @Override
-    public void onCardSearch(String key, int id) {
+    public void onCardQuery(String key, int id) {
         /*
         if (id == ID_HOMEFRAGMENT) {
             Intent intent = new Intent(this, CardSearchFragment.class);
@@ -480,11 +521,15 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
     }
 
     @Override
-    public void onSaveDeck(String message, boolean isUrl, int id) {
-        saveDeck(message, isUrl);
+    public void onSaveDeck(Uri uri, List<Integer> mainList, List<Integer> exList, List<Integer> sideList, boolean isCompleteDeck, String exception, int id) {
+        saveDeck(uri,mainList,exList,sideList,isCompleteDeck,exception);
     }
 
-    public void saveDeck(String deckMessage, boolean isUrl) {
+    public void saveDeck(Uri uri, List<Integer> mainList, List<Integer> exList, List<Integer> sideList, boolean isCompleteDeck, String exception) {
+        if (!TextUtils.isEmpty(exception)){
+            YGOUtil.show("卡组解析失败，原因为："+exception);
+            return;
+        }
         DialogPlus dialog = new DialogPlus(getContext());
         dialog.setTitle(R.string.question);
         dialog.setMessage(R.string.find_deck_text);
@@ -497,33 +542,23 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
         });
         dialog.setRightButtonListener((dlg, s) -> {
             dialog.dismiss();
+            Deck deckInfo;
             //如果是卡组url
-            if (isUrl) {
-                Deck deckInfo = new Deck(getString(R.string.rename_deck) + System.currentTimeMillis(), Uri.parse(deckMessage));
-                File file = deckInfo.saveTemp(AppsSettings.get().getDeckDir());
-                if (!deckInfo.isCompleteDeck()) {
-                    YGOUtil.show("当前卡组缺少完整信息，将只显示已有卡片");
-                }
-                if (!file.getAbsolutePath().isEmpty()) {
-                    mBundle.putString("setDeck", file.getAbsolutePath());
-                    activity.fragment_deck_cards.setArguments(mBundle);
-                }
-                activity.switchFragment(activity.fragment_deck_cards, 2, true);
+            if (uri != null) {
+                deckInfo = new Deck(uri, mainList, exList, sideList);
             } else {
-                //如果是卡组文本
-                try {
-                    //以当前时间戳作为卡组名保存卡组
-                    File file = DeckUtils.save(getString(R.string.rename_deck) + System.currentTimeMillis(), deckMessage);
-                    if (!file.getAbsolutePath().isEmpty()) {
-                        mBundle.putString("setDeck", file.getAbsolutePath());
-                        activity.fragment_deck_cards.setArguments(mBundle);
-                    }
-                    activity.switchFragment(activity.fragment_deck_cards, 2, true);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    Toast.makeText(getContext(), getString(R.string.save_failed_bcos) + e, Toast.LENGTH_SHORT).show();
-                }
+                deckInfo = new Deck(getString(R.string.rename_deck) + System.currentTimeMillis(), mainList, exList, sideList);
             }
+            deckInfo.setCompleteDeck(isCompleteDeck);
+            File file = deckInfo.saveTemp(AppsSettings.get().getDeckDir());
+            if (!deckInfo.isCompleteDeck()) {
+                YGOUtil.show("当前卡组缺少完整信息，将只显示已有卡片");
+            }
+            if (!file.getAbsolutePath().isEmpty()) {
+                mBundle.putString("setDeck", file.getAbsolutePath());
+                activity.fragment_deck_cards.setArguments(mBundle);
+            }
+            activity.switchFragment(activity.fragment_deck_cards, 2, true);
         });
     }
 
@@ -661,7 +696,12 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
                 YGOStarter.startGame(getActivity(), null, "-k", "-s");
                 break;
             case R.id.action_download_ex:
-                WebActivity.open(getContext(), getString(R.string.action_download_expansions), Constants.URL_YGO233_ADVANCE);
+                String aurl = Constants.URL_YGO233_ADVANCE;
+                if (ll_new_notice.getVisibility() == View.VISIBLE) {
+                    aurl = aurl + "#pre_update_title";
+                }
+                WebActivity.open(getContext(), getString(R.string.action_download_expansions), aurl);
+                ll_new_notice.setVisibility(View.GONE);
                 break;
             case R.id.action_help: {
                 final DialogPlus dialog = new DialogPlus(getContext());
@@ -692,7 +732,8 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
                 break;*/
             case R.id.nav_webpage: {
                 Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse(BuildConfig.URL_DONATE));
+                intent.setData(Uri.parse(Constants.URL_DONATE));
+                Toast.makeText(getActivity(),R.string.donatefor, Toast.LENGTH_LONG).show();
                 startActivity(intent);
             }
             break;

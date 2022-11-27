@@ -18,13 +18,20 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
+
+import com.ourygo.lib.duelassistant.util.YGODAUtil;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import cn.garymb.ygomobile.App;
 import cn.garymb.ygomobile.Constants;
+import cn.garymb.ygomobile.lite.R;
 import cn.garymb.ygomobile.ui.cards.deck.DeckUtils;
 import cn.garymb.ygomobile.utils.FileLogUtil;
 import cn.garymb.ygomobile.utils.YGOUtil;
@@ -215,6 +222,18 @@ public class Deck implements Parcelable {
         this(uri.getQueryParameter(QUERY_YDK), uri);
     }
 
+    public Deck(String name, List<Integer> mainList, List<Integer> exList, List<Integer> sideList) {
+        this(name);
+        this.mainlist.addAll(mainList);
+        this.extraList.addAll(exList);
+        this.sideList.addAll(sideList);
+    }
+
+    public Deck(Uri uri, List<Integer> mainList, List<Integer> exList, List<Integer> sideList) {
+        this(TextUtils.isEmpty(uri.getQueryParameter(Constants.QUERY_NAME))
+                ? App.get().getString(R.string.rename_deck) + System.currentTimeMillis()
+                : uri.getQueryParameter(Constants.QUERY_NAME), mainList, exList, sideList);
+    }
 
     public Deck(String name) {
         this();
@@ -245,6 +264,15 @@ public class Deck implements Parcelable {
                 break;
         }
         return idNum;
+    }
+    public Uri toUri() {
+        Map<String,String> map=new HashMap<>();
+        map.put(Constants.QUERY_NAME, name);
+        return YGODAUtil.toUri(mainlist,extraList,sideList,map);
+    }
+
+    public void setCompleteDeck(boolean completeDeck) {
+        isCompleteDeck = completeDeck;
     }
 
     public boolean isCompleteDeck() {
@@ -518,6 +546,10 @@ public class Deck implements Parcelable {
             allList.addAll(sideList);
         }
         return allList;
+    }
+
+    public void addPack(Integer id) {
+        mainlist.add(id);
     }
 
     public void addMain(Integer id) {

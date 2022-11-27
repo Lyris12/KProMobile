@@ -249,8 +249,9 @@
     <string name="OK">OK</string>
     <string name="Cancel">Cancel</string>
     <string name="Checking_Update">Now Checking Update</string>
+    <string name="Found_Update">New upGrade is Founded, Download?</string>
     <string name="Checking_Update_Failed">Checking Update Failed</string>
-    <string name="Ask_to_Change_Other_Way">\, would you like to change other way</string>
+    <string name="Ask_to_Change_Other_Way">trying other way...</string>
     <string name="DuelAssistant">DuelAssiatant is On</string>
     <string name="masterrule">Master Rule</string>
     <string name="tutorial">Soft Tutorial</string>
@@ -277,7 +278,7 @@
     <string name="delete_confirm">will delete all deck of this Category</string>
     <string name="no_deck_is_selected">no_deck_is_selected</string>
     <string name="done">done\！</string>
-    <string name="donot_editor_bot_Deck">Pls Donot edit/remove AI Deck, if you do\nAI mode wont work properly</string>
+    <string name="donot_edit_Deck">Do not change decks of this category</string>
     <string name="code_share">Code Share</string>
     <string name="screenshoot">Share Art</string>
     <string name="ydk_share">File sahre</string>
@@ -302,7 +303,6 @@
     <string name="restore_deck">found backed up decks in your Device\, restore\?</string>
     <string name="explain_permission">
         Very necessary permissions will be applied\:
-        \nInstall unknow apps\: Install upgrade and Change Settings
         \nStorage Access\:backup\/restore deck\,set custom background\/avatars\/cardback</string>
     <string name="guide_menu">Menu\:\nincluding most of functions, for Example</string>
     <string name="guide_mycard">Mycard\: rank duel record, observe games, chating room, etc. </string>
@@ -333,7 +333,7 @@
     <string name="label_ot_SC_OCG">SChinese OCG</string>
     <string name="settings_screen_padding">Reserved height of curved screen</string>
     <string name="tip_load_cdb_error">Load database error</string>
-    <string name="action_download_expansions">download\\nexpansions</string>
+    <string name="action_download_expansions">download\nexpansions</string>
     <string name="replay">Watch replay</string>
     <string name="bot_mode">Bot game</string>
     <string name="personal">My</string>

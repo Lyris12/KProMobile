@@ -9,8 +9,8 @@ android {
         minSdkVersion 21
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 29
-        versionCode 310020906
-        versionName "Gloxinia"
+        versionCode 310050929
+        versionName "ChimiMoryo"
         flavorDimensions "versionCode"
         vectorDrawables.useSupportLibrary = true
         ndk {
@@ -26,22 +26,8 @@ android {
         cn {
             resValue 'string', 'app_name', 'KProMobile'
             applicationIdSuffix ".CN"
-            buildConfigField 'String', 'URL_DONATE', '"https://afdian.net/@ygomobile"'
-            manifestPlaceholders = [APP_ID: "0b6f110306"]
         }
-        en {
-            resValue 'string', 'app_name', 'KProMobile.En'
-            applicationIdSuffix ".EN"
-            buildConfigField 'String', 'URL_DONATE', '"https://www.patreon.com/ygomobile"'
-            manifestPlaceholders = [APP_ID: "9c66525dfa"]
         }
-        ko {
-            resValue 'string', 'app_name', 'KProMobile.Kor'
-            applicationIdSuffix ".KO"
-            buildConfigField 'String', 'URL_DONATE', '"https://www.patreon.com/ygomobile"'
-            manifestPlaceholders = [APP_ID: "0488398d8a"]
-        }
-    }
     buildTypes {
         debug {
             debuggable false
@@ -56,7 +42,7 @@ android {
     }
     android.applicationVariants.all { variant ->
         variant.outputs.all {
-            def fileName = "YGOMobile-${variant.name}${versionName}.apk"
+            def fileName = "KPro_${versionName}.apk"
             outputFileName = fileName
         }
     }
@@ -65,13 +51,7 @@ android {
             assets.srcDirs = ['assets']
             jniLibs.srcDirs = ['libs']
         }
-        en {
-            assets.srcDirs = ['assets_en']
         }
-        ko {
-            assets.srcDirs = ['assets_ko']
-        }
-    }
     lintOptions {
         ignoreWarnings true
         checkReleaseBuilds false
@@ -131,10 +111,8 @@ dependencies {
     implementation 'com.yuyh.imgsel:library:2.1.0'
     //跨进程SharedPreferencesPlus工具
     implementation 'com.github.zhangliangming:PreferencesProvider:v1.3'
-    //Tencent bugly
-    implementation 'com.tencent.bugly:crashreport_upgrade:latest.release'
-    implementation 'com.tencent.bugly:nativecrashreport:3.8.0'
-    api 'com.tencent.tbs:tbssdk:44085'
+    implementation 'org.apache.commons:commons-lang3:3.7'
+    api 'com.tencent.tbs:tbssdk:44226'
     //http请求库
     implementation 'com.squareup.okhttp3:okhttp:3.12.0'
     implementation 'com.bm.photoview:library:1.4.1'
@@ -152,4 +130,6 @@ dependencies {
     implementation 'com.ashokvarma.android:bottom-navigation-bar:2.2.0'
     //圆形头像
     implementation 'de.hdodenhof:circleimageview:2.2.0'
+    //决斗助手
+    implementation 'com.github.feihuaduo:YGODuelAssistantLib:1.0'
 }

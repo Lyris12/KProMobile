@@ -251,8 +251,9 @@
     <string name="OK">确定</string>
     <string name="Cancel">取消</string>
     <string name="Checking_Update">检查更新中，请稍候</string>
+    <string name="Found_Update">发现新版本，前往下载？</string>
     <string name="Checking_Update_Failed">检查更新失败</string>
-    <string name="Ask_to_Change_Other_Way">，是否跳转到备用下载方式？</string>
+    <string name="Ask_to_Change_Other_Way">主线下载失败，尝试备选线路中...</string>
     <string name="DuelAssistant">决斗助手启用中</string>
     <string name="masterrule">学习大师规则</string>
     <string name="tutorial">查看软件教程</string>
@@ -260,7 +261,7 @@
     <string name="to_open">去开启</string>
     <string name="crashed">软件错误退出</string>
     <string name="invalid_shortcut">无效的快捷方式</string>
-    <string name="return_to_duel">点此返回决斗</string>
+    <string name="return_to_duel">点此返回决斗☞</string>
     <string name="Start_ServiceDuelAssistant">开启决斗助手</string>
     <string name="about_DuelAssistant">复制约战房间号直接加房
         \n复制卡组文本直接保存为卡组并在卡组编辑打开它</string>
@@ -279,7 +280,7 @@
     <string name="delete_confirm">确定删除该分类吗，分类下的卡组也将全部被删除</string>
     <string name="no_deck_is_selected">未选中卡组</string>
     <string name="done">完成！</string>
-    <string name="donot_editor_bot_Deck">请不要更改/删除AI卡组否则会导致人机模式无法正常使用</string>
+    <string name="donot_edit_Deck">请勿更改此分类下的卡组</string>
     <string name="unable_to_edit_empty_deck">不可操作空卡组</string>
     <string name="create_new_failed">创建失败</string>
     <string name="about_pref_settings_keep_scale">开启原始比例的游戏画面</string>
@@ -301,7 +302,6 @@
     <string name="restore_deck">发现本机有卡组备份记录，是否还原？</string>
     <string name="explain_permission">
         使用本软件此类功能将申请以下必要权限：
-        \n安装未知应用权限：安装更新包，备份、还原卡组必需
         \n存储权限：备份、还原卡组，自定义背景、头像、卡背必需</string>
     <string name="guide_menu">功能菜单：\n主要功能如"</string>
     <string name="guide_mycard">萌卡平台：\n提供众多对战服务\n包含排位，观战，聊天与论坛等</string>

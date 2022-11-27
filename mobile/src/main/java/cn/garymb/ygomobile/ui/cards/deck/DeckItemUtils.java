@@ -18,7 +18,7 @@ class DeckItemUtils {
     public static String makeMd5(List<DeckItem> items) {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("#main");
-        for (int i = DeckItem.MainStart; i < DeckItem.MainStart + Constants.DECK_MAIN_MAX; i++) {
+        for (int i = DeckItem.MainStart; i < DeckItem.MainStart + items.size(); i++) {
             DeckItem deckItem = items.get(i);
             if (deckItem.getType() == DeckItemType.Space) {
                 break;
@@ -167,10 +167,11 @@ class DeckItemUtils {
         return true;
     }
 
-    public static void makeItems(DeckInfo mDeck, DeckAdapater adapater) {
-        if (mDeck != null) {
+    public static void makeItems(DeckInfo deckInfo, boolean isPack, DeckAdapater adapater) {
+        if (deckInfo != null) {
+            DeckItem.resetLabel(deckInfo, isPack);
             adapater.addItem(new DeckItem(DeckItemType.MainLabel));
-            List<Card> main = mDeck.getMainCards();
+            List<Card> main = deckInfo.getMainCards();
             if (main == null) {
                 for (int i = 0; i < Constants.DECK_MAIN_MAX; i++) {
                     adapater.addItem(new DeckItem());
@@ -179,37 +180,51 @@ class DeckItemUtils {
                 for (Card card : main) {
                     adapater.addItem(new DeckItem(card, DeckItemType.MainCard));
                 }
-                for (int i = main.size(); i < Constants.DECK_MAIN_MAX; i++) {
-                    adapater.addItem(new DeckItem());
+                if (main.size() < Constants.DECK_MAIN_MAX) {
+                    for (int i = main.size(); i < Constants.DECK_MAIN_MAX; i++) {
+                        adapater.addItem(new DeckItem());
+                    }
+                } else {
+                    //填充空舍的位置便于滚动到底部时不和底部功能按钮重叠
+                    int emty = Constants.DECK_WIDTH_COUNT - deckInfo.getMainCount() % Constants.DECK_WIDTH_COUNT;
+                    for (int i = main.size(); i < (isPack ? emty : 0) + deckInfo.getMainCount(); i++) {
+                        adapater.addItem(new DeckItem());
+                    }
                 }
             }
-            List<Card> extra = mDeck.getExtraCards();
-            adapater.addItem(new DeckItem(DeckItemType.ExtraLabel));
-            if (extra == null) {
-                for (int i = 0; i < Constants.DECK_EXTRA_COUNT; i++) {
-                    adapater.addItem(new DeckItem());
+
+            if (!isPack) {
+                List<Card> extra = deckInfo.getExtraCards();
+                List<Card> side = deckInfo.getSideCards();
+                //extra
+                adapater.addItem(new DeckItem(DeckItemType.ExtraLabel));
+                if (extra == null) {
+                    for (int i = 0; i < Constants.DECK_EXTRA_COUNT; i++) {
+                        adapater.addItem(new DeckItem());
+                    }
+                } else {
+                    for (Card card : extra) {
+                        adapater.addItem(new DeckItem(card, DeckItemType.ExtraCard));
+                    }
+                    for (int i = extra.size(); i < Constants.DECK_EXTRA_COUNT; i++) {
+                        adapater.addItem(new DeckItem());
+                    }
                 }
-            } else {
-                for (Card card : extra) {
-                    adapater.addItem(new DeckItem(card, DeckItemType.ExtraCard));
+                //side
+                adapater.addItem(new DeckItem(DeckItemType.SideLabel));
+                if (side == null) {
+                    for (int i = 0; i < Constants.DECK_SIDE_COUNT; i++) {
+                        adapater.addItem(new DeckItem());
+                    }
+                } else {
+                    for (Card card : side) {
+                        adapater.addItem(new DeckItem(card, DeckItemType.SideCard));
+                    }
+                    for (int i = side.size(); i < Constants.DECK_SIDE_COUNT; i++) {
+                        adapater.addItem(new DeckItem());
+                    }
                 }
-                for (int i = extra.size(); i < Constants.DECK_EXTRA_COUNT; i++) {
-                    adapater.addItem(new DeckItem());
-                }
-            }
-            List<Card> side = mDeck.getSideCards();
-            adapater.addItem(new DeckItem(DeckItemType.SideLabel));
-            if (side == null) {
-                for (int i = 0; i < Constants.DECK_SIDE_COUNT; i++) {
-                    adapater.addItem(new DeckItem());
-                }
-            } else {
-                for (Card card : side) {
-                    adapater.addItem(new DeckItem(card, DeckItemType.SideCard));
-                }
-                for (int i = side.size(); i < Constants.DECK_SIDE_COUNT; i++) {
-                    adapater.addItem(new DeckItem());
-                }
+                adapater.addItem(new DeckItem(DeckItemType.Space));
             }
         }
     }
@@ -227,7 +242,7 @@ class DeckItemUtils {
     }
 
     public static boolean isLabel(int position) {
-        if (position == DeckItem.MainLabel || position == DeckItem.SideLabel || position == DeckItem.ExtraLabel) {
+        if (position == DeckItem.MainLabel || position == DeckItem.ExtraLabel || position == DeckItem.SideLabel) {
             return true;
         }
         return false;
