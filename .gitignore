@@ -61,3 +61,4 @@ output*.json
 /libygo/.cxx
 /mobile/assets/data/single
 /mobile/assets/data/pack
+keystore.properties
