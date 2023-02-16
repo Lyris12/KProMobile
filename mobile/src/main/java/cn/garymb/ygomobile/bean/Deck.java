@@ -18,7 +18,6 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
-
 import com.ourygo.lib.duelassistant.util.YGODAUtil;
 
 import java.io.File;

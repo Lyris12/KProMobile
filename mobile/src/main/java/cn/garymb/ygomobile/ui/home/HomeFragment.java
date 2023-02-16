@@ -1,7 +1,6 @@
 package cn.garymb.ygomobile.ui.home;
 
 import static cn.garymb.ygomobile.Constants.ASSET_SERVER_LIST;
-import static cn.garymb.ygomobile.Constants.URL_YGO233_DATAVER;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -33,7 +32,6 @@ import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-
 import com.ourygo.lib.duelassistant.listener.OnDuelAssistantListener;
 import com.ourygo.lib.duelassistant.util.DuelAssistantManagement;
 import com.ourygo.lib.duelassistant.util.Util;
@@ -59,8 +57,9 @@ import cn.garymb.ygomobile.base.BaseFragemnt;
 import cn.garymb.ygomobile.bean.Deck;
 import cn.garymb.ygomobile.bean.ServerInfo;
 import cn.garymb.ygomobile.bean.ServerList;
+import cn.garymb.ygomobile.bean.events.ExCardEvent;
 import cn.garymb.ygomobile.bean.events.ServerInfoEvent;
-import cn.garymb.ygomobile.lite.BuildConfig;
+import cn.garymb.ygomobile.ex_card.ExCardActivity;
 import cn.garymb.ygomobile.lite.R;
 import cn.garymb.ygomobile.loader.ImageLoader;
 import cn.garymb.ygomobile.ui.activities.WebActivity;
@@ -75,25 +74,22 @@ import cn.garymb.ygomobile.ui.plus.VUiKit;
 import cn.garymb.ygomobile.ui.widget.Shimmer;
 import cn.garymb.ygomobile.ui.widget.ShimmerTextView;
 import cn.garymb.ygomobile.utils.FileLogUtil;
-import cn.garymb.ygomobile.utils.OkhttpUtil;
-import cn.garymb.ygomobile.utils.SharedPreferenceUtil;
+import cn.garymb.ygomobile.utils.ServerUtil;
 import cn.garymb.ygomobile.utils.YGOUtil;
 import ocgcore.CardManager;
 import ocgcore.DataManager;
 import ocgcore.data.Card;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.Response;
 
 
 public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListener, View.OnClickListener {
+    private static final String TAG = "HomeFragment";
     public static final int ID_HOMEFRAGMENT = 0;
     private DuelAssistantManagement duelAssistantManagement;
     private HomeActivity activity;
     private static final int TYPE_BANNER_QUERY_OK = 0;
     private static final int TYPE_BANNER_QUERY_EXCEPTION = 1;
     private static final int TYPE_RES_LOADING_OK = 2;
-    private static final int TYPE_GET_DATA_VER_OK = 3;
+    public static final int TYPE_GET_DATA_VER_OK = 3;
     private static final String ARG_MC_NEWS_LIST = "mcNewsList";
     private boolean isMcNewsLoadException = false;
 
@@ -145,7 +141,7 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
         if (!EventBus.getDefault().isRegistered(this)) {//加上判断
             EventBus.getDefault().register(this);
         }
-        showExNew();
+        changeColor();
         //showNewbieGuide("homePage");
         return layoutView;
     }
@@ -268,43 +264,46 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
                     tv_banner_loading.setText(R.string.loading_failed);
                     isMcNewsLoadException = true;
                     break;
-                case TYPE_GET_DATA_VER_OK:
-                    WebActivity.dataVer = msg.obj.toString();
-                    String oldVer = SharedPreferenceUtil.getExpansionDataVer();
-                    if (!TextUtils.isEmpty(WebActivity.dataVer)) {
-                        if (!WebActivity.dataVer.equals(oldVer)) {
-                            ll_new_notice.setVisibility(View.VISIBLE);
-                        } else {
-                            ll_new_notice.setVisibility(View.GONE);
-                        }
-                    } else {
-                        showExNew();
-                        ll_new_notice.setVisibility(View.GONE);
-                    }
+
             }
 
         }
     };
 
-    public void showExNew() {
-        if (AppsSettings.get().isReadExpansions()) {
-            OkhttpUtil.get(URL_YGO233_DATAVER, new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    Log.i(BuildConfig.VERSION_NAME, "error" + e);
-                }
 
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    String json = response.body().string();
-                    Message message = new Message();
-                    message.what = TYPE_GET_DATA_VER_OK;
-                    message.obj = json;
-                    handler.sendMessage(message);
-                }
-            });
+    /**
+     * 通过http访问web读取先行卡版本号。
+     * 读取结果通过handler发到ui线程
+     * 注意在ExCardActivity中包含一个相同实现
+     * ServerUtil获取到版本状态后会通过eventmessage通知调用本函数，不需要在主函数显式调用
+     */
+    public void changeExCardNewMark() {
+        Log.i(TAG, "check excard new mark, version:" + ServerUtil.exCardState);
+        if (ServerUtil.exCardState == ServerUtil.ExCardState.UPDATED) {
+            ll_new_notice.setVisibility(View.GONE);
+        } else if (ServerUtil.exCardState == ServerUtil.ExCardState.NEED_UPDATE) {
+            ll_new_notice.setVisibility(View.VISIBLE);
+        } else if (ServerUtil.exCardState == ServerUtil.ExCardState.ERROR) {
+            Toast.makeText(getActivity(), "无法获取服务器先行卡信息", Toast.LENGTH_SHORT).show();
+            ll_new_notice.setVisibility(View.GONE);
         }
+
     }
+
+    private void changeColor() {
+        /* 同步设置服务器列表的状态，在syncLoadData()里更新recyclerview的数据，在更新数据时convert()方法自动更改item的颜色 */
+        mServerListManager.syncLoadData();
+
+        /* 改变“扩展卡下载”按钮的颜色 */
+//        if (AppsSettings.get().isReadExpansions()) {
+//            Paint paint = getPaint(1);
+//            cv_download_ex.setLayerType(View.LAYER_TYPE_HARDWARE, paint);
+//        } else {
+//            Paint paint = getPaint(0);
+//            cv_download_ex.setLayerType(View.LAYER_TYPE_HARDWARE, paint);
+//        }
+    }
+
 
     private void findMcNews() {
         isMcNewsLoadException = false;
@@ -335,7 +334,7 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
         //进入房间
         DialogPlus builder = new DialogPlus(getContext());
         builder.setTitle(R.string.intput_room_name);
-        builder.setContentView(R.layout.dialog_room_name);
+        builder.setContentView(R.layout.dialog_edit_and_list);
         EditText editText = builder.bind(R.id.room_name);
         ListView listView = builder.bind(R.id.room_list);
         TextView text_abt_roomlist = builder.bind(R.id.abt_room_list);
@@ -522,12 +521,12 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
 
     @Override
     public void onSaveDeck(Uri uri, List<Integer> mainList, List<Integer> exList, List<Integer> sideList, boolean isCompleteDeck, String exception, int id) {
-        saveDeck(uri,mainList,exList,sideList,isCompleteDeck,exception);
+        saveDeck(uri, mainList, exList, sideList, isCompleteDeck, exception);
     }
 
     public void saveDeck(Uri uri, List<Integer> mainList, List<Integer> exList, List<Integer> sideList, boolean isCompleteDeck, String exception) {
-        if (!TextUtils.isEmpty(exception)){
-            YGOUtil.show("卡组解析失败，原因为："+exception);
+        if (!TextUtils.isEmpty(exception)) {
+            YGOUtil.show("卡组解析失败，原因为：" + exception);
             return;
         }
         DialogPlus dialog = new DialogPlus(getContext());
@@ -567,6 +566,18 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
         return Util.isContextExisted(getActivity());
     }
 
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageReceived(ExCardEvent event) {
+        if (event.getType() == ExCardEvent.EventType.exCardPackageChange) {
+            changeExCardNewMark();
+            changeColor();
+        } else if (event.getType() == ExCardEvent.EventType.exCardPrefChange) {
+            /* 可以设置在不开启扩展卡的情况下“扩展卡下载”图标是否显示为灰色 */
+            changeColor();
+        }
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onServerInfoEvent(ServerInfoEvent event) {
         if (event.delete) {
@@ -583,11 +594,22 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
             dialogPlus.setOnCloseLinster(null);
             dialogPlus.show();
         } else if (event.join) {
+            if (ServerUtil.isPreServer(event.serverInfo.getPort(), event.serverInfo.getServerAddr())) {
+
+                //如果是先行卡服务器，并且未开启先行卡设置，则通过toast提示
+                if (!AppsSettings.get().isReadExpansions()) {
+                    Toast.makeText(getActivity(), R.string.ex_card_check_toast_message, Toast.LENGTH_LONG).show();
+                } else if (ServerUtil.exCardState != ServerUtil.ExCardState.UPDATED) {
+                    //如果是先行卡服务器，并且未开启下载先行卡，则通过toast提示
+                    Toast.makeText(getActivity(), R.string.ex_card_check_toast_message_ii, Toast.LENGTH_LONG).show();
+                }
+            }
             joinRoom(event.position);
             //showNewbieGuide("joinRoom");
         } else {
             mServerListManager.showEditDialog(event.position);
         }
+
     }
 
     public void setRandomCardDetail() {
@@ -604,6 +626,7 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
 
     protected void openGame() {
         YGOStarter.startGame(getActivity(), null);
+        getFragmentManager().beginTransaction().remove(activity.fragment_deck_cards).commit();
     }
 
     private void duelAssistantCheck() {
@@ -691,17 +714,20 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
                 break;
             case R.id.action_replay:
                 YGOStarter.startGame(getActivity(), null, "-k", "-r");
+                getFragmentManager().beginTransaction().remove(activity.fragment_deck_cards).commit();
                 break;
             case R.id.action_bot:
                 YGOStarter.startGame(getActivity(), null, "-k", "-s");
+                getFragmentManager().beginTransaction().remove(activity.fragment_deck_cards).commit();
                 break;
             case R.id.action_download_ex:
-                String aurl = Constants.URL_YGO233_ADVANCE;
-                if (ll_new_notice.getVisibility() == View.VISIBLE) {
-                    aurl = aurl + "#pre_update_title";
-                }
-                WebActivity.open(getContext(), getString(R.string.action_download_expansions), aurl);
-                ll_new_notice.setVisibility(View.GONE);
+//                if (!AppsSettings.get().isReadExpansions()) {//如果未开启扩展卡设置，直接跳过
+//                    Toast.makeText(getActivity(), R.string.ypk_go_setting, Toast.LENGTH_LONG).show();
+//                    break;
+//                }
+                /* using Web crawler to extract the information of pre card */
+                Intent exCardIntent = new Intent(getActivity(), ExCardActivity.class);
+                startActivity(exCardIntent);
                 break;
             case R.id.action_help: {
                 final DialogPlus dialog = new DialogPlus(getContext());
@@ -722,18 +748,11 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
                 });
 
             }
-            break;/*
-            case R.id.action_join_qq_group:
-                String key = "anEjPCDdhLgxtfLre-nT52G1Coye3LkK";
-                joinQQGroup(key);
-                break;
-            case R.id.action_reset_game_res:
-                updateImages();
-                break;*/
+            break;
             case R.id.nav_webpage: {
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setData(Uri.parse(Constants.URL_DONATE));
-                Toast.makeText(getActivity(),R.string.donatefor, Toast.LENGTH_LONG).show();
+                Toast.makeText(getActivity(), R.string.donatefor, Toast.LENGTH_LONG).show();
                 startActivity(intent);
             }
             break;

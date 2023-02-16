@@ -10,7 +10,6 @@ import static cn.garymb.ygomobile.Constants.CORE_SINGLE_PATH;
 import static cn.garymb.ygomobile.Constants.CORE_STRING_PATH;
 import static cn.garymb.ygomobile.Constants.CORE_SYSTEM_PATH;
 import static cn.garymb.ygomobile.Constants.DATABASE_NAME;
-import static cn.garymb.ygomobile.Constants.WINDBOT_PATH;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -32,7 +31,6 @@ import java.util.List;
 
 import cn.garymb.ygomobile.AppsSettings;
 import cn.garymb.ygomobile.Constants;
-import cn.garymb.ygomobile.lite.BuildConfig;
 import cn.garymb.ygomobile.lite.R;
 import cn.garymb.ygomobile.ui.plus.DialogPlus;
 import cn.garymb.ygomobile.utils.FileUtils;
@@ -190,19 +188,18 @@ public class ResCheckTask extends AsyncTask<Void, Integer, Integer> {
 
     @Override
     protected Integer doInBackground(Void... params) {
-        if (Constants.DEBUG)
-            Log.d(TAG, "check start");
+        Log.d(TAG, "check start");
         boolean needsUpdate = isNewVersion;
         //清空下载缓存
-        File imgDir = new File(AppsSettings.get().getCardImagePath());
+        File imgDir = new File(mSettings.getCardImagePath());
         File[] files = imgDir.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
                 return name.endsWith(".tmp");
             }
         });
-        if(files != null){
-            for(File file : files){
+        if (files != null) {
+            for (File file : files) {
                 FileUtils.deleteFile(file);
             }
         }
@@ -215,10 +212,10 @@ public class ResCheckTask extends AsyncTask<Void, Integer, Integer> {
             IOUtils.createNoMedia(resPath);
             //检查文件夹
             checkDirs();
-            if (AppsSettings.get().isUseExtraCards()) {
+            if (mSettings.isUseExtraCards()) {
                 //自定义数据库无效，则用默认的
-                if (!CardManager.checkDataBase(AppsSettings.get().getDataBaseFile())) {
-                    AppsSettings.get().setUseExtraCards(false);
+                if (!CardManager.checkDataBase(mSettings.getDataBaseFile())) {
+                    mSettings.setUseExtraCards(false);
                 }
             }
             //如果是新版本
@@ -274,45 +271,50 @@ public class ResCheckTask extends AsyncTask<Void, Integer, Integer> {
                 IOUtils.copyFilesFromAssets(mContext, getDatapath(Constants.CORE_PICS_ZIP),
                         resPath, needsUpdate);
             }
+            //复制人机资源
+            IOUtils.copyFilesFromAssets(mContext, getDatapath(Constants.WINDBOT_PATH), mSettings.getResourcePath(), needsUpdate);
+            //根据系统语言复制特定资料文件
             String language = mContext.getResources().getConfiguration().locale.getLanguage();
-            Log.i(BuildConfig.VERSION_NAME,language);
-            if(!language.isEmpty()){
-                if(language.equals("zh")) {
-                    copyCnData(needsUpdate);
-                }else if (language.equals("ko")){
-                    copyKorData(needsUpdate);
+            if (!language.isEmpty()) {
+                if (mSettings.getDataLanguage() == -1) {
+                    if (language.equals("zh")) {
+                        copyCnData(true);
+                    } else if (language.equals("ko")) {
+                        copyKorData(true);
+                    } else {
+                        copyEnData(true);
+                    }
                 } else {
-                    copyEnData(needsUpdate);
+                    if (mSettings.getDataLanguage() == 0) copyCnData(true);
+                    if (mSettings.getDataLanguage() == 1) copyKorData(true);
+                    if (mSettings.getDataLanguage() == 2) copyEnData(true);
                 }
             }
             han.sendEmptyMessage(0);
 
             loadData();
-        } catch (
-                Exception e) {
-            if (Constants.DEBUG)
-                Log.e(TAG, "check", e);
+        } catch (Exception e) {
+                Log.e(TAG, "ERROR COPY", e);
             return ERROR_COPY;
         }
         return ERROR_NONE;
     }
 
-    private int copyCnData(Boolean needsUpdate) throws IOException {
+    public int copyCnData(Boolean needsUpdate) throws IOException {
         //复制数据库
         copyCdbFile(getDatapath(DATABASE_NAME), needsUpdate);
         //复制残局
         setMessage(mContext.getString(R.string.check_things, mContext.getString(R.string.single_lua)));
         IOUtils.copyFilesFromAssets(mContext, getDatapath(CORE_SINGLE_PATH), mSettings.getSingleDir(), needsUpdate);
-        //复制人机资源
-        IOUtils.copyFilesFromAssets(mContext, getDatapath(Constants.WINDBOT_PATH), mSettings.getResourcePath(), needsUpdate);
         //复制游戏配置文件
         copyCoreConfig(getDatapath("conf") + "/" + CORE_STRING_PATH,
                 getDatapath("conf") + "/" + BOT_CONF,
                 mSettings.getResourcePath(), needsUpdate);
+        mSettings.setDataLanguage(0);
         return ERROR_NONE;
     }
 
-    private int copyEnData(Boolean needsUpdate) throws IOException {
+    public int copyEnData(Boolean needsUpdate) throws IOException {
         String enStringConf = ASSETS_EN + getDatapath("conf") + "/" + CORE_STRING_PATH;
         String enBotConf = ASSETS_EN + getDatapath("conf") + "/" + CORE_BOT_CONF_PATH;
         String enCdb = ASSETS_EN + getDatapath(DATABASE_NAME);
@@ -322,29 +324,25 @@ public class ResCheckTask extends AsyncTask<Void, Integer, Integer> {
         //复制残局
         setMessage(mContext.getString(R.string.check_things, mContext.getString(R.string.single_lua)));
         IOUtils.copyFilesFromAssets(mContext, enSingle, mSettings.getSingleDir(), needsUpdate);
-        //复制人机资源
-        IOUtils.copyFilesFromAssets(mContext, getDatapath(Constants.WINDBOT_PATH), mSettings.getResourcePath(), needsUpdate);
         //复制游戏配置文件
         copyCoreConfig(enStringConf, enBotConf, mSettings.getResourcePath(), needsUpdate);
-
+        mSettings.setDataLanguage(2);
         return ERROR_NONE;
     }
 
-    private int copyKorData(Boolean needsUpdate) throws IOException {
+    public int copyKorData(Boolean needsUpdate) throws IOException {
         String korStringConf = ASSETS_KOR + getDatapath("conf") + "/" + CORE_STRING_PATH;
         String korBotConf = ASSETS_KOR + getDatapath("conf") + "/" + CORE_BOT_CONF_PATH;
         String korCdb = ASSETS_KOR + getDatapath(DATABASE_NAME);
-        String korWindbotPath = ASSETS_KOR + getDatapath(WINDBOT_PATH);
         String korSingle = ASSETS_EN + getDatapath(CORE_SINGLE_PATH);
         //复制数据库
         copyCdbFile(korCdb, true);
         //复制残局
         setMessage(mContext.getString(R.string.check_things, mContext.getString(R.string.single_lua)));
         IOUtils.copyFilesFromAssets(mContext, korSingle, mSettings.getSingleDir(), needsUpdate);
-        //复制人机资源
-        IOUtils.copyFilesFromAssets(mContext, korWindbotPath, mSettings.getResourcePath(), needsUpdate);
         //复制游戏配置文件
         copyCoreConfig(korStringConf, korBotConf, mSettings.getResourcePath(), needsUpdate);
+        mSettings.setDataLanguage(1);
         return ERROR_NONE;
     }
 
@@ -422,16 +420,14 @@ public class ResCheckTask extends AsyncTask<Void, Integer, Integer> {
     }
 
     private int copyCoreConfig(String assetStringPath, String assetBotPath, String toPath, boolean needsUpdate) throws IOException {
-        File systemfile = new File(AppsSettings.get().getResourcePath(), CORE_SYSTEM_PATH);
-        File stringfile = new File(AppsSettings.get().getResourcePath(), CORE_STRING_PATH);
-        File botfile = new File(AppsSettings.get().getResourcePath(), BOT_CONF);
+        File systemfile = new File(mSettings.getResourcePath(), CORE_SYSTEM_PATH);
+        File stringfile = new File(mSettings.getResourcePath(), CORE_STRING_PATH);
+        File botfile = new File(mSettings.getResourcePath(), BOT_CONF);
         if (!systemfile.exists()) {
             IOUtils.copyFilesFromAssets(mContext, getDatapath("conf") + "/" + CORE_SYSTEM_PATH, toPath, false);
         }
         IOUtils.copyFilesFromAssets(mContext, getDatapath("conf") + "/" + CORE_LIMIT_PATH, toPath, needsUpdate);
-        if (!stringfile.exists() || stringfile.length() < new File(getDatapath("conf") + "/" + CORE_STRING_PATH).length()) {
-            IOUtils.copyFilesFromAssets(mContext, assetStringPath, toPath, needsUpdate);
-        }
+        IOUtils.copyFilesFromAssets(mContext, assetStringPath, toPath, needsUpdate);
         IOUtils.copyFilesFromAssets(mContext, assetBotPath, toPath, needsUpdate);
         //替换换行符
         fixString(stringfile.getAbsolutePath());

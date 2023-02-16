@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:sml="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingBottom="10dp"
+    android:background="@drawable/list_item_bg"
+    android:orientation="horizontal">
+    <!--    set the layout_height in the linear layout to “wrap_content”
+    so it doesn’t only show one TextView per page.-->
+
+    <ImageView
+        android:id="@+id/ex_card_image"
+        android:layout_width="@dimen/card_width_middle"
+        android:layout_height="@dimen/card_height_middle"
+        android:padding="10dp"
+        android:layout_gravity="center_vertical"
+        android:scaleType="fitXY"
+        tools:src="@drawable/unknown" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:orientation="vertical">
+
+        <cn.garymb.ygomobile.ui.widget.AlwaysMarqueeTextView
+            android:id="@+id/ex_card_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:shadowColor="@color/black"
+            android:shadowDx="1"
+            android:shadowDy="2"
+            android:shadowRadius="2"
+            android:singleLine="true"
+            android:textAppearance="@style/TextAppearance.AppCompat.Title"
+            android:textColor="@color/gold"
+            android:textSize="15sp"
+            tools:text="Card Name" />
+
+        <TextView
+            android:id="@+id/ex_card_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+</LinearLayout>

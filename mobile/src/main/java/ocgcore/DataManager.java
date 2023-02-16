@@ -45,6 +45,8 @@ public class DataManager {
     private boolean mInit;
 
     public void load(boolean force) {
+
+        //Log.i("webCrawler", "DataManager load data");
         boolean needLoad = false;
         synchronized (this) {
             if (!mInit || force) {

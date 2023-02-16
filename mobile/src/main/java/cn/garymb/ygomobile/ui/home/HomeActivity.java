@@ -39,6 +39,7 @@ import cn.garymb.ygomobile.ui.plus.DialogPlus;
 import cn.garymb.ygomobile.ui.settings.SettingFragment;
 import cn.garymb.ygomobile.utils.OkhttpUtil;
 import cn.garymb.ygomobile.utils.ScreenUtil;
+import cn.garymb.ygomobile.utils.ServerUtil;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
@@ -47,6 +48,7 @@ public abstract class HomeActivity extends BaseActivity implements BottomNavigat
 
     long exitLasttime = 0;
     public static String Version;
+    public static String Cache_link;
     private static final int TYPE_GET_VERSION_OK = 0;
     private static final int TYPE_GET_VERSION_FAILED = 1;
 
@@ -71,15 +73,16 @@ public abstract class HomeActivity extends BaseActivity implements BottomNavigat
             super.handleMessage(msg);
             switch (msg.what) {
                 case TYPE_GET_VERSION_OK:
-                    Version = msg.obj.toString();
-                    Log.i(BuildConfig.VERSION_NAME, Version);
-                    if (!Version.equals(BuildConfig.VERSION_NAME) && !Version.isEmpty()) {
+                    Version = msg.obj.toString().substring(0, msg.obj.toString().indexOf("|"));//截取版本号
+                    Cache_link = msg.obj.toString().substring(msg.obj.toString().indexOf("|") + 1);
+                    Log.i(BuildConfig.VERSION_NAME, Version + "和" + Cache_link);
+                    if (!Version.equals(BuildConfig.VERSION_NAME) && !Version.isEmpty() && !Cache_link.isEmpty()) {
                         DialogPlus dialog = new DialogPlus(getActivity());
                         dialog.setMessage(R.string.Found_Update);
                         dialog.setLeftButtonText(R.string.download_home);
                         dialog.setLeftButtonListener((dlg, s) -> {
                             Intent intent = new Intent(Intent.ACTION_VIEW);
-                            intent.setData(Uri.parse("https://netdisk.link/YGOMobile_" + Version + ".apk/links"));
+                            intent.setData(Uri.parse(Cache_link));
                             startActivity(intent);
                             dialog.dismiss();
                         });
@@ -88,7 +91,6 @@ public abstract class HomeActivity extends BaseActivity implements BottomNavigat
                     break;
                 case TYPE_GET_VERSION_FAILED:
                     String error = msg.obj.toString();
-                    Log.e(BuildConfig.VERSION_NAME, error);
                     break;
             }
 
@@ -112,6 +114,7 @@ public abstract class HomeActivity extends BaseActivity implements BottomNavigat
         //showNewbieGuide("homePage");
         initBottomNavigationBar();
         onNewIntent(getIntent());
+        ServerUtil.initExCardState();//检查扩展卡版本
     }
 
     @Override
@@ -174,7 +177,7 @@ public abstract class HomeActivity extends BaseActivity implements BottomNavigat
     private void showNewsCounts() {
         mTextBadgeItem = new TextBadgeItem()
                 .setBorderWidth(4)//文本大小
-                .setGravity(Gravity.LEFT )//位置 默认右上
+                .setGravity(Gravity.LEFT)//位置 默认右上
                 .setBackgroundColorResource(R.color.holo_orange_bright)//背景颜色
                 .setAnimationDuration(200)//动画时间
                 .setText("3")
@@ -356,7 +359,6 @@ public abstract class HomeActivity extends BaseActivity implements BottomNavigat
                 message.what = TYPE_GET_VERSION_FAILED;
                 message.obj = e;
                 handlerHome.sendMessage(message);
-                Log.i(BuildConfig.VERSION_NAME, "error" + e);
             }
 
             @Override
