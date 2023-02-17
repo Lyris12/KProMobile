@@ -5,8 +5,8 @@
     <server>
         <player-name>Komeiji Koishi</player-name>
         <name>YGOCC Koishi</name>
-        <ip>23.254.201.48</ip>
-        <port>7999</port>
+        <ip>198.148.104.197</ip>
+        <port>7911</port>
         <keep>true</keep>
     </server>
     <server>
