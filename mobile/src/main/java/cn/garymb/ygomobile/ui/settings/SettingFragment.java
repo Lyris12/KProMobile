@@ -34,14 +34,18 @@ import static cn.garymb.ygomobile.Constants.PREF_WINDOW_TOP_BOTTOM;
 import static cn.garymb.ygomobile.Constants.SETTINGS_AVATAR;
 import static cn.garymb.ygomobile.Constants.SETTINGS_CARD_BG;
 import static cn.garymb.ygomobile.Constants.SETTINGS_COVER;
+import static cn.garymb.ygomobile.Constants.URL_HOME_VERSION;
 import static cn.garymb.ygomobile.ui.home.ResCheckTask.getDatapath;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
@@ -79,14 +83,21 @@ import cn.garymb.ygomobile.ui.plus.DialogPlus;
 import cn.garymb.ygomobile.ui.plus.VUiKit;
 import cn.garymb.ygomobile.utils.FileUtils;
 import cn.garymb.ygomobile.utils.IOUtils;
+import cn.garymb.ygomobile.utils.OkhttpUtil;
 import cn.garymb.ygomobile.utils.ServerUtil;
 import cn.garymb.ygomobile.utils.SharedPreferenceUtil;
 import cn.garymb.ygomobile.utils.SystemUtils;
 import cn.garymb.ygomobile.utils.glide.GlideCompat;
 import ocgcore.DataManager;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 public class SettingFragment extends PreferenceFragmentPlus {
+    private static final int TYPE_SETTING_GET_VERSION_OK = 0;
+    private static final int TYPE_SETTING_GET_VERSION_FAILED = 1;
     private AppsSettings mSettings;
+    public static String Version;
     public static String Cache_link;
     private boolean isInit = true;
 
@@ -94,7 +105,9 @@ public class SettingFragment extends PreferenceFragmentPlus {
 
     }
 
-    @Override
+    @SuppressLint("HandlerLeak")
+    Handler handler = new Handler() {
+        @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             switch (msg.what) {
@@ -134,6 +147,7 @@ public class SettingFragment extends PreferenceFragmentPlus {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(false);
+
         mSettings = AppsSettings.get();
 
         addPreferencesFromResource(R.xml.preference_game);
@@ -155,7 +169,7 @@ public class SettingFragment extends PreferenceFragmentPlus {
         bind(PREF_READ_EX, mSettings.isReadExpansions());
         bind(PREF_DEL_EX, getString(R.string.about_delete_ex));
         bind(PERF_TEST_REPLACE_KERNEL, "需root权限，请在开发者的指导下食用");
-        bind(PREF_WINDOW_TOP_BOTTOM, ""+mSettings.getScreenPadding());
+        bind(PREF_WINDOW_TOP_BOTTOM, "" + mSettings.getScreenPadding());
         bind(PREF_DATA_LANGUAGE, mSettings.getDataLanguage());
         Preference preference = findPreference(PREF_READ_EX);
         if (preference != null) {
@@ -191,6 +205,14 @@ public class SettingFragment extends PreferenceFragmentPlus {
                     return false;
                 }
             }*/
+            if (PREF_FONT_SIZE.equals(preference.getKey())) {
+                int size = Constants.DEF_PREF_FONT_SIZE;
+                try {
+                    size = Integer.parseInt(String.valueOf(value));
+                } catch (Exception e) {
+
+                }
+            }
             if (preference instanceof CheckBoxPreference) {
                 CheckBoxPreference checkBoxPreference = (CheckBoxPreference) preference;
                 mSharedPreferences.edit().putBoolean(preference.getKey(), checkBoxPreference.isChecked()).apply();
@@ -200,6 +222,14 @@ public class SettingFragment extends PreferenceFragmentPlus {
                     DataManager.get().load(true);
                     EventBus.getDefault().postSticky(new ExCardEvent(ExCardEvent.EventType.exCardPrefChange));
                     //ServerUtil.initExCardState();
+                }
+                //开关决斗助手
+                if (preference.getKey().equals(PREF_START_SERVICEDUELASSISTANT)) {
+//                    if (checkBoxPreference.isChecked()) {
+//                        getActivity().startService(new Intent(getActivity(), DuelAssistantService.class));
+//                    } else {
+//                        getActivity().stopService(new Intent(getActivity(), DuelAssistantService.class));
+//                    }
                 }
                 return true;
             }
@@ -517,7 +547,7 @@ public class SettingFragment extends PreferenceFragmentPlus {
                 //处理数据
 //                ResCheckTask.doSomeTrickOnDatabase(db.getAbsolutePath());
                 return true;
-            } catch (Exception ignored) {
+            } catch (Exception e) {
 
             } finally {
                 IOUtils.close(in);
@@ -548,9 +578,11 @@ public class SettingFragment extends PreferenceFragmentPlus {
                     IOUtils.createFolder(dir);
                     IOUtils.copyFilesFromAssets(getActivity(), getDatapath(Constants.CORE_SKIN_PENDULUM_PATH),
                             dir.getAbsolutePath(), false);
-                } catch (IOException ignored) {
+                } catch (IOException e) {
                 }
-            }).done((re) -> dlg.dismiss());
+            }).done((re) -> {
+                dlg.dismiss();
+            });
         } else {
             IOUtils.delete(dir);
         }
@@ -568,7 +600,7 @@ public class SettingFragment extends PreferenceFragmentPlus {
                 //复制卡图包
                 if (IOUtils.hasAssets(getContext(), getDatapath(Constants.CORE_PICS_ZIP))) {
                     IOUtils.copyFilesFromAssets(getContext(), getDatapath(Constants.CORE_PICS_ZIP), mSettings.getResourcePath(), true);
-}
+                }
                 //复制脚本包
                 if (IOUtils.hasAssets(getContext(), getDatapath(Constants.CORE_SCRIPTS_ZIP))) {
                     IOUtils.copyFilesFromAssets(getContext(), getDatapath(Constants.CORE_SCRIPTS_ZIP), mSettings.getResourcePath(), true);
