@@ -74,11 +74,7 @@ public class MainActivity extends HomeActivity implements BottomNavigationBar.On
         checkResourceDownload((error, isNew) -> {
             //加载收藏夹
             CardFavorites.get().load();
-            if (error < 0) {
-                enableStart = false;
-            } else {
-                enableStart = true;
-            }
+            enableStart = error >= 0;
             if (isNew) {
                 if (!getGameUriManager().doIntent(getIntent())) {
                     final DialogPlus dialog = new DialogPlus(this);
@@ -180,11 +176,7 @@ public class MainActivity extends HomeActivity implements BottomNavigationBar.On
         super.onNewIntent(intent);
         if (ACTION_RELOAD.equals(intent.getAction())) {
             checkResourceDownload((error, isNew) -> {
-                if (error < 0) {
-                    enableStart = false;
-                } else {
-                    enableStart = true;
-                }
+                enableStart = error >= 0;
                 getGameUriManager().doIntent(getIntent());
             });
         } else {

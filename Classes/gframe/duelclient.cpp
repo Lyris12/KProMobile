@@ -1090,7 +1090,7 @@ int DuelClient::ClientAnalyze(char * msg, unsigned int len) {
 			myswprintf(textBuffer, dataManager.GetSysString(1510), dataManager.GetDesc(data));
 			mainGame->AddLog(textBuffer);
 			mainGame->gMutex.lock();
-			mainGame->SetStaticText(mainGame->stACMessage, 310 * mainGame->xScale, mainGame->textFont, textBuffer);
+			mainGame->SetStaticText(mainGame->stACMessage, 310 * mainGame->xScale, mainGame->guiFont, textBuffer);
 			mainGame->PopupElement(mainGame->wACMessage, 20);
 			mainGame->gMutex.unlock();
 			mainGame->WaitFrameSignal(40);
@@ -1107,7 +1107,7 @@ int DuelClient::ClientAnalyze(char * msg, unsigned int len) {
 			myswprintf(textBuffer, dataManager.GetSysString(1511), dataManager.FormatRace(data));
 			mainGame->AddLog(textBuffer);
 			mainGame->gMutex.lock();
-			mainGame->SetStaticText(mainGame->stACMessage, 310 * mainGame->xScale, mainGame->textFont, textBuffer);
+			mainGame->SetStaticText(mainGame->stACMessage, 310 * mainGame->xScale, mainGame->guiFont, textBuffer);
 			mainGame->PopupElement(mainGame->wACMessage, 20);
 			mainGame->gMutex.unlock();
 			mainGame->WaitFrameSignal(40);
@@ -1117,7 +1117,7 @@ int DuelClient::ClientAnalyze(char * msg, unsigned int len) {
 			myswprintf(textBuffer, dataManager.GetSysString(1511), dataManager.FormatAttribute(data));
 			mainGame->AddLog(textBuffer);
 			mainGame->gMutex.lock();
-			mainGame->SetStaticText(mainGame->stACMessage, 310 * mainGame->xScale, mainGame->textFont, textBuffer);
+			mainGame->SetStaticText(mainGame->stACMessage, 310 * mainGame->xScale, mainGame->guiFont, textBuffer);
 			mainGame->PopupElement(mainGame->wACMessage, 20);
 			mainGame->gMutex.unlock();
 			mainGame->WaitFrameSignal(40);
@@ -1127,7 +1127,7 @@ int DuelClient::ClientAnalyze(char * msg, unsigned int len) {
 			myswprintf(textBuffer, dataManager.GetSysString(1511), dataManager.GetName(data));
 			mainGame->AddLog(textBuffer, data);
 			mainGame->gMutex.lock();
-			mainGame->SetStaticText(mainGame->stACMessage, 310 * mainGame->xScale, mainGame->textFont, textBuffer);
+			mainGame->SetStaticText(mainGame->stACMessage, 310 * mainGame->xScale, mainGame->guiFont, textBuffer);
 			mainGame->PopupElement(mainGame->wACMessage, 20);
 			mainGame->gMutex.unlock();
 			mainGame->WaitFrameSignal(40);
@@ -1137,7 +1137,7 @@ int DuelClient::ClientAnalyze(char * msg, unsigned int len) {
 			myswprintf(textBuffer, dataManager.GetSysString(1512), data);
 			mainGame->AddLog(textBuffer);
 			mainGame->gMutex.lock();
-			mainGame->SetStaticText(mainGame->stACMessage, 310, mainGame->textFont, textBuffer);
+			mainGame->SetStaticText(mainGame->stACMessage, 310, mainGame->guiFont, textBuffer);
 			mainGame->PopupElement(mainGame->wACMessage, 20);
 			mainGame->gMutex.unlock();
 			mainGame->WaitFrameSignal(40);
@@ -1518,7 +1518,7 @@ int DuelClient::ClientAnalyze(char * msg, unsigned int len) {
 			myswprintf(textBuffer, dataManager.GetDesc(desc), dataManager.GetName(code));
 		}
 		mainGame->gMutex.lock();
-		mainGame->SetStaticText(mainGame->stQMessage, 370 * mainGame->xScale, mainGame->textFont, textBuffer);
+		mainGame->SetStaticText(mainGame->stQMessage, 350 * mainGame->xScale, mainGame->guiFont, textBuffer);
 		mainGame->PopupElement(mainGame->wQuery);
 		mainGame->gMutex.unlock();
 		return false;
@@ -1528,7 +1528,7 @@ int DuelClient::ClientAnalyze(char * msg, unsigned int len) {
 		int desc = BufferIO::ReadInt32(pbuf);
 		mainGame->dField.highlighting_card = 0;
 		mainGame->gMutex.lock();
-		mainGame->SetStaticText(mainGame->stQMessage, 370 * mainGame->xScale, mainGame->textFont, dataManager.GetDesc(desc));
+		mainGame->SetStaticText(mainGame->stQMessage, 350 * mainGame->xScale, mainGame->guiFont, dataManager.GetDesc(desc));
 		mainGame->PopupElement(mainGame->wQuery);
 		mainGame->gMutex.unlock();
 		return false;
@@ -1788,7 +1788,7 @@ int DuelClient::ClientAnalyze(char * msg, unsigned int len) {
 					myswprintf(textBuffer, L"%ls\n%ls\n%ls", event_string, dataManager.GetSysString(222), dataManager.GetSysString(223));
 				else
 					myswprintf(textBuffer, L"%ls\n%ls", event_string, dataManager.GetSysString(203));
-				mainGame->SetStaticText(mainGame->stQMessage, 370 * mainGame->xScale, mainGame->textFont, textBuffer);
+				mainGame->SetStaticText(mainGame->stQMessage, 350 * mainGame->xScale, mainGame->guiFont, textBuffer);
 				mainGame->PopupElement(mainGame->wQuery);
 			}
 		}
