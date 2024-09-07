@@ -53,7 +53,7 @@ public class CardDetail extends BaseAdapterPlus.BaseViewHolder {
     private static final int TYPE_DOWNLOAD_CARD_IMAGE_EXCEPTION = 1;
     private static final int TYPE_DOWNLOAD_CARD_IMAGE_ING = 2;
 
-    private static final String TAG = "CardDetail";
+    private static final String TAG = String.valueOf(CardDetail.class);
     private final CardManager cardManager;
     private final ImageView cardImage;
     private final TextView name;
@@ -120,7 +120,7 @@ public class CardDetail extends BaseAdapterPlus.BaseViewHolder {
                     isDownloadCardImage = true;
                     ll_bar.startAnimation(AnimationUtils.loadAnimation(context, R.anim.out_from_bottom));
                     ll_bar.setVisibility(View.GONE);
-                    YGOUtil.show("error" + msg.obj);
+                    YGOUtil.showTextToast("error" + msg.obj);
                     break;
 
             }
@@ -272,7 +272,11 @@ public class CardDetail extends BaseAdapterPlus.BaseViewHolder {
             showCardImageDetail(cardInfo.Code);
         });
         name.setText(cardInfo.Name);
-        desc.setText(cardInfo.Desc);
+        if (cardInfo.Name.equals("Unknown")) {
+            desc.setText(R.string.tip_card_info_diff);
+        } else {
+            desc.setText(cardInfo.Desc);
+        }
         cardCode.setText(String.format("%08d", cardInfo.getCode()));
         if (cardInfo.isType(CardType.Token)) {
             faq.setVisibility(View.INVISIBLE);
@@ -427,7 +431,7 @@ public class CardDetail extends BaseAdapterPlus.BaseViewHolder {
         //先显示普通卡片大图，判断如果没有高清图就下载
         imageLoader.bindImage(photoView, code, null, ImageLoader.Type.middle);
 
-        if (null == ImageLoader.getImageFile(code)) {
+        if (null == imageLoader.getImageFile(code)) {
             downloadCardImage(code, false);
         }
 
@@ -435,7 +439,7 @@ public class CardDetail extends BaseAdapterPlus.BaseViewHolder {
 
     private void downloadCardImage(int code, boolean force) {
         if (cardManager.getCard(code) == null) {
-            YGOUtil.show(context.getString(R.string.tip_expansions_image));
+            YGOUtil.showTextToast(context.getString(R.string.tip_expansions_image));
             return;
         }
         File imgFile = new File(AppsSettings.get().getCardImagePath(code));

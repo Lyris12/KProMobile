@@ -1,6 +1,10 @@
 package cn.garymb.ygomobile.ui.home;
 
 import static cn.garymb.ygomobile.Constants.ASSET_SERVER_LIST;
+import static cn.garymb.ygomobile.ui.home.HomeActivity.pre_code_list;
+import static cn.garymb.ygomobile.ui.home.HomeActivity.released_code_list;
+import static cn.garymb.ygomobile.utils.ComparisonTableUtil.newIDsArray;
+import static cn.garymb.ygomobile.utils.ComparisonTableUtil.oldIDsArray;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -73,8 +77,10 @@ import cn.garymb.ygomobile.ui.plus.VUiKit;
 import cn.garymb.ygomobile.ui.widget.Shimmer;
 import cn.garymb.ygomobile.ui.widget.ShimmerTextView;
 import cn.garymb.ygomobile.utils.FileLogUtil;
+import cn.garymb.ygomobile.utils.LogUtil;
 import cn.garymb.ygomobile.utils.ServerUtil;
 import cn.garymb.ygomobile.utils.YGOUtil;
+import cn.hutool.core.util.ArrayUtil;
 import ocgcore.CardManager;
 import ocgcore.DataManager;
 import ocgcore.data.Card;
@@ -91,7 +97,6 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
     public static final int TYPE_GET_DATA_VER_OK = 3;
     private static final String ARG_MC_NEWS_LIST = "mcNewsList";
     private boolean isMcNewsLoadException = false;
-
     private LinearLayout ll_back;
     ShimmerTextView tv;
     ShimmerTextView tv2;
@@ -100,6 +105,7 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
     private ServerListAdapter mServerListAdapter;
     private ServerListManager mServerListManager;
     private CardManager mCardManager;
+    private SparseArray<Card> cards;
     private CardDetailRandom mCardDetailRandom;
     //轮播图
     private CardView cv_banner;
@@ -112,6 +118,10 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
     private CardView cv_bot_game;
     private CardView cv_watch_replay;
     //辅助功能
+
+    /**
+     * 先行卡下载按钮，点击后跳转到先行卡下载页面
+     */
     private CardView cv_download_ex;
     private LinearLayoutCompat ll_new_notice;
     //外连
@@ -139,7 +149,13 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
         if (!EventBus.getDefault().isRegistered(this)) {//加上判断
             EventBus.getDefault().register(this);
         }
+        ServerUtil.initExCardState();//LogoActivity中会调用一次本函数，此处再次调用的原因：有时HomeFragment的onCreateView()函数执行较慢，导致initExCardState()中eventbus事件发布完毕后仍未注册，因此在此处再调用一次检查，再次发布
         changeColor();
+        try {
+            ServerUtil.refreshServer(activity);
+        } catch (IOException e) {
+            Log.e("seesee",e+"");
+        }
         //showNewbieGuide("homePage");
         return layoutView;
     }
@@ -152,12 +168,8 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
         //添加服务器
         View footView = infla.inflate(R.layout.item_ic_add, null);
         TextView add_server = footView.findViewById(R.id.add_server);
-        add_server.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mServerListManager.addServer();
-            }
-        });
+        add_server.setOnClickListener(this);
+
         mServerListAdapter.addFooterView(footView);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
         mServerList.setLayoutManager(linearLayoutManager);
@@ -217,9 +229,17 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
         });
         tv_banner_loading = view.findViewById(R.id.tv_banner_loading);
         tv_banner_loading.setOnClickListener(this);
-        xb_banner.setOnItemClickListener((banner, model, v, position) ->
-                WebActivity.open(getContext(), getString(R.string.McNews), mcNewsList.get(position).getNews_url())
-        );
+        xb_banner.setOnItemClickListener((banner, model, v, position) -> {
+            String newsUrl = mcNewsList.get(position).getNews_url();
+            if (newsUrl.startsWith(MyCard.MYCARD_POST_URL)) {
+                WebActivity.open(getContext(), getString(R.string.McNews), newsUrl);
+            } else {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(Uri.parse(newsUrl));
+                startActivity(intent);
+            }
+
+        });
         xb_banner.loadImage((banner, model, v, position) -> {
             TextView tv_time, tv_title, tv_type;
             ImageView iv_image;
@@ -275,18 +295,25 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
      * ServerUtil获取到版本状态后会通过eventmessage通知调用本函数，不需要在主函数显式调用
      */
     public void changeExCardNewMark() {
-        Log.i(TAG, "check excard new mark, version:" + ServerUtil.exCardState);
+        LogUtil.i(TAG, "check excard new mark, version:" + ServerUtil.exCardState);
         if (ServerUtil.exCardState == ServerUtil.ExCardState.UPDATED) {
             ll_new_notice.setVisibility(View.GONE);
         } else if (ServerUtil.exCardState == ServerUtil.ExCardState.NEED_UPDATE) {
             ll_new_notice.setVisibility(View.VISIBLE);
         } else if (ServerUtil.exCardState == ServerUtil.ExCardState.ERROR) {
-            Toast.makeText(getActivity(), "无法获取服务器先行卡信息", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), R.string.ex_card_check_toast_message_iii, Toast.LENGTH_SHORT).show();
             ll_new_notice.setVisibility(View.GONE);
+        } else if (ServerUtil.exCardState == ServerUtil.ExCardState.UNCHECKED) {
+            //do nothing
+            //由于UNCHECKED状态仅在app刚启动时短暂存在，因此不需要对其进行处理
+            //the UNCHECKED state only exists temporarily before the check action, so we need not handle it.
         }
 
     }
 
+    /**
+     * 根据同服务器状态设置展示列表中每项的颜色（服务器不可用就设置为灰色）
+     */
     private void changeColor() {
         /* 同步设置服务器列表的状态，在syncLoadData()里更新recyclerview的数据，在更新数据时convert()方法自动更改item的颜色 */
         mServerListManager.syncLoadData();
@@ -501,6 +528,28 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
     }
 
     public void onJoinRoom(String host, int port, String password, int id) {
+        if (YGOStarter.isGameRunning(getActivity())) {
+            DialogPlus dlg = new DialogPlus(getActivity());
+            dlg.setMessage(R.string.tip_ygopro_is_running);
+            dlg.setLeftButtonListener((d, s) -> {
+                if (!TextUtils.isEmpty(password)) {
+                    SimpleListAdapter simpleListAdapter = new SimpleListAdapter(getContext());
+                    simpleListAdapter.set(AppsSettings.get().getLastRoomList());
+                    List<String> items = simpleListAdapter.getItems();
+                    int index = items.indexOf(password);
+                    if (index >= 0) {
+                        items.remove(index);
+                        items.add(0, password);
+                    } else {
+                        items.add(0, password);
+                    }
+                    AppsSettings.get().setLastRoomList(items);
+                    simpleListAdapter.notifyDataSetChanged();
+                }
+                dlg.dismiss();
+            });
+            dlg.show();
+        }
         if (id == ID_HOMEFRAGMENT) {
             quickjoinRoom(host, port, password);
         }
@@ -523,8 +572,33 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
 
     public void saveDeck(Uri uri, List<Integer> mainList, List<Integer> exList, List<Integer> sideList, boolean isCompleteDeck, String exception) {
         if (!TextUtils.isEmpty(exception)) {
-            YGOUtil.show("卡组解析失败，原因为：" + exception);
+            YGOUtil.showTextToast("卡组解析失败，原因为：" + exception);
             return;
+        }
+        for (Integer id : mainList) {
+            if (released_code_list.contains(id)) {//先查看id对应的卡片密码是否在正式数组中存在
+                mainList.set(mainList.indexOf(id), pre_code_list.get(released_code_list.indexOf(id)));//使用set而不是用remove和add为了避免Arraylist的ConcurrentModificationException异常
+            }
+            //执行完后变成先行密码，如果constants对照表里存在该密码，则如下又转换一次，确保正式更新后不会出错，最好发布app后必须及时更新在线对照表
+            if (ArrayUtil.contains(oldIDsArray, id)) {
+                mainList.set(mainList.indexOf(id), ArrayUtil.get(newIDsArray, ArrayUtil.indexOf(oldIDsArray, id)));
+            }
+        }
+        for (Integer id : exList) {
+            if (released_code_list.contains(id)) {
+                exList.set(exList.indexOf(id), pre_code_list.get(released_code_list.indexOf(id)));
+            }
+            if (ArrayUtil.contains(oldIDsArray, id)) {
+                exList.set(exList.indexOf(id), ArrayUtil.get(newIDsArray, ArrayUtil.indexOf(oldIDsArray, id)));
+            }
+        }
+        for (Integer id : sideList) {
+            if (released_code_list.contains(id)) {
+                sideList.set(sideList.indexOf(id), pre_code_list.get(released_code_list.indexOf(id)));
+            }
+            if (ArrayUtil.contains(oldIDsArray, id)) {
+                sideList.set(sideList.indexOf(id), ArrayUtil.get(newIDsArray, ArrayUtil.indexOf(oldIDsArray, id)));
+            }
         }
         DialogPlus dialog = new DialogPlus(getContext());
         dialog.setTitle(R.string.question);
@@ -538,17 +612,17 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
         });
         dialog.setRightButtonListener((dlg, s) -> {
             dialog.dismiss();
-            Deck deckInfo;
+            Deck deck;
             //如果是卡组url
             if (uri != null) {
-                deckInfo = new Deck(uri, mainList, exList, sideList);
+                deck = new Deck(uri, mainList, exList, sideList);
             } else {
-                deckInfo = new Deck(getString(R.string.rename_deck) + System.currentTimeMillis(), mainList, exList, sideList);
+                deck = new Deck(getString(R.string.rename_deck) + System.currentTimeMillis(), mainList, exList, sideList);
             }
-            deckInfo.setCompleteDeck(isCompleteDeck);
-            File file = deckInfo.saveTemp(AppsSettings.get().getDeckDir());
-            if (!deckInfo.isCompleteDeck()) {
-                YGOUtil.show("当前卡组缺少完整信息，将只显示已有卡片");
+            deck.setCompleteDeck(isCompleteDeck);
+            File file = deck.saveTemp(AppsSettings.get().getDeckDir());
+            if (!deck.isCompleteDeck()) {
+                YGOUtil.showTextToast(activity.getString(R.string.tip_deckInfo_isNot_completeDeck));
             }
             if (!file.getAbsolutePath().isEmpty()) {
                 mBundle.putString("setDeck", file.getAbsolutePath());
@@ -718,13 +792,17 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
                 getFragmentManager().beginTransaction().remove(activity.fragment_deck_cards).commit();
                 break;
             case R.id.action_download_ex:
+
+                /*不检查先行卡设置，无论是否开启先行卡都要求能够打开先行卡页面，因此注释掉下面代码*/
 //                if (!AppsSettings.get().isReadExpansions()) {//如果未开启扩展卡设置，直接跳过
 //                    Toast.makeText(getActivity(), R.string.ypk_go_setting, Toast.LENGTH_LONG).show();
 //                    break;
 //                }
-                /* using Web crawler to extract the information of pre card */
+
+                /* 查不到版本号也打开excard安卓原生activity */
                 Intent exCardIntent = new Intent(getActivity(), ExCardActivity.class);
                 startActivity(exCardIntent);
+
                 break;
             case R.id.action_help: {
                 final DialogPlus dialog = new DialogPlus(getContext());
@@ -757,6 +835,9 @@ public class HomeFragment extends BaseFragemnt implements OnDuelAssistantListene
                 openGame();
             }
             break;
+            case R.id.add_server:
+                mServerListManager.addServer();
+                break;
             case R.id.tv_banner_loading:
                 if (isMcNewsLoadException)
                     findMcNews();

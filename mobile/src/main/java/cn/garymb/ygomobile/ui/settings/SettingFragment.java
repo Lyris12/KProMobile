@@ -4,6 +4,9 @@ import static cn.garymb.ygomobile.Constants.ACTION_RELOAD;
 import static cn.garymb.ygomobile.Constants.CORE_SKIN_AVATAR_SIZE;
 import static cn.garymb.ygomobile.Constants.CORE_SKIN_BG_SIZE;
 import static cn.garymb.ygomobile.Constants.CORE_SKIN_CARD_COVER_SIZE;
+import static cn.garymb.ygomobile.Constants.ID1;
+import static cn.garymb.ygomobile.Constants.ID2;
+import static cn.garymb.ygomobile.Constants.ID3;
 import static cn.garymb.ygomobile.Constants.ORI_DECK;
 import static cn.garymb.ygomobile.Constants.ORI_PICS;
 import static cn.garymb.ygomobile.Constants.ORI_REPLAY;
@@ -35,6 +38,10 @@ import static cn.garymb.ygomobile.Constants.SETTINGS_AVATAR;
 import static cn.garymb.ygomobile.Constants.SETTINGS_CARD_BG;
 import static cn.garymb.ygomobile.Constants.SETTINGS_COVER;
 import static cn.garymb.ygomobile.Constants.URL_HOME_VERSION;
+import static cn.garymb.ygomobile.Constants.URL_YGO233_FILE_ALT;
+import static cn.garymb.ygomobile.ui.home.HomeActivity.Cache_pre_release_code;
+import static cn.garymb.ygomobile.ui.home.HomeActivity.pre_code_list;
+import static cn.garymb.ygomobile.ui.home.HomeActivity.released_code_list;
 import static cn.garymb.ygomobile.ui.home.ResCheckTask.getDatapath;
 
 import android.annotation.SuppressLint;
@@ -65,10 +72,12 @@ import com.bumptech.glide.signature.MediaStoreSignature;
 
 import org.greenrobot.eventbus.EventBus;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -96,47 +105,15 @@ import okhttp3.Response;
 public class SettingFragment extends PreferenceFragmentPlus {
     private static final int TYPE_SETTING_GET_VERSION_OK = 0;
     private static final int TYPE_SETTING_GET_VERSION_FAILED = 1;
-    private AppsSettings mSettings;
     public static String Version;
     public static String Cache_link;
+    private AppsSettings mSettings;
     private boolean isInit = true;
+    private int FailedCount;
 
     public SettingFragment() {
 
     }
-
-    @SuppressLint("HandlerLeak")
-    Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            switch (msg.what) {
-                case TYPE_SETTING_GET_VERSION_OK:
-                    Version = msg.obj.toString().substring(0, msg.obj.toString().indexOf("|"));//截取版本号
-                    Cache_link = msg.obj.toString().substring(msg.obj.toString().indexOf("|") + 1);
-                    if (!Version.equals(BuildConfig.VERSION_NAME) && !Version.isEmpty() && !Cache_link.isEmpty()) {
-                        DialogPlus dialog = new DialogPlus(getActivity());
-                        dialog.setMessage(R.string.Found_Update);
-                        dialog.setLeftButtonText(R.string.download_home);
-                        dialog.setLeftButtonListener((dlg, s) -> {
-                            Intent intent = new Intent(Intent.ACTION_VIEW);
-                            intent.setData(Uri.parse(Cache_link));
-                            startActivity(intent);
-                            dialog.dismiss();
-                        });
-                        dialog.show();
-                    } else {
-                        Toast.makeText(getContext(), R.string.Already_Lastest, Toast.LENGTH_SHORT).show();
-                    }
-                    break;
-                case TYPE_SETTING_GET_VERSION_FAILED:
-                    String error = msg.obj.toString();
-                    Toast.makeText(getContext(), getString(R.string.Checking_Update_Failed) + error, Toast.LENGTH_SHORT).show();
-                    break;
-            }
-
-        }
-    };
 
     @Override
     protected SharedPreferences getSharedPreferences() {
@@ -258,6 +235,13 @@ public class SettingFragment extends PreferenceFragmentPlus {
                             e.printStackTrace();
                         }
                     }
+                    if (listPreference.getValue().equals("3")) {
+                        try {
+                            mSettings.copyEsData();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                     mSettings.setDataLanguage(Integer.valueOf(listPreference.getValue()));
                     Toast.makeText(getContext(), R.string.restart_app, Toast.LENGTH_LONG).show();
                     DataManager.get().load(true);
@@ -270,6 +254,51 @@ public class SettingFragment extends PreferenceFragmentPlus {
         }
         return true;
     }
+
+    @SuppressLint("HandlerLeak")
+    Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case TYPE_SETTING_GET_VERSION_OK:
+                    if (msg.obj.toString().contains(ID1) && msg.obj.toString().contains(ID2) && msg.obj.toString().contains(ID3)) {
+                        Version = msg.obj.toString().substring(msg.obj.toString().indexOf(ID1) + ID1.length(), msg.obj.toString().indexOf(";"));//截取版本号
+                        Cache_link = msg.obj.toString().substring(msg.obj.toString().indexOf(ID2) + ID2.length(), msg.obj.toString().indexOf("$"));//截取下载地址
+                        Cache_pre_release_code = msg.obj.toString().substring(msg.obj.toString().indexOf(ID3) + ID3.length() + 1);//截取先行-正式对照文本
+                        if (!TextUtils.isEmpty(Cache_pre_release_code)) {
+                            arrangeCodeList(Cache_pre_release_code);//转换成两个数组
+                        }
+                        if (Version.compareTo(BuildConfig.VERSION_NAME) > 0 && !TextUtils.isEmpty(Version) && !TextUtils.isEmpty(Cache_link)) {
+                            DialogPlus dialog = new DialogPlus(getActivity());
+                            dialog.setMessage(R.string.Found_Update);
+                            dialog.setLeftButtonText(R.string.download_home);
+                            dialog.setLeftButtonListener((dlg, s) -> {
+                                Intent intent = new Intent(Intent.ACTION_VIEW);
+                                intent.setData(Uri.parse(Cache_link));
+                                startActivity(intent);
+                                dialog.dismiss();
+                            });
+                            dialog.show();
+                        } else {
+                            Toast.makeText(getContext(), R.string.Already_Lastest, Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Toast.makeText(getContext(), getString(R.string.Checking_Update_Failed), Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+                case TYPE_SETTING_GET_VERSION_FAILED:
+                    ++FailedCount;
+                    if (FailedCount <= 2) {
+                        checkUpgrade(URL_YGO233_FILE_ALT);
+                    } else {
+                        Toast.makeText(getContext(), getString(R.string.Checking_Update_Failed) + msg.obj.toString(), Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+            }
+
+        }
+    };
 
     @Override
     public boolean onPreferenceClick(Preference preference) {
@@ -288,24 +317,8 @@ public class SettingFragment extends PreferenceFragmentPlus {
             joinQQGroup(groupkey);
         }
         if (PREF_CHECK_UPDATE.equals(key)) {
-            OkhttpUtil.get(URL_HOME_VERSION, new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    Message message = new Message();
-                    message.what = TYPE_SETTING_GET_VERSION_FAILED;
-                    message.obj = e;
-                    handler.sendMessage(message);
-                }
+            checkUpgrade(URL_HOME_VERSION);
 
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    String json = response.body().string();
-                    Message message = new Message();
-                    message.what = TYPE_SETTING_GET_VERSION_OK;
-                    message.obj = json;
-                    handler.sendMessage(message);
-                }
-            });
         }
         if (PREF_DEL_EX.equals(key)) {
             File[] ypks = new File(mSettings.getExpansionsPath().getAbsolutePath()).listFiles();
@@ -332,9 +345,11 @@ public class SettingFragment extends PreferenceFragmentPlus {
                     FileUtils.delFile(mSettings.getExpansionsPath().getAbsolutePath() + "/" + name);
                     DataManager.get().load(true);
                     Toast.makeText(getContext(), R.string.done, Toast.LENGTH_LONG).show();
-                    SharedPreferenceUtil.setExpansionDataVer(null);//删除先行卡后，更新版本状态
-                    ServerUtil.exCardState = ServerUtil.ExCardState.NEED_UPDATE;
-                    EventBus.getDefault().postSticky(new ExCardEvent(ExCardEvent.EventType.exCardPackageChange));//删除后，通知UI做更新
+                    if (name.contains(Constants.officialExCardPackageName)) {//如果删除的是官方先行卡ypk，则更新其相关UI状态
+                        SharedPreferenceUtil.setExpansionDataVer(null);//删除先行卡后，更新版本状态
+                        ServerUtil.exCardState = ServerUtil.ExCardState.NEED_UPDATE;
+                        EventBus.getDefault().postSticky(new ExCardEvent(ExCardEvent.EventType.exCardPackageChange));//删除后，通知UI做更新
+                    }
                 }
                 return true;
             });
@@ -356,7 +371,7 @@ public class SettingFragment extends PreferenceFragmentPlus {
             setPendlumScale(checkBoxPreference.isChecked());
         } else if (PREF_GAME_FONT.equals(key)) {
             //选择ttf字体文件，保存
-            showFileChooser(preference, "*.ttf", mSettings.getFontDirPath(), getString(R.string.dialog_select_font));
+            showFileChooser(preference, "*.ttf", mSettings.getFontDirPath(), getString(R.string.dialog_select_file));
         } else if (SETTINGS_AVATAR.equals(key)) {
             final DialogPlus dialog = new DialogPlus(getContext());
             dialog.setContentView(R.layout.dialog_avatar_select);
@@ -622,22 +637,32 @@ public class SettingFragment extends PreferenceFragmentPlus {
                     FileUtils.delFile(fonts);
                 IOUtils.copyFilesFromAssets(getContext(), getDatapath(Constants.FONT_DIRECTORY), mSettings.getFontDirPath(), true);
                 //根据系统语言复制特定资料文件
-                String language = getContext().getResources().getConfiguration().locale.getLanguage();
-                if (!language.isEmpty()) {
-                    if (mSettings.getDataLanguage() == -1) {
-                        if (language.equals("zh")) {
+                if (mSettings.getDataLanguage() == -1) {//如果未在App中指定语言，则查询系统语言并进行设置
+                    String language = getContext().getResources().getConfiguration().locale.getLanguage();
+                    if (!language.isEmpty()) {
+                        if (language.equals(AppsSettings.languageEnum.Chinese.name)) {
                             mSettings.copyCnData();
-                        } else if (language.equals("ko")) {
+                        } else if (language.equals(AppsSettings.languageEnum.Korean.name)) {
                             mSettings.copyKorData();
+                        } else if (language.equals(AppsSettings.languageEnum.Spanish.name)) {
+                            mSettings.copyEsData();
+                        } else if (language.equals(AppsSettings.languageEnum.Japanese.name)) {
+                            mSettings.copyJpData();
                         } else {
                             mSettings.copyEnData();
                         }
-                    } else {
-                        if (mSettings.getDataLanguage() == 0) mSettings.copyCnData();
-                        if (mSettings.getDataLanguage() == 1) mSettings.copyKorData();
-                        if (mSettings.getDataLanguage() == 2) mSettings.copyEnData();
                     }
+                } else {
+                    if (mSettings.getDataLanguage() == AppsSettings.languageEnum.Chinese.code)
+                        mSettings.copyCnData();
+                    if (mSettings.getDataLanguage() == AppsSettings.languageEnum.Korean.code)
+                        mSettings.copyKorData();
+                    if (mSettings.getDataLanguage() == AppsSettings.languageEnum.English.code)
+                        mSettings.copyEnData();
+                    if (mSettings.getDataLanguage() == AppsSettings.languageEnum.Spanish.code)
+                        mSettings.copyEsData();
                 }
+
                 /*
                 IOUtils.copyFilesFromAssets(this, getDatapath(Constants.CORE_SOUND_PATH),
                         mSettings.getSoundPath(), false);*/
@@ -672,5 +697,42 @@ public class SettingFragment extends PreferenceFragmentPlus {
         }
     }
 
+    public void checkUpgrade(String url) {
+        OkhttpUtil.get(url, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Message message = new Message();
+                message.what = TYPE_SETTING_GET_VERSION_FAILED;
+                message.obj = e;
+                handler.sendMessage(message);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String json = response.body().string();
+                Message message = new Message();
+                message.what = TYPE_SETTING_GET_VERSION_OK;
+                message.obj = json;
+                handler.sendMessage(message);
+            }
+        });
+    }
+
+    private void arrangeCodeList(String code) {
+        BufferedReader br = new BufferedReader(new StringReader(code));
+        try {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] words = line.trim().split("[ ]+");
+                pre_code_list.add(Integer.valueOf(words[0]));
+                released_code_list.add(Integer.valueOf(words[1]));
+
+            }
+        } catch (Exception e) {
+            Log.e(Constants.TAG, e + "");
+        } finally {
+
+        }
+    }
 }
 

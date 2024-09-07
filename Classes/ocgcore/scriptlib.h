@@ -11,9 +11,13 @@
 #include "common.h"
 #include "interpreter.h"
 
+constexpr bool match_all(uint32 x, uint32 y) {
+	return (x & y) == y;
+}
+
 class scriptlib {
 public:
-	static int32 check_param(lua_State* L, int32 param_type, int32 index, BOOL retfalse = FALSE);
+	static int32 check_param(lua_State* L, int32 param_type, int32 index, int32 retfalse = FALSE);
 	static int32 check_param_count(lua_State* L, int32 count);
 	static int32 check_action_permission(lua_State* L);
 	//millux
@@ -38,6 +42,7 @@ public:
 	static int32 duel_load_script(lua_State *L);
 	static int32 duel_reset_time_limit(lua_State *L);
 	static int32 duel_set_summon_cancelable(lua_State *L);
+	static int32 duel_get_random_number(lua_State *L);
 	//card lib
 	static int32 card_get_code(lua_State *L);
 	static int32 card_get_origin_code(lua_State *L);
@@ -51,6 +56,7 @@ public:
 	static int32 card_is_pre_set_card(lua_State *L);
 	static int32 card_is_fusion_set_card(lua_State *L);
 	static int32 card_is_link_set_card(lua_State *L);
+	static int32 card_is_special_summon_set_card(lua_State *L);
 	static int32 card_get_type(lua_State *L);
 	static int32 card_get_origin_type(lua_State *L);
 	static int32 card_get_fusion_type(lua_State *L);
@@ -106,6 +112,7 @@ public:
 	static int32 card_get_previous_race_onfield(lua_State *L);
 	static int32 card_get_previous_attack_onfield(lua_State *L);
 	static int32 card_get_previous_defense_onfield(lua_State *L);
+	static int32 card_get_previous_overlay_count_onfield(lua_State *L);
 	static int32 card_get_owner(lua_State *L);
 	static int32 card_get_controler(lua_State *L);
 	static int32 card_get_previous_controler(lua_State *L);
@@ -132,6 +139,7 @@ public:
 	static int32 card_is_origin_code_rule(lua_State *L);
 	static int32 card_is_code(lua_State *L);
 	static int32 card_is_type(lua_State *L);
+	static int32 card_is_all_types(lua_State *L);
 	static int32 card_is_fusion_type(lua_State *L);
 	static int32 card_is_synchro_type(lua_State *L);
 	static int32 card_is_xyz_type(lua_State *L);
@@ -149,9 +157,11 @@ public:
 	static int32 card_is_non_attribute(lua_State *L);
 	static int32 card_is_extra_deck_monster(lua_State *L);
 	static int32 card_is_reason(lua_State *L);
+	static int32 card_is_all_reasons(lua_State *L);
 	static int32 card_is_summon_type(lua_State *L);
 	static int32 card_is_summon_location(lua_State *L);
 	static int32 card_is_summon_player(lua_State *L);
+	static int32 card_get_special_summon_info(lua_State *L);
 	static int32 card_is_status(lua_State *L);
 	static int32 card_is_not_tuner(lua_State *L);
 	static int32 card_is_tuner(lua_State* L);
@@ -229,6 +239,7 @@ public:
 	static int32 card_is_link_summonable(lua_State *L);
 	static int32 card_is_can_be_summoned(lua_State *L);
 	static int32 card_is_can_be_special_summoned(lua_State *L);
+	static int32 card_is_can_be_placed_on_field(lua_State *L);
 	static int32 card_is_able_to_hand(lua_State *L);
 	static int32 card_is_able_to_grave(lua_State *L);
 	static int32 card_is_able_to_deck(lua_State *L);
@@ -269,6 +280,8 @@ public:
 	static int32 card_is_attack_above(lua_State *L);
 	static int32 card_is_defense_below(lua_State *L);
 	static int32 card_is_defense_above(lua_State *L);
+	static int32 card_is_has_level(lua_State *L);
+	static int32 card_is_has_defense(lua_State *L);
 	static int32 card_is_public(lua_State *L);
 	static int32 card_is_forbidden(lua_State *L);
 	static int32 card_is_able_to_change_controler(lua_State *L);
@@ -376,13 +389,13 @@ public:
 	static int32 group_get_next(lua_State *L);
 	static int32 group_get_first(lua_State *L);
 	static int32 group_get_count(lua_State *L);
-	static int32 group_for_each(lua_State *L);
 	static int32 group_filter(lua_State *L);
 	static int32 group_filter_count(lua_State *L);
 	static int32 group_filter_select(lua_State *L);
 	static int32 group_select(lua_State *L);
 	static int32 group_select_unselect(lua_State *L);
 	static int32 group_random_select(lua_State *L);
+	static int32 group_cancelable_select(lua_State *L);
 	static int32 group_is_exists(lua_State *L);
 	static int32 group_check_with_sum_equal(lua_State *L);
 	static int32 group_select_with_sum_equal(lua_State *L);
@@ -403,6 +416,7 @@ public:
 	static int32 duel_enable_global_flag(lua_State *L);
 	static int32 duel_get_lp(lua_State *L);
 	static int32 duel_set_lp(lua_State *L);
+	static int32 duel_is_turn_player(lua_State *L);
 	static int32 duel_get_turn_player(lua_State *L);
 	static int32 duel_get_turn_count(lua_State *L);
 	static int32 duel_get_draw_count(lua_State *L);
@@ -469,6 +483,7 @@ public:
 	static int32 duel_discard_hand(lua_State *L);
 	static int32 duel_disable_shuffle_check(lua_State *L);
 	static int32 duel_disable_self_destroy_check(lua_State *L);
+	static int32 duel_reveal_select_deck_sequence(lua_State *L);
 	static int32 duel_shuffle_deck(lua_State *L);
 	static int32 duel_shuffle_extra(lua_State *L);
 	static int32 duel_shuffle_hand(lua_State *L);
@@ -499,10 +514,14 @@ public:
 	static int32 duel_get_field_card(lua_State *L);
 	static int32 duel_check_location(lua_State *L);
 	static int32 duel_get_current_chain(lua_State *L);
+	static int32 duel_get_ready_chain(lua_State* L);
 	static int32 duel_get_chain_info(lua_State *L);
 	static int32 duel_get_chain_event(lua_State *L);
 	static int32 duel_get_first_target(lua_State *L);
 	static int32 duel_get_targets_relate_to_chain(lua_State *L);
+	static int32 duel_is_phase(lua_State *L);
+	static int32 duel_is_main_phase(lua_State *L);
+	static int32 duel_is_battle_phase(lua_State *L);
 	static int32 duel_get_current_phase(lua_State *L);
 	static int32 duel_skip_phase(lua_State *L);
 	static int32 duel_is_damage_calculated(lua_State *L);
@@ -572,6 +591,7 @@ public:
 	static int32 duel_get_disable_field(lua_State *L);
 
 	static int32 duel_hint(lua_State *L);
+	static int32 duel_get_last_select_hint(lua_State *L);
 	static int32 duel_hint_selection(lua_State *L);
 	static int32 duel_select_effect_yesno(lua_State *L);
 	static int32 duel_select_yesno(lua_State *L);
@@ -612,6 +632,7 @@ public:
 	static int32 duel_is_player_can_send_to_grave(lua_State *L);
 	static int32 duel_is_player_can_send_to_deck(lua_State *L);
 	static int32 duel_is_player_can_additional_summon(lua_State *L);
+	static int32 duel_is_chain_solving(lua_State *L);
 	static int32 duel_is_chain_negatable(lua_State *L);
 	static int32 duel_is_chain_disablable(lua_State *L);
 	static int32 duel_is_chain_disabled(lua_State *L);

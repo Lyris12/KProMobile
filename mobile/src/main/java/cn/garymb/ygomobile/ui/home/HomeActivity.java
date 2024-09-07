@@ -1,6 +1,10 @@
 package cn.garymb.ygomobile.ui.home;
 
+import static cn.garymb.ygomobile.Constants.ID1;
+import static cn.garymb.ygomobile.Constants.ID2;
+import static cn.garymb.ygomobile.Constants.ID3;
 import static cn.garymb.ygomobile.Constants.URL_HOME_VERSION;
+import static cn.garymb.ygomobile.Constants.URL_HOME_VERSION_ALT;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -8,6 +12,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MenuItem;
@@ -22,9 +27,15 @@ import com.ashokvarma.bottomnavigation.BottomNavigationBar;
 import com.ashokvarma.bottomnavigation.BottomNavigationItem;
 import com.ashokvarma.bottomnavigation.ShapeBadgeItem;
 import com.ashokvarma.bottomnavigation.TextBadgeItem;
+import com.tencent.smtt.export.external.TbsCoreSettings;
 import com.tencent.smtt.sdk.QbSdk;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import cn.garymb.ygomobile.AppsSettings;
 import cn.garymb.ygomobile.Constants;
@@ -51,12 +62,20 @@ import okhttp3.Response;
 
 public abstract class HomeActivity extends BaseActivity implements BottomNavigationBar.OnTabSelectedListener {
 
-    long exitLasttime = 0;
-    public static String Version;
-    public static String Cache_link;
     private static final int TYPE_GET_VERSION_OK = 0;
     private static final int TYPE_GET_VERSION_FAILED = 1;
-
+    public static String Version;
+    public static String Cache_link;
+    public static String Cache_pre_release_code;
+    public static List<Integer> pre_code_list = new ArrayList<>();
+    public static List<Integer> released_code_list = new ArrayList<>();
+    public HomeFragment fragment_home;
+    public CardSearchFragment fragment_search;
+    public DeckManagerFragment fragment_deck_cards;
+    public MycardFragment fragment_mycard;
+    public SettingFragment fragment_settings;
+    public MycardChatFragment fragment_mycard_chatting_room;
+    long exitLasttime = 0;
     private CardLoader cardLoader;
     private ImageLoader imageLoader;
     private BottomNavigationBar bottomNavigationBar;
@@ -64,45 +83,8 @@ public abstract class HomeActivity extends BaseActivity implements BottomNavigat
     private TextBadgeItem mTextBadgeItem;
     private FrameLayout frameLayout;
     private Fragment mFragment;
-
-    public HomeFragment fragment_home;
-    public CardSearchFragment fragment_search;
-    public DeckManagerFragment fragment_deck_cards;
-    public MycardFragment fragment_mycard;
-    public SettingFragment fragment_settings;
-    public MycardChatFragment fragment_mycard_chatting_room;
     private Bundle mBundle;
-
-    @SuppressLint("HandlerLeak")
-    Handler handlerHome = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            switch (msg.what) {
-                case TYPE_GET_VERSION_OK:
-                    Version = msg.obj.toString().substring(0, msg.obj.toString().indexOf("|"));//截取版本号
-                    Cache_link = msg.obj.toString().substring(msg.obj.toString().indexOf("|") + 1);
-                    Log.i(BuildConfig.VERSION_NAME, Version + "和" + Cache_link);
-                    if (!Version.equals(BuildConfig.VERSION_NAME) && !Version.isEmpty() && !Cache_link.isEmpty()) {
-                        DialogPlus dialog = new DialogPlus(getActivity());
-                        dialog.setMessage(R.string.Found_Update);
-                        dialog.setLeftButtonText(R.string.download_home);
-                        dialog.setLeftButtonListener((dlg, s) -> {
-                            Intent intent = new Intent(Intent.ACTION_VIEW);
-                            intent.setData(Uri.parse(Cache_link));
-                            startActivity(intent);
-                            dialog.dismiss();
-                        });
-                        dialog.show();
-                    }
-                    break;
-                case TYPE_GET_VERSION_FAILED:
-                    String error = msg.obj.toString();
-                    break;
-            }
-
-        }
-    };
+    private int FailedCount;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -119,7 +101,7 @@ public abstract class HomeActivity extends BaseActivity implements BottomNavigat
         initQbSdk();
         //
         checkNotch();
-        checkUpgrade();
+        checkUpgrade(URL_HOME_VERSION);
         //showNewbieGuide("homePage");
         initBottomNavigationBar();
         onNewIntent(getIntent());
@@ -194,6 +176,45 @@ public abstract class HomeActivity extends BaseActivity implements BottomNavigat
                 .show();
     }
 
+    @SuppressLint("HandlerLeak")
+    Handler handlerHome = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case TYPE_GET_VERSION_OK:
+                    if (msg.obj.toString().contains(ID1) && msg.obj.toString().contains(ID2) && msg.obj.toString().contains(ID3)) {
+                        Version = msg.obj.toString().substring(msg.obj.toString().indexOf(ID1) + ID1.length(), msg.obj.toString().indexOf(";"));//截取版本号
+                        Cache_link = msg.obj.toString().substring(msg.obj.toString().indexOf(ID2) + ID2.length(), msg.obj.toString().indexOf("$"));//截取下载地址
+                        Cache_pre_release_code = msg.obj.toString().substring(msg.obj.toString().indexOf(ID3) + ID3.length() + 1);//截取先行-正式对照文本
+                        if (!TextUtils.isEmpty(Cache_pre_release_code)) {
+                            arrangeCodeList(Cache_pre_release_code);//转换成两个数组
+                        }
+                        if (Version.compareTo(BuildConfig.VERSION_NAME) > 0 && !TextUtils.isEmpty(Version) && !TextUtils.isEmpty(Cache_link)) {
+                            DialogPlus dialog = new DialogPlus(getActivity());
+                            dialog.setMessage(R.string.Found_Update);
+                            dialog.setLeftButtonText(R.string.download_home);
+                            dialog.setLeftButtonListener((dlg, s) -> {
+                                Intent intent = new Intent(Intent.ACTION_VIEW);
+                                intent.setData(Uri.parse(Cache_link));
+                                startActivity(intent);
+                                dialog.dismiss();
+                            });
+                            dialog.show();
+                        }
+                    }
+                    break;
+                case TYPE_GET_VERSION_FAILED:
+                    ++FailedCount;
+                    if (FailedCount <= 2) {
+                        checkUpgrade(URL_HOME_VERSION_ALT);
+                    }
+                    break;
+            }
+
+        }
+    };
+
     @Override
     public void onTabSelected(int position) {
         switch (position) {
@@ -265,6 +286,10 @@ public abstract class HomeActivity extends BaseActivity implements BottomNavigat
     }
 
     private void initQbSdk() {
+        HashMap map = new HashMap();
+        map.put(TbsCoreSettings.TBS_SETTINGS_USE_SPEEDY_CLASSLOADER, true);
+        map.put(TbsCoreSettings.TBS_SETTINGS_USE_DEXLOADER_SERVICE, true);
+        QbSdk.initTbsSettings(map);
         QbSdk.PreInitCallback cb = new QbSdk.PreInitCallback() {
             @Override
             public void onViewInitFinished(boolean arg0) {
@@ -290,10 +315,10 @@ public abstract class HomeActivity extends BaseActivity implements BottomNavigat
         }
     }
 
-
     @Override
     protected void onResume() {
         super.onResume();
+        ServerUtil.initExCardState();//检查扩展卡版本
     }
 
     @Override
@@ -306,9 +331,11 @@ public abstract class HomeActivity extends BaseActivity implements BottomNavigat
         super.onStart();
 
     }
+
     public CardLoader getCardLoader() {
         return cardLoader;
     }
+
     public ImageLoader getImageLoader() {
         return imageLoader;
     }
@@ -374,8 +401,8 @@ public abstract class HomeActivity extends BaseActivity implements BottomNavigat
 
     protected abstract void openGame();
 
-    public void checkUpgrade() {
-        OkhttpUtil.get(URL_HOME_VERSION, new Callback() {
+    public void checkUpgrade(String url) {
+        OkhttpUtil.get(url, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
                 Message message = new Message();
@@ -393,6 +420,22 @@ public abstract class HomeActivity extends BaseActivity implements BottomNavigat
                 handlerHome.sendMessage(message);
             }
         });
+    }
+
+    private void arrangeCodeList(String code) {
+        BufferedReader br = new BufferedReader(new StringReader(code));
+        try {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] words = line.trim().split("[\t ]+");
+                pre_code_list.add(Integer.valueOf(words[0]));
+                released_code_list.add(Integer.valueOf(words[1]));
+
+            }
+        } catch (Exception e) {
+            Log.e(Constants.TAG, e + "");
+        } finally {
+        }
     }
 
 }

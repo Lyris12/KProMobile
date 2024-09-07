@@ -105,6 +105,15 @@
                 <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\.yrp" />
                 <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\..*\.yrp" />
                 <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\..*\..*\.yrp" />
+                <data android:pathPattern=".*\.conf" />
+                <data android:pathPattern=".*\..*\.conf" />
+                <data android:pathPattern=".*\..*\..*\.conf" />
+                <data android:pathPattern=".*\..*\..*\..*\.conf" />
+                <data android:pathPattern=".*\..*\..*\..*\..*\.conf" />
+                <data android:pathPattern=".*\..*\..*\..*\..*\..*\.conf" />
+                <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\.conf" />
+                <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\..*\.conf" />
+                <data android:pathPattern=".*\..*\..*\..*\..*\..*\..*\..*\..*\.conf" />
             </intent-filter>
 
             <intent-filter>
@@ -152,12 +161,11 @@
             android:theme="@style/AppTheme.Mycard"
             android:launchMode="singleTop"
             />
-        <!-- 为防止Service被系统回收，可以尝试通过提高服务的优先级解决，1000是最高优先级，数字越小，优先级越低 -->
-        <!--android:priority="1000"-->
         <service
-            android:name="com.ourygo.assistant.service.DuelAssistantService"
-            android:priority="1000" />
-
+            android:name="com.tencent.smtt.export.external.DexClassLoaderProviderService"
+            android:label="dexopt"
+            android:process=":dexopt" >
+        </service>
         <!-- 如果已经安装过原版YGOMobile，请注释掉或修改成其他，否则会导致无法安装 -->
         <provider
             android:name="cn.garymb.ygomobile.ui.settings.YGOPreferencesProvider"
@@ -173,11 +181,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-
-        <service
-            android:name="com.tencent.smtt.export.external.DexClassLoaderProviderService"
-            android:label="dexopt"
-            android:process=":dexopt" />
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -187,16 +190,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission
-        android:name="android.permission.READ_LOGS"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission
         android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <uses-sdk tools:overrideLibrary="com.toptoche.searchablespinnerlibrary" />
 </manifest>

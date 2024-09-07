@@ -1,6 +1,12 @@
 package cn.garymb.ygomobile.utils;
 
 
+import android.text.TextUtils;
+
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class StringUtils {
     /**
      * 半角转全角
@@ -43,4 +49,58 @@ public class StringUtils {
 
         return returnString;
     }
+
+    /**
+     * 检查字符串是否是纯数字
+     */
+    public static boolean isNumeric(String str) {
+        for (int i = 0; i < str.length(); i++) {
+            if (!Character.isDigit(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 检查字符串是否是域名
+     */
+    public static boolean isHost(String hostStr) {
+        if (TextUtils.isEmpty(hostStr)) {
+            return false;
+        }
+
+        boolean isurl = false;
+        String regex = "(((https|http)?://)?([a-z0-9]+[.])|(www.))"
+                + "\\w+[.|\\/]([a-z0-9]{0,})?[[.]([a-z0-9]{0,})]+((/[\\S&&[^,;\u4E00-\u9FA5]]+)+)?([.][a-z0-9]{0,}+|/?)";//设置正则表达式
+
+        Pattern pat = Pattern.compile(regex.trim());//比对
+        Matcher mat = pat.matcher(hostStr.trim());
+        isurl = mat.matches();//判断是否匹配
+        if (isurl) {
+            isurl = true;
+        }
+        return isurl;
+    }
+
+
+    /**
+     * 使用分隔符，将List<String>合为一个String
+     */
+    public static String mergeListDelimeter(List<String> list) {
+        if (list == null || list.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder stringBuilder = new StringBuilder();
+
+        for (int i = 0; i < list.size() - 1; i++) {
+            stringBuilder.append(list.get(i));
+            stringBuilder.append("|");
+        }
+        stringBuilder.append(list.get(list.size() - 1));
+        return stringBuilder.toString();
+
+    }
+
 }

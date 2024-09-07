@@ -1,11 +1,12 @@
 package cn.garymb.ygomobile.ex_card;
 
+import android.content.Context;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ExpandableListView;
+import android.widget.LinearLayout;
 
 import androidx.fragment.app.Fragment;
 
@@ -20,13 +21,19 @@ import java.util.regex.Pattern;
 
 import cn.garymb.ygomobile.Constants;
 import cn.garymb.ygomobile.lite.R;
+import cn.garymb.ygomobile.ui.activities.WebActivity;
 import cn.garymb.ygomobile.ui.plus.DialogPlus;
 import cn.garymb.ygomobile.ui.plus.VUiKit;
+import cn.garymb.ygomobile.utils.LogUtil;
 
-public class ExCardLogFragment extends Fragment {
-
-
+/**
+ * 配合cn.garymb.ygomobile.ex_card.ExCardLogAdapter，实现展示先行卡更新日志的页面，暂不使用。
+ */
+public class ExCardLogFragment extends Fragment implements View.OnClickListener {
+    private static final String TAG = String.valueOf(ExCardLogFragment.class);
+    private Context mContext;
     private View layoutView;
+    private LinearLayout ll_report;
     private ExCardLogAdapter mExCardLogAdapter;
     private ExpandableListView mExCardLogView;
 
@@ -36,6 +43,7 @@ public class ExCardLogFragment extends Fragment {
                              Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         layoutView = inflater.inflate(R.layout.fragment_ex_card_log, container, false);
+        this.mContext = getContext();
         initView(layoutView);
         loadData();
         return layoutView;
@@ -45,6 +53,8 @@ public class ExCardLogFragment extends Fragment {
         mExCardLogView = layoutView.findViewById(R.id.expandableListView);
         mExCardLogAdapter = new ExCardLogAdapter(getContext());
         mExCardLogView.setAdapter(mExCardLogAdapter);
+        ll_report = layoutView.findViewById(R.id.btn_report);
+        ll_report.setOnClickListener(this);
 
     }
 
@@ -93,7 +103,7 @@ public class ExCardLogFragment extends Fragment {
                 }
             }
 
-            Log.i("webCrawler", "webCrawler fail");
+            LogUtil.i(TAG, "webCrawler fail");
         }).done(exCardLogList -> {
             mExCardLogAdapter.setData(exCardLogList);
             mExCardLogAdapter.notifyDataSetChanged();
@@ -102,7 +112,7 @@ public class ExCardLogFragment extends Fragment {
             mExCardLogView.expandGroup(1);
             mExCardLogView.expandGroup(2);
             if (exCardLogList != null) {
-                Log.i("webCrawler", "webCrawler parse html complete");
+                LogUtil.i(TAG, "webCrawler parse html complete");
             }
             //关闭异常
             if (dialog_read_ex.isShowing()) {
@@ -114,4 +124,12 @@ public class ExCardLogFragment extends Fragment {
         });
     }
 
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.btn_report:
+                WebActivity.open(mContext, getString(R.string.ex_card_report_title), Constants.URL_YGO233_BUG_REPORT);
+                break;
+        }
+    }
 }

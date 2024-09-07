@@ -9,7 +9,6 @@ import android.text.Editable;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
@@ -169,7 +168,7 @@ public class YGODialogUtil {
                     try {
                         deckList.addAll(0, DeckUtil.getExpansionsDeckList());//置顶ypk缓存的cacheDeck下的先行卡ydk
                     } catch (IOException e) {
-                        YGOUtil.show("额外卡库加载失败,原因为" + e);
+                        YGOUtil.showTextToast("额外卡库加载失败,原因为" + e);
                     }
                 }
             }
@@ -186,9 +185,11 @@ public class YGODialogUtil {
                     if (position == 0) {
                         if (AppsSettings.get().isReadExpansions()) {
                             try {
-                                deckList.addAll(0, DeckUtil.getExpansionsDeckList());
+                                if (!DeckUtil.getExpansionsDeckList().isEmpty()) {
+                                    deckList.addAll(0, DeckUtil.getExpansionsDeckList());
+                                }
                             } catch (IOException e) {
-                                YGOUtil.show("额外卡库加载失败,原因为" + e);
+                                YGOUtil.showTextToast("额外卡库加载失败,原因为" + e);
                             }
                         }
                     }
@@ -316,7 +317,7 @@ public class YGODialogUtil {
                                 builder.setLeftButtonListener((dlg, s) -> {
                                     CharSequence catename = editText.getText();
                                     if (TextUtils.isEmpty(catename)) {
-                                        YGOUtil.show(context.getString(R.string.invalid_category_name));
+                                        YGOUtil.showTextToast(context.getString(R.string.invalid_category_name));
                                         return;
                                     }
                                     File file = new File(AppsSettings.get().getDeckDir(), catename.toString());
@@ -325,7 +326,7 @@ public class YGODialogUtil {
                                         typeAdp.notifyItemInserted(typeList.size() - 1);
                                         dlg.dismiss();
                                     } else {
-                                        YGOUtil.show(context.getString(R.string.create_new_failed));
+                                        YGOUtil.showTextToast(context.getString(R.string.create_new_failed));
                                     }
                                 });
                                 builder.show();
@@ -370,7 +371,7 @@ public class YGODialogUtil {
                         }
                         deckList.remove(deckFile);
                     }
-                    YGOUtil.show(context.getString(R.string.done));
+                    YGOUtil.showTextToast(context.getString(R.string.done));
                     onDeckMenuListener.onDeckMove(deckAdp.getSelectList(), toType);
                     clearDeckSelect();
                     dialog.dismiss();
@@ -405,7 +406,7 @@ public class YGODialogUtil {
                             e.printStackTrace();
                         }
                     }
-                    YGOUtil.show(context.getString(R.string.done));
+                    YGOUtil.showTextToast(context.getString(R.string.done));
                     onDeckMenuListener.onDeckCopy(deckAdp.getSelectList(), toType);
                     clearDeckSelect();
                     dialog.dismiss();
@@ -417,7 +418,7 @@ public class YGODialogUtil {
                 @Override
                 public void onClick(View v) {
                     if (deckAdp.getSelectList().size() == 0) {
-                        YGOUtil.show(context.getString(R.string.no_deck_is_selected));
+                        YGOUtil.showTextToast(context.getString(R.string.no_deck_is_selected));
                         return;
                     }
                     DialogPlus dialogPlus = new DialogPlus(context);
@@ -432,7 +433,7 @@ public class YGODialogUtil {
                                 deckFile.getPathFile().delete();
                                 deckList.remove(deckFile);
                             }
-                            YGOUtil.show(context.getString(R.string.done));
+                            YGOUtil.showTextToast(context.getString(R.string.done));
                             dialogPlus.dismiss();
                             onDeckMenuListener.onDeckDel(selectDeckList);
                             clearDeckSelect();
@@ -478,7 +479,7 @@ public class YGODialogUtil {
                         }
                     }
                     IOUtils.delete(file);
-                    YGOUtil.show(context.getString(R.string.done));
+                    YGOUtil.showTextToast(context.getString(R.string.done));
                     onDeckMenuListener.onDeckDel(deckFileList);
                     typeAdp.remove(positon);
                     if (typeAdp.getSelectPosition() == positon) {

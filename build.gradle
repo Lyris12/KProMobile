@@ -8,16 +8,17 @@ buildscript {
         maven { url'https://maven.aliyun.com/repository/central/' }
         maven { url 'https://repo1.maven.org/maven2/' }
         mavenCentral()
+        google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.4.2'
+        classpath 'com.android.tools.build:gradle:8.0.2'
         classpath 'com.android.tools.build:gradle-experimental:0.11.1'
         //classpath 'me.tatarka:gradle-retrolambda:3.2.5'
     }
 }
 
 ext {
-    compileSdkVersion = 31
+    compileSdkVersion = 33
     //buildToolsVersion = compileSdkVersion+".0.0"
     supportVersion = "30.0.0"
 }
@@ -34,6 +35,7 @@ allprojects {
         maven {
             url 'https://oss.sonatype.org/content/repositories/snapshots'
         }
+        google()
     }
 }
 

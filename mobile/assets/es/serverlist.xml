@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<servers>
+    <version>2</version>
+
+    <server>
+        <player-name>Knight of Hanoi</player-name>
+        <name>Mycard_Superpre☆needs download expansions</name>
+        <desc>mycard‘s server within expansions cards</desc>
+        <ip>mygo.superpre.pro</ip>
+        <port>888</port>
+        <keep>true</keep>
+    </server>
+    <server>
+        <player-name>Knight of Hanoi</player-name>
+        <name>Mycard_Superpre(2)☆needs download expansions</name>
+        <desc>mycard‘s server within expansions cards</desc>
+        <ip>mygo.superpre.pro</ip>
+        <port>888</port>
+        <keep>true</keep>
+    </server>
+    <server>
+        <player-name>Knight of Hanoi</player-name>
+        <name>Evolution TCG Server</name>
+        <desc>TCG environments</desc>
+        <ip>server.evolutionygo.com</ip>
+        <port>7711</port>
+        <keep>true</keep>
+    </server>
+     <server>
+        <player-name>Knight of Hanoi</player-name>
+        <name>Koishi TCG Server</name>
+        <desc>TCG</desc>
+        <ip>koishi.momobako.com</ip>
+        <port>1311</port>
+        <keep>true</keep>
+    </server>
+    <server>
+        <player-name>Knight of Hanoi</player-name>
+        <name>Koishi OCG Server</name>
+        <desc>OCG</desc>
+        <ip>koishi.momobako.com</ip>
+        <port>7210</port>
+        <keep>true</keep>
+    </server>
+    <server>
+        <player-name>Knight of Hanoi</player-name>
+        <name>Mercury233 OCG</name>
+        <desc>unknow upgrade time</desc>
+        <ip>s1.ygo233.com</ip>
+        <port>233</port>
+        <keep>true</keep>
+    </server>
+    <server>
+        <player-name>Knight of Hanoi</player-name>
+        <name>Duel Chronicles</name>
+        <desc>use random deck to duel</desc>
+        <ip>2333.duelstart.com</ip>
+        <port>2333</port>
+        <keep>true</keep>
+    </server>
+    <server>
+        <player-name>Knight of Hanoi</player-name>
+        <name>2Pick</name>
+        <desc>build new deck to duel</desc>
+        <ip>2pick.mycard.moe</ip>
+        <port>765</port>
+        <keep>true</keep>
+    </server>
+</servers>

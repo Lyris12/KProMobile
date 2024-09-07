@@ -19,7 +19,7 @@
     <string name="game_sound">sound files</string>
     <string name="game_skins">skin files</string>
     <string name="coping_pendulum_image">Coping pendulum image</string>
-    <string name="dialog_select_font">Select a font file</string>
+    <string name="dialog_select_file">Select a file</string>
     <string name="dialog_select_image">Select a iamge</string>
     <string name="dialog_select_database">Select a database file</string>
     <string name="copy_databse">copying databse</string>
@@ -46,9 +46,12 @@
     <string name="string_help_text">The current application lacks the necessary permissions. \n
         please click Settings - permissions - open the required permissions.</string>
     <string name="fetch_ex_card">Fetching pre-cards via web</string>
+    <string name="ex_card_list_title">Card List</string>
     <string name="ex_card_log_title">update log</string>
+    <string name="ex_card_report_title">Reoprt</string>
     <string name="ex_card_check_toast_message">before join in this server, please "used Expansions" in settings first</string>
     <string name="ex_card_check_toast_message_ii">before join in this server, please download expansions first</string>
+    <string name="ex_card_check_toast_message_iii">obtain expansion cards failed, opening 233 website to download now.</string>
     <!-- settings -->
     <string name="settings_about">About</string>
     <string name="settings_about_sub_about">About</string>
@@ -76,7 +79,8 @@
     <string name="settings_game_immersive_mode">Optimize not 16:9 resolution</string>
     <string name="settings_game_opengl">OpenGL</string>
     <string name="settings_game_avatar">Game Avatar</string>
-    <string name="settings_author" translatable="false">菜菜、暗星</string>
+    <string name="settings_author" translatable="false">菜菜、暗星\n浙ICP备2023031884号-2A
+</string>
     <string name="restart_app">"Please restart app！"</string>
     <string-array name="opengl_version">
         <item>OpenGL ES 1.X</item>
@@ -91,6 +95,8 @@
         <item>简体中文</item>
         <item>조선말</item>
         <item>English</item>
+        <item>Español</item>
+        <item>日本語</item>
     </string-array>
     <string-array name="screen_top_bottom_desc" translatable="false">
         <item>Disable</item>
@@ -103,6 +109,7 @@
 
     <string name="server_list">Duel Servers</string>
     <string name="server_name">Name:</string>
+    <string name="server_desc">Note:</string>
     <string name="server_ip">Host:</string>
     <string name="server_user">User:</string>
     <string name="server_room_name">Room Name:</string>
@@ -112,6 +119,7 @@
     <string name="server_info_edit">Server Info Edit</string>
     <string name="save">Save</string>
     <string name="must_info">must info</string>
+    <string name="optional_info">optional info</string>
     <string name="server_is_exist">the server is exist</string>
     <string name="server_info_error">server info is bad.</string>
     <string name="card_search">Card Search</string>
@@ -261,6 +269,8 @@
     <string name="Checking_Update">Now Checking Update</string>
     <string name="Found_Update">New upGrade is Founded, Download?</string>
     <string name="Checking_Update_Failed">Checking Update Failed</string>
+    <string name="Download_Precard_Failed">Download pre-cards failed</string>
+    <string name="Pre_Server_Name">Mycard Super-pre Server</string>
     <string name="Ask_to_Change_Other_Way">trying other way...</string>
     <string name="DuelAssistant">DuelAssiatant is On</string>
     <string name="masterrule">Master Rule</string>
@@ -355,6 +365,10 @@
     <string name="reChatJoining">relogining\.\.\.</string>
     <string name="settings_data_language">Language</string>
     <string name="settings_data_language_about">change language of YGOPro UI and card database </string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="find_in_page">find:</string>
+    <string name="tip_card_info_diff">Released and Pre-released Cards are different,pls note after patch them</string>
+    <string name="tip_deckInfo_isNot_completeDeck">Card info Exception! Tried to become exsisted Card Info</string>
+    <string name="tip_ygopro_is_running">ygopro is running now. unable to create a new duel before it is closed. \nthe room password has been recorded in record list.\npls close ygopro and rejoin room through the record of room password</string>
+    <string name="tip_ypk_is_deleted">Please upgrade pre-released cards at once</string>
+    <string name="tip_superpre_desc">fastest upgrade. download expansions</string>
 </resources>

@@ -26,6 +26,7 @@ import cn.garymb.ygomobile.ui.plus.VUiKit;
 import cn.garymb.ygomobile.utils.IOUtils;
 import cn.garymb.ygomobile.utils.SystemUtils;
 import cn.garymb.ygomobile.utils.XmlUtils;
+import ocgcore.StringManager;
 
 public class ServerListManager {
     private final ServerListAdapter mAdapter;
@@ -110,6 +111,7 @@ public class ServerListManager {
             ServerInfo serverInfo = mAdapter.getItem(position);
             if (serverInfo != null) {
                 editViewHolder.serverName.setText(serverInfo.getName());
+                editViewHolder.serverDesc.setText(serverInfo.getDesc());
                 editViewHolder.serverIp.setText(serverInfo.getServerAddr());
                 editViewHolder.userName.setText(serverInfo.getPlayerName());
                 editViewHolder.serverPort.setText(String.valueOf(serverInfo.getPort()));
@@ -118,16 +120,16 @@ public class ServerListManager {
         }
         dialog.setLeftButtonListener((dlg, v) -> {
             //保存
-            String serverName = "" + editViewHolder.serverName.getText();
             ServerInfo info;
             if (!isAdd) {
                 info = mAdapter.getItem(position);
             } else {
                 info = new ServerInfo();
             }
-            info.setName("" + serverName);
-            info.setServerAddr("" + editViewHolder.serverIp.getText());
-            info.setPlayerName("" + editViewHolder.userName.getText());
+            info.setName(("" + editViewHolder.serverName.getText()).trim());
+            info.setDesc(("" + editViewHolder.serverDesc.getText()).trim());
+            info.setServerAddr(("" + editViewHolder.serverIp.getText()).trim());
+            info.setPlayerName(("" + editViewHolder.userName.getText()).trim());
             if (TextUtils.isEmpty(info.getName())
                     || TextUtils.isEmpty(info.getServerAddr())
                     || TextUtils.isEmpty(editViewHolder.serverPort.getText())) {

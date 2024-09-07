@@ -18,7 +18,7 @@
     <string name="game_sound">사운드 파일</string>
     <string name="game_skins">스킨 파일</string>
     <string name="coping_pendulum_image">펜듈럼 스케일 이미지 복사</string>
-    <string name="dialog_select_font">폰트 파일을 선택하세요</string>
+    <string name="dialog_select_file">파일을 선택하세요</string>
     <string name="dialog_select_image">이미지를 선택하세요</string>
     <string name="dialog_select_database">데이터베이스 파일을 선택하세요</string>
     <string name="copy_databse">데이터베이스 파일 복사중</string>
@@ -39,9 +39,12 @@
     <string name="back_tip">뒤로가기 키를 한번 더 누르시면 앱이 종료됩니다</string>
     <string name="string_help_text">현재 앱에 필요한 권한이 없습니다. \n설정 - 권한 - 필요한 권한 얻기를 터치하십시오.</string>
     <string name="fetch_ex_card">웹에서 프리릴리즈 카드 팩 가져오기</string>
+    <string name="ex_card_list_title">카드 목록</string>
     <string name="ex_card_log_title">업데이트 기록</string>
+    <string name="ex_card_report_title">보고</string>
     <string name="ex_card_check_toast_message">이 서버에 들어가기 전에 먼저 설정에서 "프리릴리즈 카드 팩 활성화"를 클릭하십시오.</string>
     <string name="ex_card_check_toast_message_ii">이 서버에 들어가기 전에 먼저 프리릴리즈 카드 팩을 다운로드하십시오.</string>
+    <string name="ex_card_check_toast_message_iii">obtain expansion cards failed, opening 233 website to download now.</string>
 
     <!-- settings -->
     <string name="settings_about">정보</string>
@@ -83,10 +86,13 @@
         <item>简体中文</item>
         <item>한글</item>
         <item>English</item>
+        <item>Español</item>
+        <item>日本語</item>
     </string-array>
     <!-- settings -->
     <string name="server_list">다이렉트 듀얼</string>
     <string name="server_name">이름:</string>
+    <string name="server_desc">비고:</string>
     <string name="server_ip">호스트 정보:</string>
     <string name="server_user">별명:</string>
     <string name="server_room_name">방 비밀번호:</string>
@@ -96,6 +102,7 @@
     <string name="server_info_edit">서버 정보 편집</string>
     <string name="save">저장</string>
     <string name="must_info">필수 입력</string>
+    <string name="optional_info">선택 사항 </string>
     <string name="server_is_exist">서버 정보가 이미 존재합니다!</string>
     <string name="server_info_error">서버 정보가 올바르지 않습니다</string>
     <string name="card_search">카드 검색</string>
@@ -347,4 +354,12 @@
     <string name="reChatJoining">다시 로그인 중\.\.\.</string>
     <string name="settings_data_language">언어</string>
     <string name="settings_data_language_about">게임 데이터 언어를 변경합니다.</string>
+    <string name="find_in_page">" 발견:"</string>
+    <string name="tip_card_info_diff">몇몇 특수한 카드들을 제외하고 8자리 코드번호를 초과하는 카드들은 프리릴리즈 카드로, 프리릴리즈카드를 허용하는 서버 에서만 사용이 가능합니다.</string>
+    <string name="tip_deckInfo_isNot_completeDeck">Card info Exception! Tried to become exsisted Card Info</string>
+    <string name="tip_ygopro_is_running">ygopro is running now. unable to create a new duel before it is closed. \nthe room password has been recorded in record list.\npls close ygopro and rejoin room through the record of room password</string>
+    <string name="Download_Precard_Failed">Download pre-cards failed</string>
+    <string name="Pre_Server_Name">Mycard Super-pre Server</string>
+    <string name="tip_ypk_is_deleted">Please upgrade pre-released cards at once</string>
+    <string name="tip_superpre_desc">Please upgrade pre-released cards at once</string>
 </resources>

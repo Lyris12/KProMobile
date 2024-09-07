@@ -22,11 +22,13 @@ import cn.garymb.ygomobile.utils.IOUtils;
 import ocgcore.data.LimitList;
 
 public class LimitManager implements Closeable {
+    /* key为时间，如“2023.7” ，value为禁止卡、限制卡、准限制卡的列表 */
     private final Map<String, LimitList> mLimitLists = new HashMap<>();
+    /* 只存储key的列表，其元素形如“2023.7” */
     private final List<String> mLimitNames = new ArrayList<>();
     private int mCount;
 
-    LimitManager() {
+    public LimitManager() {
 
     }
 
@@ -74,6 +76,12 @@ public class LimitManager implements Closeable {
         return rs1 && rs2;
     }
 
+    /**
+     * 解析限制卡配置文件lflist.conf的内容
+     *
+     * @param file
+     * @return
+     */
     public boolean loadFile(File file) {
         if (file.isDirectory() || !file.exists()) {
             return false;
