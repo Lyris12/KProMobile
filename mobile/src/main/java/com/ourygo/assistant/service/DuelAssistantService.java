@@ -231,7 +231,7 @@ public class DuelAssistantService extends Service implements OnDuelAssistantList
                 Deck deckInfo = new Deck(getString(R.string.rename_deck) + System.currentTimeMillis(), Uri.parse(deckMessage));
                 File file = deckInfo.saveTemp(AppsSettings.get().getDeckDir());
                 if (!deckInfo.isCompleteDeck()){
-                    YGOUtil.show("当前卡组缺少完整信息，将只显示已有卡片");
+                    YGOUtil.showTextToast("当前卡组缺少完整信息，将只显示已有卡片");
                 }
 
                 startSetting.putExtra("flag", 2);

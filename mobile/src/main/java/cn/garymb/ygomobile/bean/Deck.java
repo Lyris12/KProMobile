@@ -1,7 +1,6 @@
 package cn.garymb.ygomobile.bean;
 
 import static cn.garymb.ygomobile.Constants.ARG_DECK;
-import static cn.garymb.ygomobile.Constants.NUM_40_LIST;
 import static cn.garymb.ygomobile.Constants.QUERY_DECK;
 import static cn.garymb.ygomobile.Constants.QUERY_EXTRA_ALL;
 import static cn.garymb.ygomobile.Constants.QUERY_MAIN_ALL;
@@ -440,25 +439,11 @@ public class Deck implements Parcelable {
 
     //压缩卡密,目前直接转换为40进制
     private String compressedId(int id) {
-        StringBuilder compressedId1 = new StringBuilder();
-
-        while (id > 40) {
-            compressedId1.insert(0, NUM_40_LIST[id % 40]);
-            id /= 40;
-        }
-        compressedId1.insert(0, NUM_40_LIST[id]);
-        if (compressedId1.length() < 5)
-            for (int i = compressedId1.length(); i < 5; i++)
-                compressedId1.insert(0, "0");
-        return compressedId1.toString();
+        return "";
     }
 
 
     private int getCardIdUnCompressedId(String compressedNum) {
-        for (int i = 0; i < NUM_40_LIST.length; i++) {
-            if (compressedNum.equals(NUM_40_LIST[i]))
-                return i;
-        }
         return 0;
     }
 

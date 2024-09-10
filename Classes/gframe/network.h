@@ -271,27 +271,27 @@ public:
 #define CTOS_HS_START		0x25	// no data
 #define CTOS_REQUEST_FIELD	0x30
 
-#define STOC_GAME_MSG		0x1
-#define STOC_ERROR_MSG		0x2
-#define STOC_SELECT_HAND	0x3
-#define STOC_SELECT_TP		0x4
-#define STOC_HAND_RESULT	0x5
-#define STOC_TP_RESULT		0x6
-#define STOC_CHANGE_SIDE	0x7
-#define STOC_WAITING_SIDE	0x8
-#define STOC_DECK_COUNT		0x9
-#define STOC_CREATE_GAME	0x11
-#define STOC_JOIN_GAME		0x12
-#define STOC_TYPE_CHANGE	0x13
-#define STOC_LEAVE_GAME		0x14
-#define STOC_DUEL_START		0x15
-#define STOC_DUEL_END		0x16
-#define STOC_REPLAY			0x17
-#define STOC_TIME_LIMIT		0x18
-#define STOC_CHAT			0x19
-#define STOC_HS_PLAYER_ENTER	0x20
-#define STOC_HS_PLAYER_CHANGE	0x21
-#define STOC_HS_WATCH_CHANGE	0x22
+#define STOC_GAME_MSG		0x1		// byte array
+#define STOC_ERROR_MSG		0x2		// STOC_ErrorMsg
+#define STOC_SELECT_HAND	0x3		// no data
+#define STOC_SELECT_TP		0x4		// no data
+#define STOC_HAND_RESULT	0x5		// STOC_HandResult
+#define STOC_TP_RESULT		0x6		// reserved
+#define STOC_CHANGE_SIDE	0x7		// no data
+#define STOC_WAITING_SIDE	0x8		// no data
+#define STOC_DECK_COUNT		0x9		// int16_t[6]
+#define STOC_CREATE_GAME	0x11	// reserved
+#define STOC_JOIN_GAME		0x12	// STOC_JoinGame
+#define STOC_TYPE_CHANGE	0x13	// STOC_TypeChange
+#define STOC_LEAVE_GAME		0x14	// reserved
+#define STOC_DUEL_START		0x15	// no data
+#define STOC_DUEL_END		0x16	// no data
+#define STOC_REPLAY			0x17	// ReplayHeader + byte array
+#define STOC_TIME_LIMIT		0x18	// STOC_TimeLimit
+#define STOC_CHAT			0x19	// uint16_t + uint16_t array
+#define STOC_HS_PLAYER_ENTER	0x20	// STOC_HS_PlayerEnter
+#define STOC_HS_PLAYER_CHANGE	0x21	// STOC_HS_PlayerChange
+#define STOC_HS_WATCH_CHANGE	0x22	// STOC_HS_WatchChange
 #define STOC_TEAMMATE_SURRENDER	0x23	// no data
 #define STOC_FIELD_FINISH		0x30
 #define STOC_SRVPRO_ROOMLIST	0x31

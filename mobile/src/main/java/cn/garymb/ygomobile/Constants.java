@@ -158,12 +158,7 @@ public interface Constants {
     String URL_DONATE = "https://afdian.com/@ygomobile";
     String URL_MASTER_RULE_CN = "https://ocg-rule.readthedocs.io/";
     String WIKI_SEARCH_URL = "https://yugipedia.com/wiki/";
-    String URL_HOME_VERSION = "https://ygomobile.top/verndwnload.txt";
     String URL_YGO233_DOWNLOAD_LINK = "https://ygo233.com/download/ygomobile";
-    String URL_YGO233_ADVANCE = "https://ygo233.com/pre";
-    String URL_YGO233_DATAVER = "https://ygo233.com/pre/dataver";
-    String URL_YGO233_FILE = "https://ygo233.com/pre/download-ygomobile";
-    String URL_YGO233_FILE_ALT = "https://ygo233.com/pre/download-ygomobile/alt";
     int PORT_YGO233 = 23333;
     String URL_YGO233_1 = "s1.ygo233.com";
     String URL_YGO233_2 = "s2.ygo233.com";
