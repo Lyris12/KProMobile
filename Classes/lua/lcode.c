@@ -415,7 +415,7 @@ int luaK_codeABx (FuncState *fs, OpCode o, int a, unsigned int bc) {
 /*
 ** Format and emit an 'iAsBx' instruction.
 */
-static int codeAsBx (FuncState *fs, OpCode o, int a, int bc) {
+int luaK_codeAsBx (FuncState *fs, OpCode o, int a, int bc) {
   unsigned int b = bc + OFFSET_sBx;
   lua_assert(getOpMode(o) == iAsBx);
   lua_assert(a <= MAXARG_A && b <= MAXARG_Bx);
@@ -671,7 +671,7 @@ static int fitsBx (lua_Integer i) {
 
 void luaK_int (FuncState *fs, int reg, lua_Integer i) {
   if (fitsBx(i))
-    codeAsBx(fs, OP_LOADI, reg, cast_int(i));
+    luaK_codeAsBx(fs, OP_LOADI, reg, cast_int(i));
   else
     luaK_codek(fs, reg, luaK_intK(fs, i));
 }
@@ -680,7 +680,7 @@ void luaK_int (FuncState *fs, int reg, lua_Integer i) {
 static void luaK_float (FuncState *fs, int reg, lua_Number f) {
   lua_Integer fi;
   if (luaV_flttointeger(f, &fi, F2Ieq) && fitsBx(fi))
-    codeAsBx(fs, OP_LOADF, reg, cast_int(fi));
+    luaK_codeAsBx(fs, OP_LOADF, reg, cast_int(fi));
   else
     luaK_codek(fs, reg, luaK_numberK(fs, f));
 }
@@ -776,8 +776,7 @@ void luaK_dischargevars (FuncState *fs, expdesc *e) {
       break;
     }
     case VLOCAL: {  /* already in a register */
-      int temp = e->u.var.ridx;
-      e->u.info = temp;  /* (can't do a direct assignment; values overlap) */
+      e->u.info = e->u.var.ridx;
       e->k = VNONRELOC;  /* becomes a non-relocatable value */
       break;
     }
@@ -1026,7 +1025,7 @@ static int luaK_exp2K (FuncState *fs, expdesc *e) {
 ** in the range of R/K indices).
 ** Returns 1 iff expression is K.
 */
-static int exp2RK (FuncState *fs, expdesc *e) {
+int luaK_exp2RK (FuncState *fs, expdesc *e) {
   if (luaK_exp2K(fs, e))
     return 1;
   else {  /* not a constant in the right range: put it in a register */
@@ -1038,7 +1037,7 @@ static int exp2RK (FuncState *fs, expdesc *e) {
 
 static void codeABRK (FuncState *fs, OpCode o, int a, int b,
                       expdesc *ec) {
-  int k = exp2RK(fs, ec);
+  int k = luaK_exp2RK(fs, ec);
   luaK_codeABCk(fs, o, a, b, ec->u.info, k);
 }
 
@@ -1216,7 +1215,7 @@ static void codenot (FuncState *fs, expdesc *e) {
 
 
 /*
-** Check whether expression 'e' is a short literal string
+** Check whether expression 'e' is a small literal string
 */
 static int isKstr (FuncState *fs, expdesc *e) {
   return (e->k == VK && !hasjumps(e) && e->u.info <= MAXARG_B &&
@@ -1226,7 +1225,7 @@ static int isKstr (FuncState *fs, expdesc *e) {
 /*
 ** Check whether expression 'e' is a literal integer.
 */
-static int isKint (expdesc *e) {
+int luaK_isKint (expdesc *e) {
   return (e->k == VKINT && !hasjumps(e));
 }
 
@@ -1236,7 +1235,7 @@ static int isKint (expdesc *e) {
 ** proper range to fit in register C
 */
 static int isCint (expdesc *e) {
-  return isKint(e) && (l_castS2U(e->u.ival) <= l_castS2U(MAXARG_C));
+  return luaK_isKint(e) && (l_castS2U(e->u.ival) <= l_castS2U(MAXARG_C));
 }
 
 
@@ -1245,7 +1244,7 @@ static int isCint (expdesc *e) {
 ** proper range to fit in register sC
 */
 static int isSCint (expdesc *e) {
-  return isKint(e) && fitsC(e->u.ival);
+  return luaK_isKint(e) && fitsC(e->u.ival);
 }
 
 
@@ -1284,17 +1283,15 @@ void luaK_indexed (FuncState *fs, expdesc *t, expdesc *k) {
   if (t->k == VUPVAL && !isKstr(fs, k))  /* upvalue indexed by non 'Kstr'? */
     luaK_exp2anyreg(fs, t);  /* put it in a register */
   if (t->k == VUPVAL) {
-    int temp = t->u.info;  /* upvalue index */
-    lua_assert(isKstr(fs, k));
-    t->u.ind.t = temp;  /* (can't do a direct assignment; values overlap) */
-    t->u.ind.idx = k->u.info;  /* literal short string */
+    t->u.ind.t = t->u.info;  /* upvalue index */
+    t->u.ind.idx = k->u.info;  /* literal string */
     t->k = VINDEXUP;
   }
   else {
     /* register index of the table */
     t->u.ind.t = (t->k == VLOCAL) ? t->u.var.ridx: t->u.info;
     if (isKstr(fs, k)) {
-      t->u.ind.idx = k->u.info;  /* literal short string */
+      t->u.ind.idx = k->u.info;  /* literal string */
       t->k = VINDEXSTR;
     }
     else if (isCint(k)) {
@@ -1462,7 +1459,7 @@ static void codebinK (FuncState *fs, BinOpr opr,
 */
 static int finishbinexpneg (FuncState *fs, expdesc *e1, expdesc *e2,
                              OpCode op, int line, TMS event) {
-  if (!isKint(e2))
+  if (!luaK_isKint(e2))
     return 0;  /* not an integer constant */
   else {
     lua_Integer i2 = e2->u.ival;
@@ -1595,7 +1592,7 @@ static void codeeq (FuncState *fs, BinOpr opr, expdesc *e1, expdesc *e2) {
     op = OP_EQI;
     r2 = im;  /* immediate operand */
   }
-  else if (exp2RK(fs, e2)) {  /* 2nd expression is constant? */
+  else if (luaK_exp2RK(fs, e2)) {  /* 2nd expression is constant? */
     op = OP_EQK;
     r2 = e2->u.info;  /* constant index */
   }
@@ -1661,7 +1658,7 @@ void luaK_infix (FuncState *fs, BinOpr op, expdesc *v) {
     }
     case OPR_EQ: case OPR_NE: {
       if (!tonumeral(v, NULL))
-        exp2RK(fs, v);
+        luaK_exp2RK(fs, v);
       /* else keep numeral, which may be an immediate operand */
       break;
     }

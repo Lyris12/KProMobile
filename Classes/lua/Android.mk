@@ -36,7 +36,7 @@ LOCAL_SRC_FILES := lapi.c \
                    ltablib.c \
                    lutf8lib.c \
                    linit.c
-LOCAL_CFLAGS    := -DLUA_USE_POSIX -O2 -Wall -D"getlocaledecpoint()='.'" -Wno-psabi -fexceptions -DLUA_COMPAT_5_3
+LOCAL_CFLAGS    := -DLUA_USE_POSIX -O2 -Wall -D"getlocaledecpoint()='.'" -Wno-psabi -fexceptions -DLUA_COMPAT_5_3 -DLUA_COMPAT_5_2
 #LOCAL_CPP_EXTENSION := .c
 include $(BUILD_STATIC_LIBRARY)
 

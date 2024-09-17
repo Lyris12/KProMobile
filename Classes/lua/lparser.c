@@ -1022,11 +1022,10 @@ static int explist (LexState *ls, expdesc *v) {
 }
 
 
-static void funcargs (LexState *ls, expdesc *f) {
+static void funcargs (LexState *ls, expdesc *f, int line) {
   FuncState *fs = ls->fs;
   expdesc args;
   int base, nparams;
-  int line = ls->linenumber;
   switch (ls->t.token) {
     case '(': {  /* funcargs -> '(' [ explist ] ')' */
       luaX_next(ls);
@@ -1064,8 +1063,8 @@ static void funcargs (LexState *ls, expdesc *f) {
   }
   init_exp(f, VCALL, luaK_codeABC(fs, OP_CALL, base, nparams+1, 2));
   luaK_fixline(fs, line);
-  fs->freereg = base+1;  /* call removes function and arguments and leaves
-                            one result (unless changed later) */
+  fs->freereg = base+1;  /* call remove function and arguments and leaves
+                            (unless changed) one result */
 }
 
 
@@ -1104,6 +1103,7 @@ static void suffixedexp (LexState *ls, expdesc *v) {
   /* suffixedexp ->
        primaryexp { '.' NAME | '[' exp ']' | ':' NAME funcargs | funcargs } */
   FuncState *fs = ls->fs;
+  int line = ls->linenumber;
   primaryexp(ls, v);
   for (;;) {
     switch (ls->t.token) {
@@ -1123,12 +1123,12 @@ static void suffixedexp (LexState *ls, expdesc *v) {
         luaX_next(ls);
         codename(ls, &key);
         luaK_self(fs, v, &key);
-        funcargs(ls, v);
+        funcargs(ls, v, line);
         break;
       }
       case '(': case TK_STRING: case '{': {  /* funcargs */
         luaK_exp2nextreg(fs, v);
-        funcargs(ls, v);
+        funcargs(ls, v, line);
         break;
       }
       default: return;
