@@ -502,7 +502,7 @@ public class AppsSettings {
      * 优先返回sharedPreference中存储的设置值，该值为空时返回context.getExternalFilesDir()
      */
     public String getResourcePath() {
-        String defPath = context.getObbDir().getAbsolutePath() + '/' + Constants.PREF_DEF_GAME_DIR;
+        String defPath = context.getExternalFilesDir(Constants.PREF_DEF_GAME_DIR).getAbsolutePath();
         /* 注意，调用的函数context.getExternalFilesDir()获取的是外部存储目录，只是安卓系统会将一部分内部存储模拟
         外部存储，此时返回的/storage/emulated/0其实是指向内部存储的一部分的链接，但在语义上它是external storage。
          context.getExternalFilesDir()的部分注释：If a shared storage device is emulated (as determined
@@ -515,7 +515,7 @@ public class AppsSettings {
         However, as its name suggets, this folder is emulated storage, which means that it is merely
          a link to the actual internal storage of your device's operating system. This is done for security reasons.
          */
-        return mSharedPreferences.getString(Constants.PREF_GAME_PATH, defPath);
+        return mSharedPreferences.getString(Constants.PREF_GAME_PATH, new File(defPath).getAbsolutePath());
     }
 
     public void setResourcePath(String path) {
