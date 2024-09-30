@@ -45,7 +45,7 @@
         <player-name>Komeiji Koishi</player-name>
         <name>2Pick</name>
         <desc>build new deck to duel</desc>
-        <ip>2pick.mycard.moe</ip>
+        <ip>2pick.moecube.com</ip>
         <port>765</port>
         <keep>true</keep>
     </server>

@@ -19,6 +19,7 @@ import static cn.garymb.ygomobile.Constants.DEF_PREF_NOTCH_HEIGHT;
 import static cn.garymb.ygomobile.Constants.DEF_PREF_ONLY_GAME;
 import static cn.garymb.ygomobile.Constants.DEF_PREF_READ_EX;
 import static cn.garymb.ygomobile.Constants.PREF_DEF_DATA_LANGUAGE;
+import static cn.garymb.ygomobile.Constants.PREF_DEF_GAME_DIR;
 import static cn.garymb.ygomobile.Constants.PREF_DEF_IMMERSIVE_MODE;
 import static cn.garymb.ygomobile.Constants.PREF_DEF_SENSOR_REFRESH;
 import static cn.garymb.ygomobile.Constants.PREF_FONT_SIZE;
@@ -235,7 +236,7 @@ public class AppsSettings {
     }
 
     public File getDatabaseFile() {
-        return new File(getDataBasePath(), Constants.DATABASE_NAME);
+        return new File(getResourcePath() + "../../../../../" + PREF_DEF_GAME_DIR, CORE_EXPANSIONS);
     }
 
 
